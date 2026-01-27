@@ -57,6 +57,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        hrms: {
+          blue: "hsl(var(--hrms-blue))",
+          "blue-light": "hsl(var(--hrms-blue-light))",
+          "blue-dark": "hsl(var(--hrms-blue-dark))",
+          success: "hsl(var(--hrms-success))",
+          warning: "hsl(var(--hrms-warning))",
+          online: "hsl(var(--hrms-online))",
+          offline: "hsl(var(--hrms-offline))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
