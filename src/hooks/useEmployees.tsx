@@ -1,49 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Employee, EmployeeWithRelations, EmployeeDocument, CreateEmployeeInput } from '@/types/employee';
 
-export interface Employee {
-  id: string;
-  user_id?: string;
-  employee_id?: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  job_title?: string;
-  department_id?: string;
-  location_id?: string;
-  manager_id?: string;
-  hire_date: string;
-  status: 'active' | 'inactive' | 'on_leave' | 'terminated';
-  avatar_url?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  linkedin_url?: string;
-  twitter_url?: string;
-  slack_username?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EmployeeWithRelations extends Employee {
-  location?: {
-    id: string;
-    name: string;
-    city: string;
-    country: string;
-  } | null;
-  department?: {
-    id: string;
-    name: string;
-  } | null;
-  manager?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  } | null;
-}
+export type { Employee, EmployeeWithRelations, EmployeeDocument };
 
 export function useEmployees() {
   return useQuery({
@@ -132,7 +92,7 @@ export function useCreateEmployee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (employee: CreateEmployeeInput) => {
       const { data, error } = await supabase
         .from('employees')
         .insert(employee)
@@ -229,6 +189,156 @@ export function useDepartments() {
 
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+// Avatar upload hook
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ employeeId, file }: { employeeId: string; file: File }) => {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${employeeId}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update employee record with new avatar URL
+      const { error: updateError } = await supabase
+        .from('employees')
+        .update({ avatar_url: publicUrl })
+        .eq('id', employeeId);
+
+      if (updateError) throw updateError;
+
+      return publicUrl;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee', variables.employeeId] });
+      toast.success('Avatar uploaded successfully');
+    },
+    onError: (error) => {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar');
+    },
+  });
+}
+
+// Document hooks
+export function useEmployeeDocuments(employeeId: string) {
+  return useQuery({
+    queryKey: ['employee-documents', employeeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_documents')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as EmployeeDocument[];
+    },
+    enabled: !!employeeId,
+  });
+}
+
+export function useUploadDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ employeeId, file }: { employeeId: string; file: File }) => {
+      const filePath = `${employeeId}/${Date.now()}_${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('employee-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data, error: insertError } = await supabase
+        .from('employee_documents')
+        .insert({
+          employee_id: employeeId,
+          file_name: file.name,
+          file_path: filePath,
+          file_type: file.type,
+          file_size: file.size,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-documents', variables.employeeId] });
+      toast.success('Document uploaded successfully');
+    },
+    onError: (error) => {
+      console.error('Error uploading document:', error);
+      toast.error('Failed to upload document');
+    },
+  });
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, filePath, employeeId }: { id: string; filePath: string; employeeId: string }) => {
+      await supabase.storage.from('employee-documents').remove([filePath]);
+
+      const { error } = await supabase
+        .from('employee_documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return employeeId;
+    },
+    onSuccess: (employeeId) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-documents', employeeId] });
+      toast.success('Document deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    },
+  });
+}
+
+export function useDownloadDocument() {
+  return useMutation({
+    mutationFn: async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
+      const { data, error } = await supabase.storage
+        .from('employee-documents')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    onError: (error) => {
+      console.error('Error downloading document:', error);
+      toast.error('Failed to download document');
     },
   });
 }
