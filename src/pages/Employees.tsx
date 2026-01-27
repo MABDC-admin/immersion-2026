@@ -1,20 +1,25 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { EmployeeFilters } from '@/components/employees/EmployeeFilters';
 import { EmployeeGrid } from '@/components/employees/EmployeeGrid';
+import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
 import { useEmployees } from '@/hooks/useEmployees';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { EmployeeWithRelations } from '@/types/employee';
 
 const ITEMS_PER_PAGE = 12;
 
 export default function Employees() {
+  const navigate = useNavigate();
   const { data: employees = [], isLoading, error } = useEmployees();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [groupBy, setGroupBy] = useState<'location' | 'department' | 'none'>('location');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Filter employees
   const filteredEmployees = useMemo(() => {
@@ -43,8 +48,11 @@ export default function Employees() {
   );
 
   const handleAddNew = () => {
-    // TODO: Open add employee modal
-    console.log('Add new employee');
+    setIsCreateModalOpen(true);
+  };
+
+  const handleEmployeeClick = (employee: EmployeeWithRelations) => {
+    navigate(`/employees/${employee.id}`);
   };
 
   if (error) {
@@ -100,6 +108,7 @@ export default function Employees() {
           <EmployeeGrid
             employees={paginatedEmployees}
             groupBy={groupBy}
+            onEmployeeClick={handleEmployeeClick}
           />
         )}
 
@@ -163,6 +172,11 @@ export default function Employees() {
           </div>
         )}
       </div>
+
+      <CreateEmployeeModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </MainLayout>
   );
 }
