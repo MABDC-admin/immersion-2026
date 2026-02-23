@@ -1135,6 +1135,10 @@ export type Database = {
         Args: { conv_id: string; u_id: string }
         Returns: boolean
       }
+      create_direct_conversation: {
+        Args: { creator_id: string; target_id: string }
+        Returns: string
+      }
       exec_sql: { Args: { query: string }; Returns: undefined }
       find_direct_conversation: {
         Args: { user_a: string; user_b: string }

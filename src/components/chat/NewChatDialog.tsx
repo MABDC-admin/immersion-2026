@@ -31,39 +31,15 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
     const handleCreateChat = async (targetEmployeeId: string) => {
         setIsCreating(true);
         try {
-            // Check if direct conversation already exists
-            const { data: existingChat, error: fetchError } = await supabase
-                .rpc('find_direct_conversation', {
-                    user_a: currentEmployeeId,
-                    user_b: targetEmployeeId
+            const { data: convId, error } = await supabase
+                .rpc('create_direct_conversation', {
+                    creator_id: currentEmployeeId,
+                    target_id: targetEmployeeId
                 });
 
-            if (existingChat) {
-                onConversationCreated(existingChat);
-                onOpenChange(false);
-                return;
-            }
+            if (error) throw error;
 
-            // Create new conversation
-            const { data: conv, error: convError } = await supabase
-                .from('conversations')
-                .insert([{ type: 'direct' }])
-                .select()
-                .single();
-
-            if (convError) throw convError;
-
-            // Add members
-            const { error: memberError } = await supabase
-                .from('conversation_members')
-                .insert([
-                    { conversation_id: conv.id, employee_id: currentEmployeeId },
-                    { conversation_id: conv.id, employee_id: targetEmployeeId }
-                ]);
-
-            if (memberError) throw memberError;
-
-            onConversationCreated(conv.id);
+            onConversationCreated(convId);
             onOpenChange(false);
         } catch (error: any) {
             toast.error(error.message);
