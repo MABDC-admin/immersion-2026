@@ -88,6 +88,47 @@ export function useEmployee(id: string) {
   });
 }
 
+export function useCurrentEmployee(userId: string) {
+  return useQuery({
+    queryKey: ['employee', 'current', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select(`
+          *,
+          location:locations(id, name, city, country),
+          department:departments(id, name)
+        `)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching current employee:', error);
+        throw error;
+      }
+
+      if (!data) return null;
+
+      // Fetch manager separately
+      let manager = null;
+      if (data.manager_id) {
+        const { data: managerData } = await supabase
+          .from('employees')
+          .select('id, first_name, last_name')
+          .eq('id', data.manager_id)
+          .maybeSingle();
+        manager = managerData;
+      }
+
+      return {
+        ...data,
+        manager,
+      } as EmployeeWithRelations;
+    },
+    enabled: !!userId,
+  });
+}
+
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
 

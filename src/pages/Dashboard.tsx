@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Users, UserPlus, Calendar, TrendingUp } from 'lucide-react';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployees, useCurrentEmployee } from '@/hooks/useEmployees';
 import { MakeAdminCard } from '@/components/admin/MakeAdminCard';
 import { AdminAssignRole } from '@/components/admin/AdminAssignRole';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,16 +12,22 @@ import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidge
 import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
+import { EmployeeDashboardView } from '@/components/profile/EmployeeDashboardView';
+import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
-  const { isAdmin, userRole } = useAuth();
+  const { user, isAdmin, userRole } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // For employee view - resolve employee record from Auth ID
+  const { data: employee } = useCurrentEmployee(user?.id || '');
 
   const stats = useMemo(() => {
     const activeEmployees = employees.filter((e) => e.status === 'active').length;
     const onLeaveEmployees = employees.filter((e) => e.status === 'on_leave').length;
-    
+
     // Calculate new hires (joined in the last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -64,51 +70,84 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-10">
+        {/* Universal Welcome Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {isAdmin || userRole === 'hr_manager' ? 'Main Dashboard' : 'My Dashboard'}
+            </h1>
             <p className="text-muted-foreground">
-              Welcome to Immersion HRMS. Here's an overview of your organization.
+              Welcome back, {user?.email}. Here's your overview for today.
             </p>
           </div>
           {isAdmin && <AdminAssignRole />}
         </div>
 
-        {/* Admin upgrade card for non-admin users */}
-        {userRole !== 'admin' && <MakeAdminCard />}
-
-        {/* Animated Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <AnimatedStatCard
-              key={stat.title}
-              {...stat}
-              delay={index * 100}
-            />
-          ))}
+        {/* Global Personal Overview - Everyone sees this */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 border-b pb-2">
+            <h2 className="text-xl font-semibold">My Personal Portal</h2>
+          </div>
+          <EmployeeDashboardView
+            employeeId={employee?.id || ''}
+            onUpdateProfile={() => setIsEditModalOpen(true)}
+          />
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <EmployeeStatusChart employees={employees} />
-          <DepartmentDistributionChart employees={employees} />
-        </div>
+        {/* Admin/HR Specific Content */}
+        {(isAdmin || userRole === 'hr_manager') && (
+          <div className="space-y-6 pt-6 border-t">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Organizational Overview</h2>
+              {userRole !== 'admin' && <MakeAdminCard />}
+            </div>
 
-        {/* Activity & Events Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <RecentActivityWidget className="lg:col-span-2" />
-          <UpcomingEventsWidget />
-        </div>
+            {/* Animated Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <AnimatedStatCard
+                  key={stat.title}
+                  {...stat}
+                  delay={index * 100}
+                />
+              ))}
+            </div>
 
-        {/* Quick Actions */}
-        <QuickActionsWidget onAddEmployee={() => setIsCreateModalOpen(true)} />
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EmployeeStatusChart employees={employees} />
+              <DepartmentDistributionChart employees={employees} />
+            </div>
+
+            {/* Activity & Events Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <RecentActivityWidget className="lg:col-span-2" />
+              <UpcomingEventsWidget />
+            </div>
+
+            {/* Quick Actions */}
+            <QuickActionsWidget onAddEmployee={() => setIsCreateModalOpen(true)} />
+          </div>
+        )}
+
+        {!isAdmin && userRole !== 'admin' && userRole !== 'hr_manager' && (
+          <MakeAdminCard />
+        )}
       </div>
 
       <CreateEmployeeModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
       />
+
+      {employee && (
+        <EditEmployeeModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          employee={employee}
+        />
+      )}
     </MainLayout>
   );
 }

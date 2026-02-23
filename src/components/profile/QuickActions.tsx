@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Square, CalendarPlus, UserEdit, FileText } from 'lucide-react';
+import { Play, Square, CalendarPlus, UserPen, FileText } from 'lucide-react';
 
 interface QuickActionsProps {
     onClockIn: () => void;
@@ -59,7 +59,7 @@ export function QuickActions({
                     className="flex flex-col h-auto py-4 gap-2 border-primary text-primary hover:bg-primary/10"
                     onClick={onUpdateProfile}
                 >
-                    <UserEdit className="h-5 w-5" />
+                    <UserPen className="h-5 w-5" />
                     <span>Update Profile</span>
                 </Button>
                 <Button

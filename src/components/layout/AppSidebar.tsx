@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Clock, UserPlus, TrendingUp,
-  UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield,
+  UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub,
   SidebarMenuSubButton, SidebarMenuSubItem, SidebarHeader, useSidebar,
 } from '@/components/ui/sidebar';
+import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface NavItem {
@@ -72,6 +73,7 @@ const navItems: NavItem[] = [
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
+  const { data: employee } = useCurrentEmployee(user?.id || '');
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const [openItems, setOpenItems] = useState<string[]>(['Employee']);
@@ -92,9 +94,22 @@ export function AppSidebar() {
     return item.subItems?.some((sub) => isActive(sub.href));
   };
 
-  const userInitials = user?.email?.substring(0, 2).toUpperCase() || 'U';
+  const userInitials = employee
+    ? `${employee.first_name[0]}${employee.last_name[0]}`.toUpperCase()
+    : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
-  const filteredItems = navItems.filter(item => !item.adminOnly || isAdmin);
+  const filteredItems = [...navItems];
+
+  // If we have an employee record, add "My Portal" to the top
+  if (employee) {
+    filteredItems.unshift({
+      title: 'My Portal',
+      icon: User,
+      href: `/employees/${employee.id}`
+    });
+  }
+
+  const finalFilteredItems = filteredItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">
@@ -111,7 +126,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.map((item) => (
+              {finalFilteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
                     <Collapsible open={openItems.includes(item.title)} onOpenChange={() => toggleItem(item.title)}>
@@ -159,7 +174,9 @@ export function AppSidebar() {
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.email?.split('@')[0] || 'User'}</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {employee ? `${employee.first_name} ${employee.last_name}` : user?.email?.split('@')[0] || 'User'}
+              </p>
               <p className="text-xs text-sidebar-foreground/70 truncate">{user?.email || ''}</p>
             </div>
           )}

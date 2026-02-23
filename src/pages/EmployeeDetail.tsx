@@ -47,18 +47,14 @@ import {
   useDeleteDocument,
   useDownloadDocument
 } from '@/hooks/useEmployees';
-import { useAttendance, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
+import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaveRequests } from '@/hooks/useLeave';
 import { useEnrollments } from '@/hooks/useTraining';
-import { useLeaveBalances, useAnnouncements } from '@/hooks/useDashboard';
+import { useLeaveBalances } from '@/hooks/useDashboard';
+import { EmployeeDashboardView } from '@/components/profile/EmployeeDashboardView';
 import { AvatarUpload } from '@/components/employees/AvatarUpload';
 import { DocumentUpload } from '@/components/employees/DocumentUpload';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
-import { TodaySummaryCards } from '@/components/profile/TodaySummaryCards';
-import { QuickActions } from '@/components/profile/QuickActions';
-import { AnnouncementsWidget } from '@/components/profile/AnnouncementsWidget';
-import { MyTasksWidget } from '@/components/profile/MyTasksWidget';
-import { CalendarPreview } from '@/components/profile/CalendarPreview';
 import { CreateLeaveModal } from '@/components/leave/CreateLeaveModal';
 import { format } from 'date-fns';
 
@@ -91,18 +87,14 @@ export default function EmployeeDetail() {
   const deleteDocument = useDeleteDocument();
   const downloadDocument = useDownloadDocument();
 
-  // Dashboard Data
-  const { data: attendanceHistory = [] } = useAttendance(id);
-  const { data: todayAttendance } = useTodayAttendance(id || '');
-  const clockIn = useClockIn();
-  const clockOut = useClockOut();
-  const { data: leaveRequests = [] } = useLeaveRequests(id);
-  const { data: leaveBalances = [] } = useLeaveBalances(id || '');
-  const { data: enrollments = [] } = useEnrollments(id);
-  const { data: announcements = [] } = useAnnouncements();
-
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+
+  // Tabs Data
+  const { data: attendanceHistory = [] } = useAttendance(id || '');
+  const { data: leaveRequests = [] } = useLeaveRequests(id || '');
+  const { data: leaveBalances = [] } = useLeaveBalances(id || '');
+  const { data: enrollments = [] } = useEnrollments(id || '');
 
   if (isLoading) {
     return (
@@ -151,14 +143,6 @@ export default function EmployeeDetail() {
 
   const handleDocumentUpload = (file: File) => {
     uploadDocument.mutate({ employeeId: employee.id, file });
-  };
-
-  const handleClockIn = () => {
-    if (id) clockIn.mutate({ employeeId: id });
-  };
-
-  const handleClockOut = () => {
-    if (todayAttendance?.id) clockOut.mutate({ id: todayAttendance.id });
   };
 
   return (
@@ -292,30 +276,10 @@ export default function EmployeeDetail() {
               </TabsList>
 
               <TabsContent value="dashboard" className="space-y-6">
-                <TodaySummaryCards
-                  attendance={todayAttendance}
-                  leaveBalances={leaveBalances}
-                  enrollments={enrollments}
+                <EmployeeDashboardView
+                  employeeId={id || ''}
+                  onUpdateProfile={() => setIsEditModalOpen(true)}
                 />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-6">
-                    <QuickActions
-                      onClockIn={handleClockIn}
-                      onClockOut={handleClockOut}
-                      onRequestLeave={() => setIsLeaveModalOpen(true)}
-                      onUpdateProfile={() => setIsEditModalOpen(true)}
-                      isClockedIn={!!todayAttendance?.clock_in && !todayAttendance?.clock_out}
-                      isClocking={clockIn.isPending || clockOut.isPending}
-                    />
-                    <AnnouncementsWidget announcements={announcements} />
-                  </div>
-                  <div className="space-y-6">
-                    <MyTasksWidget
-                      incompleteRequiredCourses={enrollments.filter(e => e.status !== 'completed')}
-                    />
-                    <CalendarPreview leaveRequests={leaveRequests} />
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="profile" className="space-y-6">
