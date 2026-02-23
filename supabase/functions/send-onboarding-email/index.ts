@@ -158,14 +158,20 @@ serve(async (req) => {
     }
 
     const fromName = company.name || "HRMS";
-    const fromEmail = company.email ? `${fromName} <${company.email}>` : `${fromName} <immersion@mabdc.com>`;
+    const fromEmail = `${fromName} <onboarding@resend.dev>`;
 
-    const { data, error } = await resend.emails.send({
+    const emailPayload: Record<string, unknown> = {
       from: fromEmail,
       to: [to],
       subject: `${subject} - ${company.name}`,
       html: buildEmailTemplate(company, subject, bodyContent),
-    });
+    };
+
+    if (company.email) {
+      emailPayload.reply_to = company.email;
+    }
+
+    const { data, error } = await resend.emails.send(emailPayload as any);
 
     if (error) {
       return new Response(JSON.stringify({ error }), {
