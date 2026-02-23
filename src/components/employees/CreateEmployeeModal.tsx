@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useLocations, useDepartments, useEmployees } from '@/hooks/useEmployees';
+import { supabase } from '@/integrations/supabase/client';
 import { sendOnboardingEmail } from '@/lib/email';
 
 const employeeFormSchema = z.object({
@@ -92,6 +93,7 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
   });
 
   const onSubmit = async (values: EmployeeFormValues) => {
+    const defaultPassword = '654321';
     const employeeData = {
       first_name: values.first_name,
       last_name: values.last_name,
@@ -111,14 +113,34 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
       country: values.country || undefined,
     };
 
-    await createEmployee.mutateAsync(employeeData);
+    const employee = await createEmployee.mutateAsync(employeeData);
 
-    // Send onboarding email
+    // Create auth account via edge function (avoids logging out the admin)
     try {
-      await sendOnboardingEmail(values.email, values.first_name, values.last_name);
+      const { data: accountData, error: accountError } = await supabase.functions.invoke('create-employee-account', {
+        body: {
+          email: values.email,
+          password: defaultPassword,
+          firstName: values.first_name,
+          lastName: values.last_name,
+        },
+      });
+
+      if (accountError) {
+        console.error('Failed to create auth account:', accountError);
+      } else if (accountData?.userId && employee?.id) {
+        // Link the auth user to the employee record
+        await supabase.from('employees').update({ user_id: accountData.userId }).eq('id', employee.id);
+      }
+    } catch (error) {
+      console.error('Failed to create auth account:', error);
+    }
+
+    // Send onboarding email with credentials
+    try {
+      await sendOnboardingEmail(values.email, values.first_name, values.last_name, undefined, defaultPassword);
     } catch (error) {
       console.error('Failed to send onboarding email:', error);
-      // We don't block the UI for email failures, but it's logged
     }
 
     form.reset();

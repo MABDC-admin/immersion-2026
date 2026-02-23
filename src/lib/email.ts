@@ -4,7 +4,8 @@ export const sendOnboardingEmail = async (
     email: string,
     firstName: string,
     lastName: string,
-    startDate?: string
+    startDate?: string,
+    password?: string
 ) => {
     const { data, error } = await supabase.functions.invoke('send-onboarding-email', {
         body: {
@@ -13,6 +14,8 @@ export const sendOnboardingEmail = async (
             lastName,
             startDate,
             type: startDate ? 'approval' : 'onboarding',
+            username: email,
+            password,
         },
     });
 

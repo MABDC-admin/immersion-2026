@@ -16,6 +16,8 @@ interface EmailPayload {
   lastName: string;
   startDate?: string;
   type?: "onboarding" | "approval";
+  username?: string;
+  password?: string;
 }
 
 interface CompanySettings {
@@ -91,14 +93,39 @@ function buildEmailTemplate(company: CompanySettings, subject: string, bodyConte
 </html>`;
 }
 
+function buildCredentialsBox(username?: string, password?: string): string {
+  if (!username || !password) return "";
+  const loginUrl = "https://immersion.mabdc.com/auth";
+  return `
+    <div style="margin:24px 0;padding:20px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
+      <h3 style="margin:0 0 14px;color:#1a1a2e;font-size:16px;font-weight:600;">🔐 Your Login Credentials</h3>
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;width:90px;">Username:</td>
+          <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${username}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Password:</td>
+          <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${password}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin-bottom:12px;">
+        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Employee Portal</a>
+      </div>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">⚠️ Please change your password after your first login for security purposes.</p>
+    </div>
+  `;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { to, firstName, lastName, startDate, type }: EmailPayload = await req.json();
+    const { to, firstName, lastName, startDate, type, username, password }: EmailPayload = await req.json();
     const company = await getCompanySettings();
+    const credentialsHtml = buildCredentialsBox(username, password);
 
     let subject: string;
     let bodyContent: string;
@@ -110,6 +137,7 @@ serve(async (req) => {
         <p>We are pleased to confirm your onboarding with <strong>${company.name}</strong>, effective <strong>${startDate || "[Start Date]"}</strong>.</p>
         <p>We are delighted to welcome you to our team and look forward to the skills and experience you will bring to our organization.</p>
         <p>We are confident that you will be a valuable addition to our growing community, and we look forward to a successful journey together.</p>
+        ${credentialsHtml}
         <p>Should you have any questions, feel free to reach out at any time.</p>
         <br />
         <p>Kind regards,</p>
@@ -121,6 +149,7 @@ serve(async (req) => {
         <p>Dear <strong>${firstName}</strong>,</p>
         <p>We're excited to have you join us at <strong>${company.name}</strong>!</p>
         <p>You can now log in to your employee portal to complete your onboarding checklist and get started.</p>
+        ${credentialsHtml}
         <p>If you have any questions during your onboarding process, don't hesitate to reach out to the HR team.</p>
         <br />
         <p>Best regards,</p>
