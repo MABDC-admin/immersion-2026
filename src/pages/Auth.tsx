@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,12 +21,21 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [companyName, setCompanyName] = useState('Immersion HRMS');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && !isLoading) {
       navigate('/');
     }
   }, [user, isLoading, navigate]);
+
+  useEffect(() => {
+    supabase.from('company_settings').select('name, logo_url').limit(1).maybeSingle().then(({ data }) => {
+      if (data?.name) setCompanyName(data.name);
+      if (data?.logo_url) setLogoUrl(data.logo_url);
+    });
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,10 +104,16 @@ export default function Auth() {
       
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary-foreground">IM</span>
-          </div>
-          <CardTitle className="text-2xl font-bold">Immersion HRMS</CardTitle>
+          {logoUrl ? (
+            <div className="mx-auto mb-4 w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center">
+              <img src={logoUrl} alt={companyName} className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="mx-auto mb-4 w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
+              <span className="text-2xl font-bold text-primary-foreground">IM</span>
+            </div>
+          )}
+          <CardTitle className="text-2xl font-bold">{companyName}</CardTitle>
           <CardDescription>
             Human Resource Management System
           </CardDescription>
