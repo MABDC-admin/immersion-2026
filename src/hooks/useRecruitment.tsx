@@ -109,6 +109,8 @@ export function useApproveCandidate() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ candidate, startDate }: { candidate: Candidate; startDate: string }) => {
+            const defaultPassword = '654321';
+
             const { error: updateError } = await supabase
                 .from('candidates')
                 .update({ status: 'approved' })
@@ -129,6 +131,26 @@ export function useApproveCandidate() {
                 .single();
             if (employeeError) throw employeeError;
 
+            // Create auth account via edge function
+            try {
+                const { data: accountData, error: accountError } = await supabase.functions.invoke('create-employee-account', {
+                    body: {
+                        email: candidate.email,
+                        password: defaultPassword,
+                        firstName: candidate.first_name,
+                        lastName: candidate.last_name,
+                    },
+                });
+
+                if (accountError) {
+                    console.error('Failed to create auth account:', accountError);
+                } else if (accountData?.userId && employee?.id) {
+                    await supabase.from('employees').update({ user_id: accountData.userId }).eq('id', employee.id);
+                }
+            } catch (error) {
+                console.error('Failed to create auth account:', error);
+            }
+
             const { error: checklistError } = await supabase
                 .from('onboarding_checklists')
                 .insert([{
@@ -139,7 +161,7 @@ export function useApproveCandidate() {
             if (checklistError) throw checklistError;
 
             try {
-                await sendOnboardingEmail(candidate.email, candidate.first_name, candidate.last_name, startDate);
+                await sendOnboardingEmail(candidate.email, candidate.first_name, candidate.last_name, startDate, defaultPassword);
             } catch (emailError) {
                 console.error('Failed to send approval email:', emailError);
                 toast.error('Candidate approved, but failed to send email notification.');
