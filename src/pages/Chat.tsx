@@ -3,9 +3,12 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { useChat } from '@/hooks/useChat';
+import { useVoiceCall } from '@/hooks/useVoiceCall';
+import { useEmployees } from '@/hooks/useEmployees';
 import { ChatList } from '@/components/chat/ChatList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
+import { IncomingCallModal } from '@/components/chat/IncomingCallModal';
 import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare } from 'lucide-react';
 
@@ -14,8 +17,25 @@ export default function ChatPage() {
     const { data: employee } = useCurrentEmployee(user?.id || '');
     const { useConversations } = useChat();
     const { data: conversations = [], isLoading, refetch } = useConversations(employee?.id || '');
+    const { data: allEmployees = [] } = useEmployees();
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+
+    const { callState, initiateCall, acceptCall, rejectCall, endCall, toggleMute } = useVoiceCall(employee?.id || '');
+
+    // Find caller info for incoming call modal
+    const callerEmployee = callState.remoteEmployeeId
+        ? allEmployees.find((e) => e.id === callState.remoteEmployeeId)
+        : null;
+    const callerName = callerEmployee
+        ? `${callerEmployee.first_name} ${callerEmployee.last_name}`
+        : 'Unknown';
+
+    const handleInitiateCall = (remoteEmployeeId: string) => {
+        if (selectedConversationId) {
+            initiateCall(remoteEmployeeId, selectedConversationId);
+        }
+    };
 
     return (
         <MainLayout>
@@ -51,6 +71,10 @@ export default function ChatPage() {
                             conversationId={selectedConversationId}
                             employeeId={employee?.id || ''}
                             onBack={() => setSelectedConversationId(null)}
+                            callState={callState}
+                            onInitiateCall={handleInitiateCall}
+                            onEndCall={endCall}
+                            onToggleMute={toggleMute}
                         />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
@@ -76,6 +100,15 @@ export default function ChatPage() {
                         setSelectedConversationId(id);
                         refetch();
                     }}
+                />
+
+                {/* Incoming Call Modal */}
+                <IncomingCallModal
+                    open={callState.status === 'ringing'}
+                    callerName={callerName}
+                    callerAvatar={callerEmployee?.avatar_url || undefined}
+                    onAccept={acceptCall}
+                    onReject={rejectCall}
                 />
             </div>
         </MainLayout>

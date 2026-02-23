@@ -4,24 +4,45 @@ import { useChat } from '@/hooks/useChat';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, ArrowLeft, Phone, Video, Info, MoreHorizontal } from 'lucide-react';
+import { Send, ArrowLeft, Phone, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ActiveCallOverlay } from './ActiveCallOverlay';
+import { CallStatus } from '@/hooks/useVoiceCall';
 
 interface ChatWindowProps {
     conversationId: string;
     employeeId: string;
     onBack?: () => void;
+    callState?: {
+        status: CallStatus;
+        remoteEmployeeId: string | null;
+        conversationId: string | null;
+        isMuted: boolean;
+        callDuration: number;
+    };
+    onInitiateCall?: (remoteEmployeeId: string) => void;
+    onEndCall?: () => void;
+    onToggleMute?: () => void;
 }
 
-export function ChatWindow({ conversationId, employeeId, onBack }: ChatWindowProps) {
-    const { useMessages, useSendMessage, subscribeToConversation } = useChat();
+export function ChatWindow({ conversationId, employeeId, onBack, callState, onInitiateCall, onEndCall, onToggleMute }: ChatWindowProps) {
+    const { useMessages, useSendMessage, subscribeToConversation, useConversations } = useChat();
     const { data: messages = [], isLoading } = useMessages(conversationId);
+    const { data: conversations = [] } = useConversations(employeeId);
     const sendMessage = useSendMessage();
     const [newMessage, setNewMessage] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
+
+    // Find the other member in this conversation
+    const conversation = conversations.find((c) => c.id === conversationId);
+    const otherMember = conversation?.members?.find((m) => m.employee_id !== employeeId)?.employee;
+    const remoteName = otherMember ? `${otherMember.first_name} ${otherMember.last_name}` : 'Chat Session';
+    const remoteInitials = remoteName.split(' ').map((n) => n[0]).join('').toUpperCase();
+
+    const isInCall = callState && callState.conversationId === conversationId && 
+                     (callState.status === 'calling' || callState.status === 'connected');
 
     // Subscribe to realtime updates
     useEffect(() => {
@@ -56,8 +77,27 @@ export function ChatWindow({ conversationId, employeeId, onBack }: ChatWindowPro
         setNewMessage('');
     };
 
+    const handleCall = () => {
+        if (otherMember && onInitiateCall) {
+            onInitiateCall(otherMember.id);
+        }
+    };
+
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+            {/* Call Overlay */}
+            {isInCall && callState && onEndCall && onToggleMute && (
+                <ActiveCallOverlay
+                    status={callState.status}
+                    remoteName={remoteName}
+                    remoteAvatar={otherMember?.avatar_url}
+                    isMuted={callState.isMuted}
+                    callDuration={callState.callDuration}
+                    onEndCall={onEndCall}
+                    onToggleMute={onToggleMute}
+                />
+            )}
+
             {/* Window Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
                 <div className="flex items-center gap-3">
@@ -65,19 +105,25 @@ export function ChatWindow({ conversationId, employeeId, onBack }: ChatWindowPro
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <Avatar className="h-10 w-10">
-                        <AvatarFallback>CH</AvatarFallback>
+                        <AvatarImage src={otherMember?.avatar_url} />
+                        <AvatarFallback>{remoteInitials}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h4 className="text-sm font-bold">Chat Session</h4>
-                        <p className="text-[10px] text-hrms-success font-medium">Online</p>
+                        <h4 className="text-sm font-bold">{remoteName}</h4>
+                        <p className="text-[10px] text-muted-foreground font-medium">
+                            {isInCall ? 'In call' : 'Online'}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={handleCall}
+                        disabled={!otherMember || isInCall}
+                    >
                         <Phone className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                        <Video className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                         <MoreHorizontal className="h-4 w-4" />
