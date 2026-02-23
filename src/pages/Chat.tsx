@@ -15,11 +15,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, MessageSquare, User, Users } from 'lucide-react';
 
 export default function ChatPage() {
-    const { user } = useAuth();
+    const { user, userRole, isAdmin, isHrManager } = useAuth();
     const { data: employee } = useCurrentEmployee(user?.id || '');
     const { useConversations } = useChat();
     const { data: conversations = [], isLoading, refetch } = useConversations(employee?.id || '');
     const { data: allEmployees = [] } = useEmployees();
+    const isSupervisor = employee ? allEmployees.some(e => e.manager_id === employee.id) : false;
+    const canCreateGroupChat = isAdmin || isHrManager || isSupervisor;
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
     const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
@@ -62,10 +64,12 @@ export default function ChatPage() {
                                     <User className="h-4 w-4 mr-2" />
                                     Direct Message
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setIsNewGroupOpen(true)}>
-                                    <Users className="h-4 w-4 mr-2" />
-                                    Group Chat
-                                </DropdownMenuItem>
+                                {canCreateGroupChat && (
+                                    <DropdownMenuItem onClick={() => setIsNewGroupOpen(true)}>
+                                        <Users className="h-4 w-4 mr-2" />
+                                        Group Chat
+                                    </DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
