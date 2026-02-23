@@ -1,22 +1,8 @@
 import { UserPlus, UserMinus, Clock, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
-interface Activity {
-  id: string;
-  type: 'join' | 'leave' | 'update' | 'status';
-  message: string;
-  time: string;
-}
-
-// Mock data - in real app, this would come from an API
-const mockActivities: Activity[] = [
-  { id: '1', type: 'join', message: 'John Doe joined the Engineering team', time: '2 hours ago' },
-  { id: '2', type: 'update', message: 'Sarah Smith updated her profile', time: '4 hours ago' },
-  { id: '3', type: 'status', message: 'Mike Johnson is now on leave', time: '5 hours ago' },
-  { id: '4', type: 'join', message: 'Emily Brown joined the Design team', time: '1 day ago' },
-  { id: '5', type: 'leave', message: 'Alex Wilson left the company', time: '2 days ago' },
-];
+import { useActivities } from '@/hooks/useEmployees';
+import { formatDistanceToNow } from 'date-fns';
 
 const activityConfig = {
   join: { icon: UserPlus, color: 'text-hrms-success', bgColor: 'bg-hrms-success/10' },
@@ -30,6 +16,8 @@ interface RecentActivityWidgetProps {
 }
 
 export function RecentActivityWidget({ className }: RecentActivityWidgetProps) {
+  const { data: activities = [], isLoading } = useActivities();
+
   return (
     <Card className={cn('animate-fade-in', className)} style={{ animationDelay: '400ms' }}>
       <CardHeader>
@@ -37,26 +25,44 @@ export function RecentActivityWidget({ className }: RecentActivityWidgetProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockActivities.map((activity, index) => {
-            const config = activityConfig[activity.type];
-            const Icon = config.icon;
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="w-8 h-8 bg-muted rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-2 bg-muted rounded w-1/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : activities.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+          ) : (
+            activities.map((activity, index) => {
+              const config = activityConfig[activity.type] || activityConfig.update;
+              const Icon = config.icon;
 
-            return (
-              <div
-                key={activity.id}
-                className="flex items-start gap-3 animate-fade-in"
-                style={{ animationDelay: `${500 + index * 100}ms` }}
-              >
-                <div className={cn('p-2 rounded-full', config.bgColor)}>
-                  <Icon className={cn('h-4 w-4', config.color)} />
+              return (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 animate-fade-in"
+                  style={{ animationDelay: `${500 + index * 100}ms` }}
+                >
+                  <div className={cn('p-2 rounded-full', config.bgColor)}>
+                    <Icon className={cn('h-4 w-4', config.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </CardContent>
     </Card>

@@ -73,3 +73,46 @@ export interface CreateEmployeeInput {
   twitter_url?: string;
   slack_username?: string;
 }
+
+export interface Activity {
+  id: string;
+  type: 'join' | 'leave' | 'update' | 'status';
+  message: string;
+  user_id?: string;
+  created_at: string;
+}
+
+export interface Event {
+  id: string;
+  type: 'birthday' | 'anniversary' | 'holiday';
+  title: string;
+  date: string;
+  created_at: string;
+}
+
+export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface LeaveRequest {
+  id: string;
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  status: LeaveStatus;
+  reason?: string;
+  approved_by?: string;
+  created_at: string;
+  employee?: {
+    first_name: string;
+    last_name: string;
+    avatar_url?: string;
+  };
+}
+
+export interface CreateLeaveRequestInput {
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+}

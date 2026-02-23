@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,7 +61,7 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 interface EditEmployeeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employee: EmployeeWithRelations;
+  employee: EmployeeWithRelations | null;
 }
 
 export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployeeModalProps) {
@@ -72,24 +73,50 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
-      first_name: employee.first_name,
-      last_name: employee.last_name,
-      email: employee.email,
-      phone: employee.phone || '',
-      job_title: employee.job_title || '',
-      department_id: employee.department_id || '',
-      location_id: employee.location_id || '',
-      manager_id: employee.manager_id || '',
-      hire_date: new Date(employee.hire_date),
-      status: employee.status,
-      linkedin_url: employee.linkedin_url || '',
-      twitter_url: employee.twitter_url || '',
-      slack_username: employee.slack_username || '',
-      address: employee.address || '',
-      city: employee.city || '',
-      country: employee.country || '',
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      job_title: '',
+      department_id: '',
+      location_id: '',
+      manager_id: '',
+      hire_date: new Date(),
+      status: 'active',
+      linkedin_url: '',
+      twitter_url: '',
+      slack_username: '',
+      address: '',
+      city: '',
+      country: '',
     },
   });
+
+  // Update form values when employee changes
+  useEffect(() => {
+    if (employee) {
+      form.reset({
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        email: employee.email,
+        phone: employee.phone || '',
+        job_title: employee.job_title || '',
+        department_id: employee.department_id || '',
+        location_id: employee.location_id || '',
+        manager_id: employee.manager_id || '',
+        hire_date: new Date(employee.hire_date),
+        status: employee.status,
+        linkedin_url: employee.linkedin_url || '',
+        twitter_url: employee.twitter_url || '',
+        slack_username: employee.slack_username || '',
+        address: employee.address || '',
+        city: employee.city || '',
+        country: employee.country || '',
+      });
+    }
+  }, [employee, form]);
+
+  if (!employee) return null;
 
   const onSubmit = async (values: EmployeeFormValues) => {
     const updateData = {

@@ -11,6 +11,19 @@ import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import NotFound from "./pages/NotFound";
 
+// HR Modules
+import LeaveRequests from "./pages/leave/Requests";
+import LeaveCalendar from "./pages/leave/Calendar";
+import Attendance from "./pages/attendance/Attendance";
+import Timesheets from "./pages/attendance/Timesheets";
+import JobPostings from "./pages/recruitment/Jobs";
+import Candidates from "./pages/recruitment/Candidates";
+import PerformanceReviews from "./pages/performance/Reviews";
+import NewHires from "./pages/onboarding/NewHires";
+import Checklists from "./pages/onboarding/Checklists";
+import OnboardingDocuments from "./pages/onboarding/Documents";
+import Courses from "./pages/training/Courses";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -54,6 +67,36 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* Leave Module */}
+            <Route path="/leave/requests" element={<ProtectedRoute><LeaveRequests /></ProtectedRoute>} />
+            <Route path="/leave/balance" element={<ProtectedRoute><LeaveRequests /></ProtectedRoute>} />
+            <Route path="/leave/calendar" element={<ProtectedRoute><LeaveCalendar /></ProtectedRoute>} />
+
+            {/* Attendance Module */}
+            <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+            <Route path="/attendance/timesheets" element={<ProtectedRoute><Timesheets /></ProtectedRoute>} />
+            <Route path="/attendance/reports" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+
+            {/* Recruitment Module */}
+            <Route path="/recruitment/jobs" element={<ProtectedRoute><JobPostings /></ProtectedRoute>} />
+            <Route path="/recruitment/candidates" element={<ProtectedRoute><Candidates /></ProtectedRoute>} />
+            <Route path="/recruitment/interviews" element={<ProtectedRoute><JobPostings /></ProtectedRoute>} />
+
+            {/* Performance Module */}
+            <Route path="/performance/reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
+            <Route path="/performance/goals" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
+            <Route path="/performance/feedback" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
+
+            {/* Onboarding Module */}
+            <Route path="/onboarding/new-hires" element={<ProtectedRoute><NewHires /></ProtectedRoute>} />
+            <Route path="/onboarding/checklists" element={<ProtectedRoute><Checklists /></ProtectedRoute>} />
+            <Route path="/onboarding/documents" element={<ProtectedRoute><OnboardingDocuments /></ProtectedRoute>} />
+
+            {/* Training Module */}
+            <Route path="/training/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+            <Route path="/training/enrollments" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+            <Route path="/training/certificates" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

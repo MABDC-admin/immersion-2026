@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useCreateEmployee, useLocations, useDepartments, useEmployees } from '@/hooks/useEmployees';
+import { sendOnboardingEmail } from '@/lib/email';
 
 const employeeFormSchema = z.object({
   first_name: z.string().min(1, 'First name is required').max(100),
@@ -111,6 +112,15 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
     };
 
     await createEmployee.mutateAsync(employeeData);
+
+    // Send onboarding email
+    try {
+      await sendOnboardingEmail(values.email, values.first_name, values.last_name);
+    } catch (error) {
+      console.error('Failed to send onboarding email:', error);
+      // We don't block the UI for email failures, but it's logged
+    }
+
     form.reset();
     onOpenChange(false);
   };

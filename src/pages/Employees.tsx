@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { EmployeeFilters } from '@/components/employees/EmployeeFilters';
 import { EmployeeGrid } from '@/components/employees/EmployeeGrid';
+import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
-import { useEmployees } from '@/hooks/useEmployees';
+import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
+import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { EmployeeWithRelations } from '@/types/employee';
@@ -20,6 +22,9 @@ export default function Employees() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRelations | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const deleteEmployee = useDeleteEmployee();
 
   // Filter employees
   const filteredEmployees = useMemo(() => {
@@ -104,11 +109,23 @@ export default function Employees() {
                 : 'Add your first employee to get started'}
             </p>
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <EmployeeGrid
             employees={paginatedEmployees}
             groupBy={groupBy}
             onEmployeeClick={handleEmployeeClick}
+          />
+        ) : (
+          <EmployeeTable
+            employees={paginatedEmployees}
+            onEdit={(emp) => {
+              setEditingEmployee(emp);
+              setIsEditModalOpen(true);
+            }}
+            onDelete={async (id) => {
+              await deleteEmployee.mutateAsync(id);
+            }}
+            onView={(id) => navigate(`/employees/${id}`)}
           />
         )}
 
@@ -176,6 +193,12 @@ export default function Employees() {
       <CreateEmployeeModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
+      />
+
+      <EditEmployeeModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        employee={editingEmployee}
       />
     </MainLayout>
   );

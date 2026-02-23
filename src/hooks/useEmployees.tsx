@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Employee, EmployeeWithRelations, EmployeeDocument, CreateEmployeeInput } from '@/types/employee';
+import type { Employee, EmployeeWithRelations, EmployeeDocument, CreateEmployeeInput, Activity, Event } from '@/types/employee';
 
 export type { Employee, EmployeeWithRelations, EmployeeDocument };
 
@@ -339,6 +339,39 @@ export function useDownloadDocument() {
     onError: (error) => {
       console.error('Error downloading document:', error);
       toast.error('Failed to download document');
+    },
+  });
+}
+
+export function useActivities() {
+  return useQuery({
+    queryKey: ['activities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data as Activity[];
+    },
+  });
+}
+
+export function useEvents() {
+  return useQuery({
+    queryKey: ['events'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true })
+        .gte('date', new Date().toISOString().split('T')[0])
+        .limit(5);
+
+      if (error) throw error;
+      return data as Event[];
     },
   });
 }
