@@ -1,147 +1,75 @@
 
-# Remove Mock Employees and Build Comprehensive Admin Panel
 
-## 1. Remove Mock Employees from Database
+# Add Company Logo Upload with Email Branding
 
-Delete the 12 mock/test employees from the database, keeping only the 5 real supervisors (@mabdc.com emails):
+## Overview
+Add a logo upload feature in the Admin Company Setup tab. The uploaded logo will appear on the login page and be embedded in all outgoing emails with a professional, branded HTML template.
 
-Employees to **delete**: John Doe, Alex Smith, Aelexa Cary, Steve John, David Maxy, Beeron Allay, Hawell Doe, Nevine Otaza, Annul Rexi, Valado John, Max Kevine, Romman Ley
+## 1. Storage Bucket for Company Logo
+Create a new public storage bucket `company-logos` to store the uploaded company logo, with RLS policies allowing admin upload and public read access.
 
-Employees to **keep**: Dennis Sotto, Sheila Mae Dadula, Glorie Ann Espinosa, Eulogio Dadula, Myranel Plaza
+## 2. Admin Company Setup -- Logo Upload
+Update `CompanySetupTab.tsx` to include:
+- An image preview area showing the current logo (from `company_settings.logo_url`)
+- A file input to upload a new logo image
+- Upload handler that stores the file in the `company-logos` bucket and saves the public URL to `company_settings.logo_url`
 
----
+## 3. Login Page Branding
+Update `Auth.tsx` to:
+- Fetch company settings (name and logo_url) on load
+- Replace the hardcoded "IM" box with the actual company logo image when available
+- Display the company name dynamically instead of hardcoded "Immersion HRMS"
 
-## 2. Comprehensive Admin Panel
+## 4. Professional Email Templates with Logo
+Rewrite the `send-onboarding-email` edge function to:
+- Fetch `company_settings` from the database to get the logo URL and company name dynamically
+- Use a polished, professional HTML email template with:
+  - Company logo header
+  - Styled body with proper typography and spacing
+  - Professional footer with company name, address, and contact info
+- Support multiple email types (onboarding welcome, approval confirmation)
+- Use the company name and details from the database instead of hardcoded values
 
-Rebuild the Admin Panel (`/admin`) with 9 tabbed sections covering the full list of requested features. Only users with the `admin` role can access this page.
-
-### Tab 1: User and Role Management
-- Table of all registered users with name, email, current role
-- Role assignment dropdown (Admin, HR Manager, Employee, plus new roles: Payroll Officer, Manager)
-- Deactivate/reactivate user accounts
-- Password reset button (triggers password reset email)
-- Create new user form
-
-### Tab 2: Company and Organization Setup
-- Company profile form (name, logo, address, tax info) -- stored in a new `company_settings` table
-- Department CRUD (existing functionality, enhanced with supervisor assignment)
-- Job position management
-- Reporting hierarchy configuration (manager assignment per employee)
-- Branch/location management (existing functionality)
-
-### Tab 3: Employee Data Oversight
-- Full employee directory with admin controls
-- Approve/reject profile update requests
-- Import/export employee data (CSV)
-- Set employment status (active, resigned, terminated)
-- Bulk actions
-
-### Tab 4: Payroll Configuration
-- Salary structure definitions (new `salary_structures` table)
-- Allowances and deductions configuration (new `payroll_components` table)
-- Tax rules setup
-- Pay grade management (new `pay_grades` table)
-- Payroll cycle settings
-
-### Tab 5: Attendance and Leave Settings
-- Work schedule configuration (new `work_schedules` table)
-- Leave type definitions (new `leave_types` table)
-- Leave policy settings (accrual rates, carry-over limits)
-- Override/approve leave requests
-- Holiday calendar management (leverages existing `events` table)
-
-### Tab 6: Reports and Analytics
-- Company-wide dashboards:
-  - Employee summary (headcount, department distribution, turnover)
-  - Attendance reports (punctuality, absences)
-  - Leave utilization rates
-- Export to PDF/CSV
-
-### Tab 7: Workflow and Approval Management
-- Approval chain configuration (new `approval_workflows` table)
-- Notification settings
-- Escalation rules
-
-### Tab 8: Security and Compliance
-- Password policy settings
-- Audit log viewer (leverages existing `activities` table)
-- Data retention settings display
-- Session management
-
-### Tab 9: System Maintenance
-- Database backup info/status
-- System health indicators
-- Clear cache / reset options
+## 5. Email Helper Update
+Update `src/lib/email.ts` to pass along any additional context needed (no major changes, the edge function handles template rendering).
 
 ---
 
-## 3. Database Changes
+## Technical Details
 
-### New Tables
-
+### Database Migration
 ```text
-company_settings
-  id, name, logo_url, address, city, country, tax_id,
-  phone, email, created_at, updated_at
+-- Create company-logos storage bucket
+INSERT INTO storage.buckets (id, name, public) VALUES ('company-logos', 'company-logos', true);
 
-leave_types
-  id, name, days_per_year, carry_over, is_paid, created_at
+-- RLS: Anyone can view logos (public bucket)
+CREATE POLICY "Public can view company logos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'company-logos');
 
-work_schedules
-  id, name, start_time, end_time, days_of_week, created_at
-
-pay_grades
-  id, name, min_salary, max_salary, currency, created_at
-
-salary_structures
-  id, employee_id, pay_grade_id, base_salary,
-  allowances (jsonb), deductions (jsonb), created_at
-
-approval_workflows
-  id, name, module, steps (jsonb), created_at
-
-audit_logs
-  id, user_id, action, entity_type, entity_id,
-  details (jsonb), created_at
+-- RLS: Admins can upload/update/delete logos
+CREATE POLICY "Admins can manage company logos"
+  ON storage.objects FOR ALL
+  USING (bucket_id = 'company-logos' AND has_role(auth.uid(), 'admin'));
 ```
 
-All tables will have RLS policies restricting management to admin role only, with read access for authenticated users where appropriate.
+### Files to Create
+- None (all changes are to existing files)
 
-### Updated Roles Enum
-Extend `app_role` enum to include additional roles:
-- `payroll_officer`
-- `manager`
+### Files to Modify
+1. **`src/components/admin/CompanySetupTab.tsx`** -- Add logo upload UI with image preview, file picker, and upload-to-storage logic
+2. **`src/pages/Auth.tsx`** -- Fetch company settings and display logo + company name dynamically
+3. **`supabase/functions/send-onboarding-email/index.ts`** -- Rewrite with professional HTML email template that fetches company logo and details from the database
+4. **`src/hooks/useAdmin.tsx`** -- Minor: ensure `logo_url` is included in company settings upsert
 
----
+### Edge Function Email Template Design
+The email will use inline CSS for maximum compatibility:
+- Header: Company logo (centered, max 200px wide)
+- Body: Clean white card with proper padding, professional greeting, and content
+- Footer: Company name, address, phone, email in muted gray text
+- Color scheme: Neutral professional tones matching the app's primary color
 
-## 4. Sidebar Navigation Update
+### Email Types Supported
+- **Onboarding Welcome**: Sent when a new employee is created
+- **Approval Confirmation**: Sent when a candidate is approved, includes start date
 
-Replace the single "Admin" link with an expandable admin section containing sub-items for each tab, or keep it as a single link that opens the tabbed admin panel. The admin menu item remains visible only to admin-role users.
-
----
-
-## 5. File Changes Summary
-
-### New Files
-- Multiple sub-components for admin tabs (e.g., `src/components/admin/UserManagementTab.tsx`, `CompanySetupTab.tsx`, etc.)
-
-### Modified Files
-- `src/pages/admin/AdminPanel.tsx` -- Complete rewrite with 9 tabs
-- `src/hooks/useAdmin.tsx` -- Add hooks for new tables
-- `src/components/layout/AppSidebar.tsx` -- Minor update if needed
-
-### Database
-- Migration with new tables and RLS policies
-- Data deletion of 12 mock employees
-
----
-
-## 6. Implementation Order
-
-1. Delete mock employees from database
-2. Create database migration for new tables
-3. Extend role enum
-4. Build admin tab components one by one
-5. Rewrite AdminPanel.tsx with all 9 tabs
-6. Update useAdmin.tsx with new hooks
-7. Test admin panel access and functionality
