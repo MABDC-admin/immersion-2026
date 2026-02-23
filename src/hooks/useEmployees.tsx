@@ -416,3 +416,28 @@ export function useEvents() {
     },
   });
 }
+
+export function useUpdateTutorialStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ employeeId, completed }: { employeeId: string; completed: boolean }) => {
+      const { data, error } = await supabase
+        .from('employees')
+        .update({ has_completed_tutorial: completed } as any)
+        .eq('id', employeeId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['employee', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['employee', variables.employeeId] });
+    },
+    onError: (error) => {
+      console.error('Error updating tutorial status:', error);
+    },
+  });
+}

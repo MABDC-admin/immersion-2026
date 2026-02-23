@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { Badge } from '@/components/ui/badge';
 
 interface TopHeaderProps {
@@ -23,6 +24,7 @@ interface TopHeaderProps {
 export function TopHeader({ onAddNew }: TopHeaderProps) {
   const navigate = useNavigate();
   const { user, signOut, userRole, canManageEmployees } = useAuth();
+  const { data: employee } = useCurrentEmployee(user?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = async () => {
@@ -73,7 +75,13 @@ export function TopHeader({ onAddNew }: TopHeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <DropdownMenuItem onClick={() => {
+              if (employee?.id) {
+                navigate(`/employees/${employee.id}`);
+              } else {
+                navigate('/dashboard');
+              }
+            }}>
               Profile Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />

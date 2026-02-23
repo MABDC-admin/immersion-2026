@@ -53,6 +53,9 @@ const App = () => (
             <Route path="/employees/:id" element={<ProtectedRoute><EmployeeDetail /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
 
+            {/* Profile & Navigation */}
+            <Route path="/profile" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+
             {/* Leave Module */}
             <Route path="/leave/requests" element={<ProtectedRoute><LeaveRequests /></ProtectedRoute>} />
             <Route path="/leave/balance" element={<ProtectedRoute><LeaveRequests /></ProtectedRoute>} />

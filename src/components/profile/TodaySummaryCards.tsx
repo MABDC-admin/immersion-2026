@@ -34,64 +34,44 @@ export function TodaySummaryCards({ attendance, allAttendance = [], leaveBalance
     const progressPercentage = Math.min((totalHours / TARGET_HOURS) * 100, 100);
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-3 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between gap-2">
                         <div>
-                            <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase">Check-in</p>
-                            <h3 className="text-lg md:text-2xl font-bold mt-1">
+                            <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase tracking-wider">Check-in</p>
+                            <h3 className="text-xl md:text-2xl font-bold mt-1 text-foreground">
                                 {clockInTime ? format(clockInTime, 'hh:mm a') : 'Not In'}
                             </h3>
                         </div>
-                        <Clock className="h-5 w-5 md:h-8 md:w-8 text-primary/20" />
+                        <div className="p-3 rounded-xl bg-primary/5">
+                            <Clock className="h-5 w-5 md:h-8 md:w-8 text-primary" />
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
             <Card className="border-l-4 border-l-hrms-success shadow-sm hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-3 md:p-6">
-                    <div className="flex flex-col gap-3">
+                <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase">Target Progress</p>
-                                <h3 className="text-lg md:text-2xl font-bold mt-1">
+                                <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase tracking-wider">Target Progress</p>
+                                <h3 className="text-xl md:text-2xl font-bold mt-1 text-foreground">
                                     {totalHours.toFixed(1)} / {TARGET_HOURS}h
                                 </h3>
                             </div>
-                            <Clock className="h-5 w-5 md:h-8 md:w-8 text-hrms-success/20" />
+                            <div className="p-3 rounded-xl bg-hrms-success/5">
+                                <Clock className="h-5 w-5 md:h-8 md:w-8 text-hrms-success" />
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                             <Progress value={progressPercentage} className="h-2 bg-hrms-success/10" />
-                            <div className="flex justify-between text-[10px] md:text-xs text-muted-foreground">
+                            <div className="flex justify-between text-[10px] md:text-xs text-muted-foreground font-medium">
                                 <span>{progressPercentage.toFixed(0)}% Completed</span>
                                 <span>{Math.max(TARGET_HOURS - totalHours, 0).toFixed(1)}h left</span>
                             </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-hrms-warning shadow-sm hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-3 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                        <div>
-                            <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase">Leave Balance</p>
-                            <h3 className="text-lg md:text-2xl font-bold mt-1">{leaveBalance} Days</h3>
-                        </div>
-                        <Calendar className="h-5 w-5 md:h-8 md:w-8 text-hrms-warning/20" />
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-3 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                        <div>
-                            <p className="text-[10px] md:text-sm font-semibold text-muted-foreground uppercase">Training</p>
-                            <h3 className="text-lg md:text-2xl font-bold mt-1">{trainingCount} Pending</h3>
-                        </div>
-                        <BookOpen className="h-5 w-5 md:h-8 md:w-8 text-purple-500/20" />
                     </div>
                 </CardContent>
             </Card>

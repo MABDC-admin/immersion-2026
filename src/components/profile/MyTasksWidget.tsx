@@ -19,13 +19,6 @@ export function MyTasksWidget({ pendingApprovals = [], incompleteRequiredCourses
             icon: Clock,
             color: 'text-hrms-warning',
         })),
-        ...incompleteRequiredCourses.map(enr => ({
-            id: enr.id,
-            title: `Complete course: ${enr.course?.title}`,
-            type: 'training',
-            icon: BookOpen,
-            color: 'text-purple-500',
-        }))
     ];
 
     return (

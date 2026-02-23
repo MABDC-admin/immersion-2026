@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Users, UserPlus, Calendar, TrendingUp } from 'lucide-react';
 import { useEmployees, useCurrentEmployee } from '@/hooks/useEmployees';
@@ -14,15 +14,33 @@ import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
 import { EmployeeDashboardView } from '@/components/profile/EmployeeDashboardView';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
+import { TutorialDialog } from '@/components/onboarding/TutorialDialog';
+import { useUpdateTutorialStatus } from '@/hooks/useEmployees';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
   const { user, isAdmin, userRole } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // For employee view - resolve employee record from Auth ID
   const { data: employee } = useCurrentEmployee(user?.id || '');
+  const updateTutorialStatus = useUpdateTutorialStatus();
+
+  // Check if tutorial should be shown
+  useEffect(() => {
+    if (employee && employee.has_completed_tutorial === false) {
+      setIsTutorialOpen(true);
+    }
+  }, [employee]);
+
+  const handleCloseTutorial = () => {
+    setIsTutorialOpen(false);
+    if (employee?.id) {
+      updateTutorialStatus.mutate({ employeeId: employee.id, completed: true });
+    }
+  };
 
   const stats = useMemo(() => {
     const activeEmployees = employees.filter((e) => e.status === 'active').length;
@@ -136,6 +154,11 @@ export default function Dashboard() {
           employee={employee}
         />
       )}
+
+      <TutorialDialog
+        open={isTutorialOpen}
+        onClose={handleCloseTutorial}
+      />
     </MainLayout>
   );
 }

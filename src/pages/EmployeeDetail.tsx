@@ -147,7 +147,7 @@ export default function EmployeeDetail() {
 
   return (
     <MainLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in max-w-full overflow-x-hidden p-1">
         {/* Header Actions */}
         <div className="flex items-center justify-between gap-4">
           <Button
@@ -264,27 +264,27 @@ export default function EmployeeDetail() {
           </Card>
 
           <div className="flex-1 w-full min-w-0">
-            <Tabs defaultValue="dashboard" className="space-y-6">
-              <div className="sticky top-0 z-10 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b lg:border-none lg:p-0 lg:static">
-                <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/30 no-scrollbar">
-                  <TabsTrigger value="dashboard" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
-                    <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    Dashboard
+            <Tabs defaultValue="dashboard" className="space-y-6 w-full">
+              <div className="sticky top-0 z-10 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b lg:border-none lg:p-0 lg:static overflow-hidden">
+                <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/40 no-scrollbar flex-nowrap scrollbar-hide">
+                  <TabsTrigger value="dashboard" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                    <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    Dash
                   </TabsTrigger>
-                  <TabsTrigger value="profile" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
-                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <TabsTrigger value="profile" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                    <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Profile
                   </TabsTrigger>
-                  <TabsTrigger value="attendance" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
-                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <TabsTrigger value="attendance" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Attendance
                   </TabsTrigger>
-                  <TabsTrigger value="leave" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
-                    <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                    <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Leave
                   </TabsTrigger>
-                  <TabsTrigger value="training" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
-                    <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                    <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Training
                   </TabsTrigger>
                 </TabsList>
@@ -304,7 +304,7 @@ export default function EmployeeDetail() {
                       <CardTitle className="text-lg font-bold">Personal Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-muted-foreground uppercase font-medium">First Name</p>
                           <p className="text-sm font-medium">{employee.first_name}</p>
@@ -332,7 +332,7 @@ export default function EmployeeDetail() {
                       <CardTitle className="text-lg font-bold">Work Context</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-muted-foreground uppercase font-medium">Job Title</p>
                           <p className="text-sm font-medium">{employee.job_title || 'N/A'}</p>
@@ -342,7 +342,7 @@ export default function EmployeeDetail() {
                           <p className="text-sm font-medium">{employee.department?.name || 'Unassigned'}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-muted-foreground uppercase font-medium">Reporting Manager</p>
                           <p className="text-sm font-medium">
@@ -356,7 +356,7 @@ export default function EmployeeDetail() {
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs text-muted-foreground uppercase font-medium">Hire Date</p>
                           <p className="text-sm font-medium">{format(new Date(employee.hire_date), 'MMMM d, yyyy')}</p>
@@ -398,22 +398,31 @@ export default function EmployeeDetail() {
                   <CardHeader>
                     <CardTitle className="text-lg font-bold">Attendance History</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
+                  <CardContent className="px-3 sm:px-6">
+                    <div className="space-y-3">
                       {attendanceHistory.map((record) => (
-                        <div key={record.id} className="flex items-center justify-between p-3 rounded-md border bg-card">
-                          <div className="flex items-center gap-4">
+                        <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card gap-2 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/5">
+                              <Calendar className="h-4 w-4 text-primary" />
+                            </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-semibold">{format(new Date(record.date), 'EEE, MMM d')}</span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-sm font-bold">{format(new Date(record.date), 'EEE, MMM d')}</span>
+                              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
                                 {record.clock_in ? format(new Date(record.clock_in), 'hh:mm a') : 'Missed'} -
                                 {record.clock_out ? format(new Date(record.clock_out), ' hh:mm a') : ' Pending'}
                               </span>
                             </div>
                           </div>
-                          <Badge variant="outline" className={record.status === 'present' ? 'text-hrms-success border-hrms-success/20 bg-hrms-success/5' : ''}>
-                            {record.status}
-                          </Badge>
+                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
+                            <span className="text-[10px] sm:hidden text-muted-foreground font-medium italic">Status:</span>
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
+                              record.status === 'present' ? 'text-hrms-success border-hrms-success/20 bg-hrms-success/5' : 'text-muted-foreground bg-muted/50'
+                            )}>
+                              {record.status}
+                            </Badge>
+                          </div>
                         </div>
                       ))}
                       {attendanceHistory.length === 0 && (
@@ -458,22 +467,31 @@ export default function EmployeeDetail() {
                         <CardTitle className="text-lg font-bold text-foreground">Recent Requests</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => setIsLeaveModalOpen(true)} className="rounded-lg h-8 text-xs">New Request</Button>
                       </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
+                      <CardContent className="px-3 sm:px-6">
+                        <div className="space-y-3">
                           {leaveRequests.map((request) => (
-                            <div key={request.id} className="flex items-center justify-between p-3 rounded-md border bg-card">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-semibold">{request.leave_type}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
-                                </span>
+                            <div key={request.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card gap-2 shadow-sm">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-hrms-warning/5">
+                                  <ClipboardList className="h-4 w-4 text-hrms-warning" />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold">{request.leave_type}</span>
+                                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                                    {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
+                                  </span>
+                                </div>
                               </div>
-                              <Badge variant="outline" className={
-                                request.status === 'approved' ? 'text-hrms-success border-hrms-success/20 bg-hrms-success/5' :
-                                  request.status === 'pending' ? 'text-hrms-warning border-hrms-warning/20 bg-hrms-warning/5' : ''
-                              }>
-                                {request.status}
-                              </Badge>
+                              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
+                                <span className="text-[10px] sm:hidden text-muted-foreground font-medium italic">Status:</span>
+                                <Badge variant="outline" className={cn(
+                                  "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
+                                  request.status === 'approved' ? 'text-hrms-success border-hrms-success/20 bg-hrms-success/5' :
+                                    request.status === 'pending' ? 'text-hrms-warning border-hrms-warning/20 bg-hrms-warning/5' : 'text-muted-foreground'
+                                )}>
+                                  {request.status}
+                                </Badge>
+                              </div>
                             </div>
                           ))}
                           {leaveRequests.length === 0 && (
@@ -491,24 +509,27 @@ export default function EmployeeDetail() {
                   <CardHeader>
                     <CardTitle className="text-lg font-bold">Enrolled Courses</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CardContent className="px-3 sm:px-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {enrollments.map((enr) => (
-                        <div key={enr.id} className="p-4 rounded-lg border bg-muted/20 space-y-3">
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-semibold text-sm">{enr.course?.title}</h4>
-                            <Badge className={enr.status === 'completed' ? 'bg-hrms-success' : 'bg-primary'}>
+                        <div key={enr.id} className="p-4 rounded-xl border bg-card shadow-sm space-y-3">
+                          <div className="flex justify-between items-start gap-4">
+                            <h4 className="font-bold text-sm leading-tight">{enr.course?.title}</h4>
+                            <Badge className={cn(
+                              "text-[9px] font-bold uppercase px-2 rounded-full shrink-0",
+                              enr.status === 'completed' ? 'bg-hrms-success' : 'bg-primary'
+                            )}>
                               {enr.status}
                             </Badge>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[10px] text-muted-foreground uppercase">
-                              <span>Progress</span>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span>Course Progress</span>
                               <span>{enr.progress || 0}%</span>
                             </div>
-                            <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                            <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden shadow-inner">
                               <div
-                                className="bg-primary h-full transition-all"
+                                className="bg-primary h-full transition-all duration-500 rounded-full"
                                 style={{ width: `${enr.progress || 0}%` }}
                               />
                             </div>

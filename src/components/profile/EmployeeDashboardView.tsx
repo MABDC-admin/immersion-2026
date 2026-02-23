@@ -112,9 +112,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                     <AnnouncementsWidget announcements={announcements} />
                 </div>
                 <div className="space-y-6 md:space-y-8">
-                    <MyTasksWidget
-                        incompleteRequiredCourses={enrollments.filter(e => e.status !== 'completed')}
-                    />
+                    <MyTasksWidget />
                     <CalendarPreview leaveRequests={leaveRequests} />
                 </div>
             </div>

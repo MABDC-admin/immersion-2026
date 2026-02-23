@@ -19,6 +19,7 @@ export interface Employee {
   linkedin_url?: string;
   twitter_url?: string;
   slack_username?: string;
+  has_completed_tutorial?: boolean;
   created_at: string;
   updated_at: string;
 }
