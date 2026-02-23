@@ -1,67 +1,139 @@
 
-
-# Include User Credentials and Login URL in Onboarding Emails
+# Auto-Detect and Apply SQL Migrations from GitHub
 
 ## Overview
-Update the onboarding email system so that when emails are sent, they can optionally include the employee's login credentials (username/email and password) and a direct link to the employee portal at `https://immersion.mabdc.com/auth`.
+Create a background system that periodically checks your GitHub repository for new SQL migration files and automatically applies them to the database.
 
 ## How It Works
 
-When an employee is created or a candidate is approved, the system will:
-1. Create a Supabase Auth account for the employee with a default password
-2. Include the credentials (email as username + password) in the onboarding email
-3. Include a styled "Login to Portal" button linking to `https://immersion.mabdc.com/auth`
+1. A scheduled background function runs every 5 minutes
+2. It connects to your GitHub repository via the GitHub API
+3. It lists all `.sql` files in the `supabase/migrations/` folder
+4. It compares them against a tracking table of already-applied migrations
+5. Any new files are downloaded, executed against the database, and logged
+
+## Setup Required
+
+You will need to provide a **GitHub Personal Access Token** so the function can read your repository files. You can create one at GitHub Settings > Developer Settings > Personal Access Tokens > Fine-grained tokens, with read-only access to your repository contents.
+
+You will also need to confirm your **GitHub repository owner and name** (e.g., `myorg/my-repo`).
 
 ## Changes
 
-### 1. Edge Function (`supabase/functions/send-onboarding-email/index.ts`)
-- Add `username` and `password` fields to the `EmailPayload` interface
-- Update both email templates (onboarding + approval) to include a credentials box when username/password are provided
-- The credentials box will be a styled card showing:
-  - **Username**: the employee's email
-  - **Password**: the provided password
-  - A prominent "Login to Employee Portal" button linking to `https://immersion.mabdc.com/auth`
-  - A note advising the employee to change their password after first login
-- The login URL `https://immersion.mabdc.com/auth` will be hardcoded in the edge function
+### 1. New Database Table: `applied_migrations`
+Tracks which SQL files have already been executed so they are never run twice.
+- `id` (uuid, primary key)
+- `filename` (text, unique) -- e.g., `20260223090000_dashboard_tables.sql`
+- `applied_at` (timestamp) -- when it was executed
+- `status` (text) -- `success` or `error`
+- `error_message` (text, nullable) -- if it failed, stores the error
+- `content_hash` (text) -- SHA hash to detect changes to existing files
 
-### 2. Email Helper (`src/lib/email.ts`)
-- Add optional `password` parameter to `sendOnboardingEmail`
-- Pass `username` (the employee's email) and `password` to the edge function payload
+### 2. New Database Function: `exec_sql`
+A `SECURITY DEFINER` PL/pgSQL function that accepts a SQL string and executes it. This is restricted: only callable by the service role via the edge function, not by regular users. An RLS policy on the `applied_migrations` table ensures only service-role access.
 
-### 3. Create Employee Modal (`src/components/employees/CreateEmployeeModal.tsx`)
-- After creating the employee, create a Supabase Auth account using an edge function (since client-side `signUp` would log out the admin)
-- Pass the credentials to `sendOnboardingEmail` so they're included in the welcome email
-- Use a default password (e.g., `654321`) or allow admin to specify one
+### 3. New Edge Function: `sync-github-migrations`
+- Reads `GITHUB_TOKEN`, `GITHUB_OWNER`, and `GITHUB_REPO` from secrets
+- Calls the GitHub Contents API to list files in `supabase/migrations/`
+- Queries `applied_migrations` to find which are new
+- For each new file:
+  - Downloads the raw SQL content
+  - Calls the `exec_sql` database function to execute it
+  - Records the result (success/error) in `applied_migrations`
+- Returns a summary of what was applied
 
-### 4. Candidate Approval (`src/hooks/useRecruitment.tsx`)
-- When approving a candidate, create a Supabase Auth account for them via edge function
-- Pass credentials to `sendOnboardingEmail` along with the start date
+### 4. Scheduled Cron Job
+A `pg_cron` + `pg_net` scheduled job that calls the edge function every 5 minutes automatically.
 
-### 5. New Edge Function: `create-employee-account`
-- Creates a Supabase Auth user with the given email and password using the Admin API
-- Returns the new user ID so it can be linked to the employee record
-- This avoids the admin being logged out (which would happen with client-side `signUp`)
+### 5. Admin Panel -- Migrations Tab (optional visibility)
+Add a simple view in the Admin Panel's "System" tab showing:
+- List of applied migrations with status and timestamp
+- A manual "Sync Now" button to trigger the function on demand
+
+## Secrets Needed
+- **GITHUB_TOKEN** -- A GitHub personal access token with repo read access
+- **GITHUB_OWNER** -- Your GitHub username or organization name
+- **GITHUB_REPO** -- Your repository name
 
 ---
 
 ## Technical Details
 
+### Database Migration SQL
+```text
+-- Table to track applied migrations
+CREATE TABLE public.applied_migrations (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  filename text UNIQUE NOT NULL,
+  applied_at timestamptz DEFAULT now(),
+  status text NOT NULL DEFAULT 'pending',
+  error_message text,
+  content_hash text
+);
+
+-- RLS: only service role can access
+ALTER TABLE public.applied_migrations ENABLE ROW LEVEL SECURITY;
+
+-- No public policies = only service role can read/write
+
+-- Function to execute arbitrary SQL (service role only)
+CREATE OR REPLACE FUNCTION public.exec_sql(query text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  EXECUTE query;
+END;
+$$;
+
+-- Revoke public access, only service role can call
+REVOKE ALL ON FUNCTION public.exec_sql(text) FROM PUBLIC;
+```
+
 ### New File
-- **`supabase/functions/create-employee-account/index.ts`** -- Edge function that uses the Supabase Admin API to create auth accounts without affecting the current session
+- **`supabase/functions/sync-github-migrations/index.ts`** -- Edge function that checks GitHub and applies new migrations
 
 ### Modified Files
-1. **`supabase/functions/send-onboarding-email/index.ts`** -- Add credentials box and login button to email templates
-2. **`src/lib/email.ts`** -- Accept and pass `password` parameter
-3. **`src/components/employees/CreateEmployeeModal.tsx`** -- Create auth account, send email with credentials
-4. **`src/hooks/useRecruitment.tsx`** -- Create auth account on approval, send email with credentials
+1. **`src/components/admin/MaintenanceTab.tsx`** -- Add migration status list and "Sync Now" button
+2. **`supabase/config.toml`** -- Register the new edge function with `verify_jwt = false`
 
-### Email Credentials Box Design
-A styled card within the email body:
-- Light blue/gray background
-- "Your Login Credentials" heading
-- Username and password displayed in monospace font
-- A colored "Login to Employee Portal" button
-- Security reminder to change password on first login
+### Cron Job SQL (run via SQL tool, not migration)
+```text
+-- Enable extensions if not already
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
-### Default Password
-The system will use `654321` as the default password (matching the convention already used for supervisors). The email will instruct the employee to change it.
+-- Schedule sync every 5 minutes
+SELECT cron.schedule(
+  'sync-github-migrations',
+  '*/5 * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://gqsuujvfkgnrhvphdqqr.supabase.co/functions/v1/sync-github-migrations',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxc3V1anZma2ducmh2cGhkcXFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0OTgwNDIsImV4cCI6MjA4NTA3NDA0Mn0.nMySE5Kyd11MkSzlT3pMXVIvoolu-ClAtRW9RFv8OQU"}'::jsonb,
+    body := '{}'::jsonb
+  ) AS request_id;
+  $$
+);
+```
+
+### Edge Function Flow
+```text
+1. Read GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO from env
+2. GET https://api.github.com/repos/{owner}/{repo}/contents/supabase/migrations
+3. Query applied_migrations for already-applied filenames
+4. For each new .sql file:
+   a. GET raw content from GitHub
+   b. Call supabase.rpc('exec_sql', { query: sqlContent })
+   c. INSERT into applied_migrations with status
+5. Return JSON summary
+```
+
+### Safety Measures
+- Migrations are applied in alphabetical order (which matches timestamp order)
+- Each file is only applied once (tracked by unique filename)
+- Errors are caught per-file so one failure does not block others
+- Error messages are stored for debugging
+- Content hash detects if a file was modified after being applied
