@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { TopHeader } from './TopHeader';
-import { ChatButton } from '@/components/chat/ChatButton';
+import { BottomNav } from './BottomNav';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -16,11 +16,11 @@ export function MainLayout({ children, onAddNew }: MainLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <TopHeader onAddNew={onAddNew} />
-          <main className="flex-1 overflow-auto bg-background p-6">
+          <main className="flex-1 overflow-auto bg-background p-6 pb-24 md:pb-6">
             {children}
           </main>
         </div>
-        <ChatButton />
+        <BottomNav />
       </div>
     </SidebarProvider>
   );

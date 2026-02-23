@@ -4,6 +4,7 @@ import { Announcement } from '@/hooks/useDashboard';
 import { format } from 'date-fns';
 import { Megaphone, Calendar, Info, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface AnnouncementsWidgetProps {
     announcements?: Announcement[];
@@ -26,7 +27,7 @@ const categoryColors = {
 
 export function AnnouncementsWidget({ announcements = [], className }: AnnouncementsWidgetProps) {
     return (
-        <Card className={className}>
+        <Card className={cn("shadow-sm hover:shadow-md transition-shadow duration-300", className)}>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Announcements</CardTitle>
                 <Megaphone className="h-5 w-5 text-muted-foreground" />
@@ -38,9 +39,12 @@ export function AnnouncementsWidget({ announcements = [], className }: Announcem
                     announcements.map((item) => {
                         const Icon = categoryIcons[item.category as keyof typeof categoryIcons] || Info;
                         return (
-                            <div key={item.id} className="flex gap-4 p-3 rounded-lg bg-muted/50 transition-colors hover:bg-muted">
-                                <div className={`p-2 rounded-full h-fit ${categoryColors[item.category as keyof typeof categoryColors] || categoryColors.general}`}>
-                                    <Icon className="h-4 w-4" />
+                            <div key={item.id} className="flex gap-4 p-4 rounded-xl bg-card border shadow-sm transition-all hover:bg-muted/30">
+                                <div className={cn(
+                                    "p-2.5 rounded-full h-fit flex items-center justify-center shadow-sm",
+                                    categoryColors[item.category as keyof typeof categoryColors] || categoryColors.general
+                                )}>
+                                    <Icon className="h-5 w-5" />
                                 </div>
                                 <div className="flex-1 space-y-1">
                                     <div className="flex items-center justify-between">

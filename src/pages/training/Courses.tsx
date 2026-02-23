@@ -3,9 +3,11 @@ import { useCourses } from '@/hooks/useTraining';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, BookOpen, Clock, Plus, Users } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Courses() {
     const { data: courses = [], isLoading } = useCourses();
+    const { isAdmin, userRole } = useAuth();
 
     return (
         <MainLayout onAddNew={() => { }}>
@@ -15,10 +17,12 @@ export default function Courses() {
                         <h1 className="text-2xl font-bold text-foreground">Training Courses</h1>
                         <p className="text-muted-foreground">Browse and manage employee training programs.</p>
                     </div>
-                    <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Course
-                    </Button>
+                    {(isAdmin || userRole === 'hr_manager') && (
+                        <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Course
+                        </Button>
+                    )}
                 </div>
 
                 {isLoading ? (
@@ -28,7 +32,9 @@ export default function Courses() {
                 ) : courses.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-96 border-2 border-dashed rounded-lg text-center p-8">
                         <p className="text-muted-foreground mb-4">No courses available.</p>
-                        <Button variant="outline">Create your first training course</Button>
+                        {(isAdmin || userRole === 'hr_manager') && (
+                            <Button variant="outline">Create your first training course</Button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

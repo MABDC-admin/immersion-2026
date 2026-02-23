@@ -71,24 +71,12 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="space-y-10">
-        {/* Universal Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {isAdmin || userRole === 'hr_manager' ? 'Main Dashboard' : 'My Dashboard'}
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome back, {user?.email}. Here's your overview for today.
-            </p>
-          </div>
+        <div className="flex items-center justify-end">
           {isAdmin && <AdminAssignRole />}
         </div>
 
         {/* Global Personal Overview - Everyone sees this */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2 border-b pb-2">
-            <h2 className="text-xl font-semibold">My Personal Portal</h2>
-          </div>
           <EmployeeDashboardView
             employeeId={employee?.id || ''}
             onUpdateProfile={() => setIsEditModalOpen(true)}

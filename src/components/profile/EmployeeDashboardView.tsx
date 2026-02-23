@@ -27,6 +27,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
 
     // Dashboard Data
     const { data: todayAttendance } = useTodayAttendance(employeeId);
+    const { data: allAttendance = [] } = useAttendance(employeeId);
     const clockIn = useClockIn();
     const clockOut = useClockOut();
     const { data: leaveRequests = [] } = useLeaveRequests(employeeId);
@@ -45,27 +46,30 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            {/* Welcome message */}
+        <div className="space-y-4 animate-fade-in">
+            {/* Welcome message - Hidden on mobile, visible on desktop */}
             {employee && (
-                <div className="rounded-lg border bg-card p-4">
-                    <h3 className="text-lg font-semibold text-foreground">
-                        Welcome, {employee.first_name} {employee.last_name}
-                    </h3>
-                    {employee.job_title && (
-                        <p className="text-sm text-muted-foreground">{employee.job_title}</p>
-                    )}
-                </div>
+                <Card className="hidden md:block border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <CardContent className="px-5 py-6">
+                        <h3 className="text-2xl font-bold text-foreground">
+                            Welcome, {employee.first_name} {employee.last_name}
+                        </h3>
+                        {employee.job_title && (
+                            <p className="text-base font-medium text-muted-foreground mt-1">{employee.job_title}</p>
+                        )}
+                    </CardContent>
+                </Card>
             )}
 
             <TodaySummaryCards
                 attendance={todayAttendance}
+                allAttendance={allAttendance}
                 leaveBalances={leaveBalances}
                 enrollments={enrollments}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                <div className="lg:col-span-2 space-y-6 md:space-y-8">
                     <QuickActions
                         onClockIn={handleClockIn}
                         onClockOut={handleClockOut}
@@ -76,26 +80,30 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                     />
 
                     {/* Quick Navigation Links */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Link to="/leave/requests">
-                            <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-                                <CardContent className="flex items-center justify-between p-4">
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="h-5 w-5 text-primary" />
-                                        <span className="text-sm font-medium">View Leave Calendar</span>
+                            <Card className="hover:bg-accent/50 transition-all cursor-pointer shadow-sm hover:shadow-md border border-muted/20">
+                                <CardContent className="flex items-center justify-between p-5">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 rounded-lg bg-primary/10">
+                                            <Calendar className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <span className="text-sm font-semibold">View Leave Calendar</span>
                                     </div>
-                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-50" />
                                 </CardContent>
                             </Card>
                         </Link>
                         <Link to="/attendance">
-                            <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-                                <CardContent className="flex items-center justify-between p-4">
-                                    <div className="flex items-center gap-3">
-                                        <Clock className="h-5 w-5 text-primary" />
-                                        <span className="text-sm font-medium">View Attendance History</span>
+                            <Card className="hover:bg-accent/50 transition-all cursor-pointer shadow-sm hover:shadow-md border border-muted/20">
+                                <CardContent className="flex items-center justify-between p-5">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 rounded-lg bg-primary/10">
+                                            <Clock className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <span className="text-sm font-semibold">View Attendance History</span>
                                     </div>
-                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-50" />
                                 </CardContent>
                             </Card>
                         </Link>
@@ -103,7 +111,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
 
                     <AnnouncementsWidget announcements={announcements} />
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-6 md:space-y-8">
                     <MyTasksWidget
                         incompleteRequiredCourses={enrollments.filter(e => e.status !== 'completed')}
                     />

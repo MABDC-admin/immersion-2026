@@ -19,7 +19,7 @@ export function CalendarPreview({ leaveRequests = [], enrollments = [] }: Calend
     ).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
     return (
-        <Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow duration-300 border-l-4 border-l-purple-500">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Schedule Preview</CardTitle>
                 <CalendarIcon className="h-5 w-5 text-muted-foreground" />

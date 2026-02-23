@@ -148,36 +148,43 @@ export default function EmployeeDetail() {
   return (
     <MainLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/employees')} className="gap-2 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Directory
+        {/* Header Actions */}
+        <div className="flex items-center justify-between gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-muted-foreground hover:text-foreground -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
+
           {(isAdmin || userRole === 'hr_manager') && (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="gap-2">
-                <Edit2 className="h-4 w-4" />
-                Admin Edit
+              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} className="gap-2">
+                <Edit2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Admin Edit</span>
+                <span className="sm:hidden text-xs">Edit</span>
               </Button>
               {isAdmin && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Archive
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Archive</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="w-[90vw] max-w-md rounded-xl">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Archive Employee Record</AlertDialogTitle>
+                      <AlertDialogTitle>Archive Record</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to archive {fullName}'s record? This will hide them from active lists.
+                        Archive {fullName}'s record? This will hide them from active lists.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="rounded-lg mt-0">Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 rounded-lg">
                         Archive
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -188,11 +195,11 @@ export default function EmployeeDetail() {
           )}
         </div>
 
-        {/* Profile Stats Overview */}
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <Card className="w-full md:w-80 shrink-0">
-            <CardContent className="pt-6 text-center">
-              <div className="flex flex-col items-center">
+        {/* Profile Content */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <Card className="w-full lg:w-80 shrink-0 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-all duration-300">
+            <CardContent className="pt-8 pb-6 px-5 text-center sm:text-left lg:text-center">
+              <div className="flex flex-col items-center sm:items-start lg:items-center">
                 {canEdit ? (
                   <AvatarUpload
                     currentUrl={employee.avatar_url}
@@ -208,25 +215,31 @@ export default function EmployeeDetail() {
                     </AvatarFallback>
                   </Avatar>
                 )}
-                <h1 className="text-xl font-bold mt-4">{fullName}</h1>
-                <p className="text-sm text-muted-foreground">{employee.job_title || 'Employee'}</p>
-                <Badge className={cn("mt-2", statusColors[employee.status])}>
+                <h1 className="text-2xl font-bold mt-4 text-foreground">{fullName}</h1>
+                <p className="text-sm font-semibold text-primary mt-1">{employee.job_title || 'Employee'}</p>
+                <Badge className={cn("mt-3 px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm", statusColors[employee.status])}>
                   {statusLabels[employee.status]}
                 </Badge>
               </div>
-              <div className="mt-6 space-y-3 pt-6 border-t">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span className="truncate">{employee.email}</span>
+              <div className="mt-8 space-y-4 pt-6 border-t border-muted/30">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
+                  <div className="p-2 rounded-lg bg-primary/5">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="truncate max-w-[200px]">{employee.email}</span>
                 </div>
                 {employee.phone && (
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4" />
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
+                    <div className="p-2 rounded-lg bg-primary/5">
+                      <Phone className="h-4 w-4 text-primary" />
+                    </div>
                     <span>{employee.phone}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Building2 className="h-4 w-4" />
+                <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
+                  <div className="p-2 rounded-lg bg-primary/5">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
                   <span>{employee.department?.name || 'Unassigned'}</span>
                 </div>
               </div>
@@ -252,28 +265,30 @@ export default function EmployeeDetail() {
 
           <div className="flex-1 w-full min-w-0">
             <Tabs defaultValue="dashboard" className="space-y-6">
-              <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/30">
-                <TabsTrigger value="dashboard" className="gap-2">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="gap-2">
-                  <User className="h-4 w-4" />
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger value="attendance" className="gap-2">
-                  <Clock className="h-4 w-4" />
-                  Attendance
-                </TabsTrigger>
-                <TabsTrigger value="leave" className="gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  Leave
-                </TabsTrigger>
-                <TabsTrigger value="training" className="gap-2">
-                  <GraduationCap className="h-4 w-4" />
-                  Training
-                </TabsTrigger>
-              </TabsList>
+              <div className="sticky top-0 z-10 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b lg:border-none lg:p-0 lg:static">
+                <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/30 no-scrollbar">
+                  <TabsTrigger value="dashboard" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
+                    <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Dashboard
+                  </TabsTrigger>
+                  <TabsTrigger value="profile" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
+                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Profile
+                  </TabsTrigger>
+                  <TabsTrigger value="attendance" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Attendance
+                  </TabsTrigger>
+                  <TabsTrigger value="leave" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
+                    <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Leave
+                  </TabsTrigger>
+                  <TabsTrigger value="training" className="gap-2 min-w-fit px-4 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:shadow-sm">
+                    <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Training
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="dashboard" className="space-y-6">
                 <EmployeeDashboardView
@@ -282,11 +297,11 @@ export default function EmployeeDetail() {
                 />
               </TabsContent>
 
-              <TabsContent value="profile" className="space-y-6">
+              <TabsContent value="profile" className="space-y-6 focus-visible:outline-none">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Personal Details</CardTitle>
+                  <Card className="border-l-4 border-l-primary shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-bold">Personal Details</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -312,9 +327,9 @@ export default function EmployeeDetail() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Work Context</CardTitle>
+                  <Card className="border-l-4 border-l-hrms-warning shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-bold">Work Context</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -354,9 +369,9 @@ export default function EmployeeDetail() {
                     </CardContent>
                   </Card>
 
-                  <Card className="lg:col-span-2">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Employment Documents</CardTitle>
+                  <Card className="lg:col-span-2 border-l-4 border-l-hrms-success shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-bold">Employment Documents</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <DocumentUpload
@@ -378,10 +393,10 @@ export default function EmployeeDetail() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="attendance" className="space-y-6">
-                <Card>
+              <TabsContent value="attendance" className="space-y-6 focus-visible:outline-none">
+                <Card className="border-l-4 border-l-primary shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg">Attendance History</CardTitle>
+                    <CardTitle className="text-lg font-bold">Attendance History</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -409,12 +424,12 @@ export default function EmployeeDetail() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="leave" className="space-y-6">
+              <TabsContent value="leave" className="space-y-6 focus-visible:outline-none">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-1 space-y-6">
-                    <Card>
+                    <Card className="border-l-4 border-l-hrms-warning shadow-sm">
                       <CardHeader>
-                        <CardTitle className="text-lg">Leave Balances</CardTitle>
+                        <CardTitle className="text-lg font-bold">Leave Balances</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {leaveBalances.map((balance) => (
@@ -438,10 +453,10 @@ export default function EmployeeDetail() {
                     </Card>
                   </div>
                   <div className="lg:col-span-2">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg text-foreground">Recent Requests</CardTitle>
-                        <Button variant="outline" size="sm" onClick={() => setIsLeaveModalOpen(true)}>New Request</Button>
+                    <Card className="border-l-4 border-l-primary shadow-sm">
+                      <CardHeader className="flex flex-row items-center justify-between pb-3">
+                        <CardTitle className="text-lg font-bold text-foreground">Recent Requests</CardTitle>
+                        <Button variant="outline" size="sm" onClick={() => setIsLeaveModalOpen(true)} className="rounded-lg h-8 text-xs">New Request</Button>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -471,10 +486,10 @@ export default function EmployeeDetail() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="training" className="space-y-6">
-                <Card>
+              <TabsContent value="training" className="space-y-6 focus-visible:outline-none">
+                <Card className="border-l-4 border-l-primary shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg">Enrolled Courses</CardTitle>
+                    <CardTitle className="text-lg font-bold">Enrolled Courses</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
