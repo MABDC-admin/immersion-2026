@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCompanySettings, useUpsertCompanySettings, useCreateDepartment, useDeleteDepartment, useCreateLocation, useDeleteLocation } from '@/hooks/useAdmin';
 import { useDepartments, useLocations } from '@/hooks/useEmployees';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Trash2, Save } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Upload, Image } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 export function CompanySetupTab() {
   const { data: company, isLoading: loadingCompany } = useCompanySettings();
@@ -27,6 +29,8 @@ export function CompanySetupTab() {
   const [locName, setLocName] = useState('');
   const [locCity, setLocCity] = useState('');
   const [locCountry, setLocCountry] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (company) {
@@ -46,8 +50,94 @@ export function CompanySetupTab() {
     upsertCompany.mutate({ id: company?.id, ...companyForm });
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be under 2MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `logo.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      if (company?.id) {
+        const { error } = await supabase.from('company_settings').update({ logo_url: logoUrl }).eq('id', company.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('company_settings').insert({ name: companyForm.name || 'My Company', logo_url: logoUrl });
+        if (error) throw error;
+      }
+
+      toast.success('Logo uploaded successfully');
+      // Refresh
+      window.dispatchEvent(new Event('company-settings-updated'));
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload logo');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Logo Upload Card */}
+      <Card>
+        <CardHeader><CardTitle>Company Logo</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-6">
+            <div className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden bg-muted/30">
+              {company?.logo_url ? (
+                <img src={company.logo_url} alt="Company logo" className="w-full h-full object-contain" />
+              ) : (
+                <Image className="h-10 w-10 text-muted-foreground/50" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Upload your company logo. It will appear on the login page and in email notifications.</p>
+              <p className="text-xs text-muted-foreground">Recommended: Square image, PNG or JPG, max 2MB</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                {uploading ? 'Uploading...' : 'Upload Logo'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle>Company Profile</CardTitle></CardHeader>
         <CardContent>
