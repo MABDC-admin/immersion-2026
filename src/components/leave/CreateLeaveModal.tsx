@@ -1,36 +1,22 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+    Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+    Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+    Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useCreateLeaveRequest } from '@/hooks/useLeave';
@@ -53,22 +39,30 @@ type LeaveFormValues = z.infer<typeof leaveFormSchema>;
 interface CreateLeaveModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    employeeId?: string; // When provided, auto-fill and hide employee dropdown
 }
 
-export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) {
+export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeaveModalProps) {
     const createLeave = useCreateLeaveRequest();
     const { data: employees = [] } = useEmployees();
 
     const form = useForm<LeaveFormValues>({
         resolver: zodResolver(leaveFormSchema),
         defaultValues: {
-            employee_id: '',
+            employee_id: employeeId || '',
             leave_type: 'Annual Leave',
             start_date: new Date(),
             end_date: new Date(),
             reason: '',
         },
     });
+
+    // When employeeId prop changes, update the form value
+    useEffect(() => {
+        if (employeeId) {
+            form.setValue('employee_id', employeeId);
+        }
+    }, [employeeId, form]);
 
     const onSubmit = async (values: LeaveFormValues) => {
         await createLeave.mutateAsync({
@@ -78,7 +72,7 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
             end_date: format(values.end_date, 'yyyy-MM-dd'),
             reason: values.reason || undefined,
         });
-        form.reset();
+        form.reset({ employee_id: employeeId || '', leave_type: 'Annual Leave', start_date: new Date(), end_date: new Date(), reason: '' });
         onOpenChange(false);
     };
 
@@ -91,30 +85,33 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="employee_id"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Employee *</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select employee" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {employees.map((emp) => (
-                                                <SelectItem key={emp.id} value={emp.id}>
-                                                    {emp.first_name} {emp.last_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Only show employee dropdown for admin/HR (when no employeeId is provided) */}
+                        {!employeeId && (
+                            <FormField
+                                control={form.control}
+                                name="employee_id"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Employee *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select employee" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {employees.map((emp) => (
+                                                    <SelectItem key={emp.id} value={emp.id}>
+                                                        {emp.first_name} {emp.last_name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <FormField
                             control={form.control}
@@ -152,32 +149,20 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        className={cn(
-                                                            'w-full pl-3 text-left font-normal',
-                                                            !field.value && 'text-muted-foreground'
-                                                        )}
-                                                    >
+                                                    <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
                                                         {field.value ? format(field.value, 'PPP') : 'Pick a date'}
                                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                     </Button>
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                />
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
                             <FormField
                                 control={form.control}
                                 name="end_date"
@@ -187,25 +172,14 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        className={cn(
-                                                            'w-full pl-3 text-left font-normal',
-                                                            !field.value && 'text-muted-foreground'
-                                                        )}
-                                                    >
+                                                    <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
                                                         {field.value ? format(field.value, 'PPP') : 'Pick a date'}
                                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                     </Button>
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                />
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                         <FormMessage />
@@ -221,11 +195,7 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
                                 <FormItem>
                                     <FormLabel>Reason</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            placeholder="Explain the reason for your leave..."
-                                            className="resize-none"
-                                            {...field}
-                                        />
+                                        <Textarea placeholder="Explain the reason for your leave..." className="resize-none" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -233,9 +203,7 @@ export function CreateLeaveModal({ open, onOpenChange }: CreateLeaveModalProps) 
                         />
 
                         <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                Cancel
-                            </Button>
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                             <Button type="submit" disabled={createLeave.isPending}>
                                 {createLeave.isPending ? 'Submitting...' : 'Submit Request'}
                             </Button>

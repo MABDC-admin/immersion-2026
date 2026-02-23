@@ -21,20 +21,21 @@ interface NavItem {
   href?: string;
   subItems?: { title: string; href: string }[];
   adminOnly?: boolean;
+  employeeVisible?: boolean; // If true, visible to regular employees
 }
 
 const navItems: NavItem[] = [
-  { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', employeeVisible: true },
   { title: 'Employee', icon: Users, href: '/employees' },
   {
-    title: 'Leave', icon: Calendar, subItems: [
+    title: 'Leave', icon: Calendar, employeeVisible: true, subItems: [
       { title: 'Leave Requests', href: '/leave/requests' },
       { title: 'Leave Balance', href: '/leave/balance' },
       { title: 'Leave Calendar', href: '/leave/calendar' },
     ],
   },
   {
-    title: 'Time Attendance', icon: Clock, subItems: [
+    title: 'Time Attendance', icon: Clock, employeeVisible: true, subItems: [
       { title: 'Attendance', href: '/attendance' },
       { title: 'Timesheets', href: '/attendance/timesheets' },
       { title: 'Reports', href: '/attendance/reports' },
@@ -61,7 +62,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Training', icon: GraduationCap, subItems: [
+    title: 'Training', icon: GraduationCap, employeeVisible: true, subItems: [
       { title: 'Courses', href: '/training/courses' },
       { title: 'Enrollments', href: '/training/enrollments' },
       { title: 'Certificates', href: '/training/certificates' },
@@ -72,7 +73,7 @@ const navItems: NavItem[] = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, userRole } = useAuth();
   const { data: employee } = useCurrentEmployee(user?.id || '');
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -98,6 +99,8 @@ export function AppSidebar() {
     ? `${employee.first_name[0]}${employee.last_name[0]}`.toUpperCase()
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
+  const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+
   const filteredItems = [...navItems];
 
   // If we have an employee record, add "My Portal" to the top
@@ -105,11 +108,18 @@ export function AppSidebar() {
     filteredItems.unshift({
       title: 'My Portal',
       icon: User,
-      href: `/employees/${employee.id}`
+      href: `/employees/${employee.id}`,
+      employeeVisible: true,
     });
   }
 
-  const finalFilteredItems = filteredItems.filter(item => !item.adminOnly || isAdmin);
+  // For regular employees: only show items marked employeeVisible
+  // For admin/HR: show everything except adminOnly (unless admin)
+  const finalFilteredItems = filteredItems.filter(item => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (!isAdminOrHR && !item.employeeVisible) return false;
+    return true;
+  });
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">

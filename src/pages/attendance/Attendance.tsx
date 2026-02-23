@@ -1,14 +1,9 @@
-import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAttendance, useClockIn, useClockOut, useTodayAttendance } from '@/hooks/useAttendance';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentEmployee } from '@/hooks/useEmployees';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,15 +13,19 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Attendance() {
-    const { user } = useAuth();
+    const { user, isAdmin, userRole } = useAuth();
+    const { data: employee } = useCurrentEmployee(user?.id || '');
+    const employeeId = employee?.id || '';
+    const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+
     const { data: attendance = [], isLoading } = useAttendance();
-    const { data: todayRecord, isLoading: isLoadingToday } = useTodayAttendance(user?.id || '');
+    const { data: todayRecord, isLoading: isLoadingToday } = useTodayAttendance(employeeId);
     const clockIn = useClockIn();
     const clockOut = useClockOut();
 
     const handleClockIn = () => {
-        if (user?.id) {
-            clockIn.mutate({ employeeId: user.id });
+        if (employeeId) {
+            clockIn.mutate({ employeeId });
         }
     };
 
@@ -35,6 +34,11 @@ export default function Attendance() {
             clockOut.mutate({ id: todayRecord.id });
         }
     };
+
+    // For regular employees, filter attendance to only their own records
+    const filteredAttendance = isAdminOrHR
+        ? attendance
+        : attendance.filter(record => record.employee_id === employeeId);
 
     const getStatusBadge = (status: string) => {
         switch (status.toLowerCase()) {
@@ -55,11 +59,18 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
-                        <p className="text-muted-foreground">Track and manage employee attendance.</p>
+                        <p className="text-muted-foreground">
+                            {isAdminOrHR ? 'Track and manage employee attendance.' : 'View your attendance records.'}
+                        </p>
                     </div>
                     <div className="flex gap-2">
-                        {!todayRecord?.clock_in ? (
-                            <Button onClick={handleClockIn} disabled={clockIn.isPending || isLoadingToday || !user}>
+                        {!employeeId ? (
+                            <Button disabled variant="outline">
+                                <Clock className="h-4 w-4 mr-2" />
+                                Loading...
+                            </Button>
+                        ) : !todayRecord?.clock_in ? (
+                            <Button onClick={handleClockIn} disabled={clockIn.isPending || isLoadingToday}>
                                 <Play className="h-4 w-4 mr-2" />
                                 Clock In
                             </Button>
@@ -103,7 +114,7 @@ export default function Attendance() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Employee</TableHead>
+                                    {isAdminOrHR && <TableHead>Employee</TableHead>}
                                     <TableHead>Date</TableHead>
                                     <TableHead>Clock In</TableHead>
                                     <TableHead>Clock Out</TableHead>
@@ -111,19 +122,21 @@ export default function Attendance() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {attendance.map((record) => (
+                                {filteredAttendance.map((record) => (
                                     <TableRow key={record.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarFallback>
-                                                        {record.employee?.first_name?.[0]}
-                                                        {record.employee?.last_name?.[0]}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <span>{record.employee?.first_name} {record.employee?.last_name}</span>
-                                            </div>
-                                        </TableCell>
+                                        {isAdminOrHR && (
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarFallback>
+                                                            {record.employee?.first_name?.[0]}
+                                                            {record.employee?.last_name?.[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span>{record.employee?.first_name} {record.employee?.last_name}</span>
+                                                </div>
+                                            </TableCell>
+                                        )}
                                         <TableCell>{format(new Date(record.date), 'MMM dd, yyyy')}</TableCell>
                                         <TableCell>{record.clock_in ? format(new Date(record.clock_in), 'hh:mm a') : '-'}</TableCell>
                                         <TableCell>{record.clock_out ? format(new Date(record.clock_out), 'hh:mm a') : '-'}</TableCell>
