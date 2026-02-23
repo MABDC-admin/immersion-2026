@@ -40,6 +40,10 @@ export function NewGroupChatDialog({ open, onOpenChange, currentEmployeeId, onCo
     };
 
     const handleCreate = async () => {
+        if (!currentEmployeeId) {
+            toast.error('Unable to identify your account. Please try again.');
+            return;
+        }
         if (selectedMembers.length < 2) {
             toast.error('Select at least 2 members for a group chat');
             return;
