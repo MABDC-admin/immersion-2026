@@ -1,75 +1,67 @@
 
 
-# Add Company Logo Upload with Email Branding
+# Include User Credentials and Login URL in Onboarding Emails
 
 ## Overview
-Add a logo upload feature in the Admin Company Setup tab. The uploaded logo will appear on the login page and be embedded in all outgoing emails with a professional, branded HTML template.
+Update the onboarding email system so that when emails are sent, they can optionally include the employee's login credentials (username/email and password) and a direct link to the employee portal at `https://immersion.mabdc.com/auth`.
 
-## 1. Storage Bucket for Company Logo
-Create a new public storage bucket `company-logos` to store the uploaded company logo, with RLS policies allowing admin upload and public read access.
+## How It Works
 
-## 2. Admin Company Setup -- Logo Upload
-Update `CompanySetupTab.tsx` to include:
-- An image preview area showing the current logo (from `company_settings.logo_url`)
-- A file input to upload a new logo image
-- Upload handler that stores the file in the `company-logos` bucket and saves the public URL to `company_settings.logo_url`
+When an employee is created or a candidate is approved, the system will:
+1. Create a Supabase Auth account for the employee with a default password
+2. Include the credentials (email as username + password) in the onboarding email
+3. Include a styled "Login to Portal" button linking to `https://immersion.mabdc.com/auth`
 
-## 3. Login Page Branding
-Update `Auth.tsx` to:
-- Fetch company settings (name and logo_url) on load
-- Replace the hardcoded "IM" box with the actual company logo image when available
-- Display the company name dynamically instead of hardcoded "Immersion HRMS"
+## Changes
 
-## 4. Professional Email Templates with Logo
-Rewrite the `send-onboarding-email` edge function to:
-- Fetch `company_settings` from the database to get the logo URL and company name dynamically
-- Use a polished, professional HTML email template with:
-  - Company logo header
-  - Styled body with proper typography and spacing
-  - Professional footer with company name, address, and contact info
-- Support multiple email types (onboarding welcome, approval confirmation)
-- Use the company name and details from the database instead of hardcoded values
+### 1. Edge Function (`supabase/functions/send-onboarding-email/index.ts`)
+- Add `username` and `password` fields to the `EmailPayload` interface
+- Update both email templates (onboarding + approval) to include a credentials box when username/password are provided
+- The credentials box will be a styled card showing:
+  - **Username**: the employee's email
+  - **Password**: the provided password
+  - A prominent "Login to Employee Portal" button linking to `https://immersion.mabdc.com/auth`
+  - A note advising the employee to change their password after first login
+- The login URL `https://immersion.mabdc.com/auth` will be hardcoded in the edge function
 
-## 5. Email Helper Update
-Update `src/lib/email.ts` to pass along any additional context needed (no major changes, the edge function handles template rendering).
+### 2. Email Helper (`src/lib/email.ts`)
+- Add optional `password` parameter to `sendOnboardingEmail`
+- Pass `username` (the employee's email) and `password` to the edge function payload
+
+### 3. Create Employee Modal (`src/components/employees/CreateEmployeeModal.tsx`)
+- After creating the employee, create a Supabase Auth account using an edge function (since client-side `signUp` would log out the admin)
+- Pass the credentials to `sendOnboardingEmail` so they're included in the welcome email
+- Use a default password (e.g., `654321`) or allow admin to specify one
+
+### 4. Candidate Approval (`src/hooks/useRecruitment.tsx`)
+- When approving a candidate, create a Supabase Auth account for them via edge function
+- Pass credentials to `sendOnboardingEmail` along with the start date
+
+### 5. New Edge Function: `create-employee-account`
+- Creates a Supabase Auth user with the given email and password using the Admin API
+- Returns the new user ID so it can be linked to the employee record
+- This avoids the admin being logged out (which would happen with client-side `signUp`)
 
 ---
 
 ## Technical Details
 
-### Database Migration
-```text
--- Create company-logos storage bucket
-INSERT INTO storage.buckets (id, name, public) VALUES ('company-logos', 'company-logos', true);
+### New File
+- **`supabase/functions/create-employee-account/index.ts`** -- Edge function that uses the Supabase Admin API to create auth accounts without affecting the current session
 
--- RLS: Anyone can view logos (public bucket)
-CREATE POLICY "Public can view company logos"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'company-logos');
+### Modified Files
+1. **`supabase/functions/send-onboarding-email/index.ts`** -- Add credentials box and login button to email templates
+2. **`src/lib/email.ts`** -- Accept and pass `password` parameter
+3. **`src/components/employees/CreateEmployeeModal.tsx`** -- Create auth account, send email with credentials
+4. **`src/hooks/useRecruitment.tsx`** -- Create auth account on approval, send email with credentials
 
--- RLS: Admins can upload/update/delete logos
-CREATE POLICY "Admins can manage company logos"
-  ON storage.objects FOR ALL
-  USING (bucket_id = 'company-logos' AND has_role(auth.uid(), 'admin'));
-```
+### Email Credentials Box Design
+A styled card within the email body:
+- Light blue/gray background
+- "Your Login Credentials" heading
+- Username and password displayed in monospace font
+- A colored "Login to Employee Portal" button
+- Security reminder to change password on first login
 
-### Files to Create
-- None (all changes are to existing files)
-
-### Files to Modify
-1. **`src/components/admin/CompanySetupTab.tsx`** -- Add logo upload UI with image preview, file picker, and upload-to-storage logic
-2. **`src/pages/Auth.tsx`** -- Fetch company settings and display logo + company name dynamically
-3. **`supabase/functions/send-onboarding-email/index.ts`** -- Rewrite with professional HTML email template that fetches company logo and details from the database
-4. **`src/hooks/useAdmin.tsx`** -- Minor: ensure `logo_url` is included in company settings upsert
-
-### Edge Function Email Template Design
-The email will use inline CSS for maximum compatibility:
-- Header: Company logo (centered, max 200px wide)
-- Body: Clean white card with proper padding, professional greeting, and content
-- Footer: Company name, address, phone, email in muted gray text
-- Color scheme: Neutral professional tones matching the app's primary color
-
-### Email Types Supported
-- **Onboarding Welcome**: Sent when a new employee is created
-- **Approval Confirmation**: Sent when a candidate is approved, includes start date
-
+### Default Password
+The system will use `654321` as the default password (matching the convention already used for supervisors). The email will instruct the employee to change it.
