@@ -158,7 +158,7 @@ serve(async (req) => {
     }
 
     const fromName = company.name || "HRMS";
-    const fromEmail = `${fromName} <onboarding@resend.dev>`;
+    const fromEmail = `${fromName} <immersion@mabdc.com>`;
 
     const emailPayload: Record<string, unknown> = {
       from: fromEmail,
