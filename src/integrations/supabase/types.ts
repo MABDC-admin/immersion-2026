@@ -38,6 +38,74 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applied_migrations: {
+        Row: {
+          applied_at: string | null
+          content_hash: string | null
+          error_message: string | null
+          filename: string
+          id: string
+          status: string
+        }
+        Insert: {
+          applied_at?: string | null
+          content_hash?: string | null
+          error_message?: string | null
+          filename: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          applied_at?: string | null
+          content_hash?: string | null
+          error_message?: string | null
+          filename?: string
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       approval_workflows: {
         Row: {
           created_at: string
@@ -521,6 +589,50 @@ export type Database = {
           },
         ]
       }
+      leave_balances: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          leave_type: string
+          remaining_days: number | null
+          total_days: number
+          updated_at: string
+          used_days: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          leave_type: string
+          remaining_days?: number | null
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          leave_type?: string
+          remaining_days?: number | null
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_by: string | null
@@ -905,6 +1017,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      exec_sql: { Args: { query: string }; Returns: undefined }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
