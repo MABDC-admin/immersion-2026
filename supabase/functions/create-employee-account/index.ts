@@ -38,6 +38,17 @@ serve(async (req) => {
     });
 
     if (error) {
+      // If user already exists, look up their ID and return it
+      if (error.message.includes("already been registered")) {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = listData?.users?.find((u) => u.email === email);
+        if (existingUser) {
+          return new Response(
+            JSON.stringify({ userId: existingUser.id, existing: true }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
