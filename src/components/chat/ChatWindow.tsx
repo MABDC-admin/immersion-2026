@@ -4,7 +4,7 @@ import { useChat } from '@/hooks/useChat';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, ArrowLeft, Phone, MoreHorizontal } from 'lucide-react';
+import { Send, ArrowLeft, Phone, MoreHorizontal, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ActiveCallOverlay } from './ActiveCallOverlay';
@@ -35,19 +35,25 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
     const scrollRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
-    // Find the other member in this conversation
     const conversation = conversations.find((c) => c.id === conversationId);
-    const otherMember = conversation?.members?.find((m) => m.employee_id !== employeeId)?.employee;
-    const remoteName = otherMember ? `${otherMember.first_name} ${otherMember.last_name}` : 'Chat Session';
-    const remoteInitials = remoteName.split(' ').map((n) => n[0]).join('').toUpperCase();
+    const isGroup = conversation?.type === 'group';
 
-    const isInCall = callState && callState.conversationId === conversationId && 
+    // For direct chats
+    const otherMember = conversation?.members?.find((m) => m.employee_id !== employeeId)?.employee;
+
+    // Display info
+    const displayName = isGroup
+        ? (conversation?.title || 'Group Chat')
+        : (otherMember ? `${otherMember.first_name} ${otherMember.last_name}` : 'Chat Session');
+    const displayInitials = displayName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
+    const memberCount = conversation?.members?.length || 0;
+
+    const isInCall = callState && callState.conversationId === conversationId &&
                      (callState.status === 'calling' || callState.status === 'connected');
 
     // Subscribe to realtime updates
     useEffect(() => {
         if (!conversationId) return;
-
         const unsubscribe = subscribeToConversation(conversationId, (newMsg) => {
             queryClient.setQueryData(['chat', 'messages', conversationId], (old: any) => {
                 const exists = old?.some((m: any) => m.id === newMsg.id);
@@ -55,7 +61,6 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                 return [...(old || []), newMsg];
             });
         });
-
         return () => unsubscribe();
     }, [conversationId, queryClient]);
 
@@ -68,7 +73,6 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
 
     const handleSend = () => {
         if (!newMessage.trim()) return;
-
         sendMessage.mutate({
             conversation_id: conversationId,
             content: newMessage,
@@ -78,10 +82,18 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
     };
 
     const handleCall = () => {
-        if (otherMember && onInitiateCall) {
+        if (otherMember && onInitiateCall && !isGroup) {
             onInitiateCall(otherMember.id);
         }
     };
+
+    // Build a map of sender names for group display
+    const memberMap = new Map<string, { first_name: string; last_name: string; avatar_url?: string }>();
+    conversation?.members?.forEach((m) => {
+        if (m.employee) {
+            memberMap.set(m.employee_id, m.employee);
+        }
+    });
 
     return (
         <div className="flex flex-col h-full relative">
@@ -89,7 +101,7 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
             {isInCall && callState && onEndCall && onToggleMute && (
                 <ActiveCallOverlay
                     status={callState.status}
-                    remoteName={remoteName}
+                    remoteName={displayName}
                     remoteAvatar={otherMember?.avatar_url}
                     isMuted={callState.isMuted}
                     callDuration={callState.callDuration}
@@ -105,26 +117,36 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <Avatar className="h-10 w-10">
-                        <AvatarImage src={otherMember?.avatar_url} />
-                        <AvatarFallback>{remoteInitials}</AvatarFallback>
+                        {isGroup ? (
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                                <Users className="h-4 w-4" />
+                            </AvatarFallback>
+                        ) : (
+                            <>
+                                <AvatarImage src={otherMember?.avatar_url} />
+                                <AvatarFallback>{displayInitials}</AvatarFallback>
+                            </>
+                        )}
                     </Avatar>
                     <div>
-                        <h4 className="text-sm font-bold">{remoteName}</h4>
+                        <h4 className="text-sm font-bold">{displayName}</h4>
                         <p className="text-[10px] text-muted-foreground font-medium">
-                            {isInCall ? 'In call' : 'Online'}
+                            {isGroup ? `${memberCount} members` : (isInCall ? 'In call' : 'Online')}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full"
-                        onClick={handleCall}
-                        disabled={!otherMember || isInCall}
-                    >
-                        <Phone className="h-4 w-4" />
-                    </Button>
+                    {!isGroup && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={handleCall}
+                            disabled={!otherMember || isInCall}
+                        >
+                            <Phone className="h-4 w-4" />
+                        </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                         <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -138,6 +160,9 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
             >
                 {messages.map((msg) => {
                     const isOwn = msg.sender_id === employeeId;
+                    const senderInfo = memberMap.get(msg.sender_id);
+                    const senderName = senderInfo ? `${senderInfo.first_name}` : '';
+
                     return (
                         <div
                             key={msg.id}
@@ -146,6 +171,11 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                                 isOwn ? "ml-auto items-end" : "items-start"
                             )}
                         >
+                            {isGroup && !isOwn && senderName && (
+                                <span className="text-[10px] text-primary font-semibold mb-0.5 px-1">
+                                    {senderName}
+                                </span>
+                            )}
                             <div className={cn(
                                 "px-4 py-2.5 rounded-2xl text-sm shadow-sm transition-all",
                                 isOwn

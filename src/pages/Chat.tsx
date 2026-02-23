@@ -8,9 +8,11 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { ChatList } from '@/components/chat/ChatList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { NewChatDialog } from '@/components/chat/NewChatDialog';
+import { NewGroupChatDialog } from '@/components/chat/NewGroupChatDialog';
 import { IncomingCallModal } from '@/components/chat/IncomingCallModal';
 import { Button } from '@/components/ui/button';
-import { Plus, MessageSquare } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, MessageSquare, User, Users } from 'lucide-react';
 
 export default function ChatPage() {
     const { user } = useAuth();
@@ -20,10 +22,10 @@ export default function ChatPage() {
     const { data: allEmployees = [] } = useEmployees();
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+    const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
 
     const { callState, initiateCall, acceptCall, rejectCall, endCall, toggleMute } = useVoiceCall(employee?.id || '');
 
-    // Find caller info for incoming call modal
     const callerEmployee = callState.remoteEmployeeId
         ? allEmployees.find((e) => e.id === callState.remoteEmployeeId)
         : null;
@@ -37,6 +39,11 @@ export default function ChatPage() {
         }
     };
 
+    const handleConversationCreated = (id: string) => {
+        setSelectedConversationId(id);
+        refetch();
+    };
+
     return (
         <MainLayout>
             <div className="flex h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] gap-4 animate-fade-in mb-8 md:mb-0">
@@ -44,14 +51,23 @@ export default function ChatPage() {
                 <div className={`${selectedConversationId ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col gap-4`}>
                     <div className="flex items-center justify-between px-1">
                         <h1 className="text-2xl font-bold">Messages</h1>
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            className="rounded-full"
-                            onClick={() => setIsNewChatOpen(true)}
-                        >
-                            <Plus className="h-5 w-5" />
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="ghost" className="rounded-full">
+                                    <Plus className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setIsNewChatOpen(true)}>
+                                    <User className="h-4 w-4 mr-2" />
+                                    Direct Message
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setIsNewGroupOpen(true)}>
+                                    <Users className="h-4 w-4 mr-2" />
+                                    Group Chat
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
 
                     <div className="flex-1 overflow-hidden">
@@ -59,6 +75,7 @@ export default function ChatPage() {
                             conversations={conversations}
                             isLoading={isLoading}
                             selectedId={selectedConversationId}
+                            currentEmployeeId={employee?.id || ''}
                             onSelect={setSelectedConversationId}
                         />
                     </div>
@@ -96,13 +113,16 @@ export default function ChatPage() {
                     open={isNewChatOpen}
                     onOpenChange={setIsNewChatOpen}
                     currentEmployeeId={employee?.id || ''}
-                    onConversationCreated={(id) => {
-                        setSelectedConversationId(id);
-                        refetch();
-                    }}
+                    onConversationCreated={handleConversationCreated}
                 />
 
-                {/* Incoming Call Modal */}
+                <NewGroupChatDialog
+                    open={isNewGroupOpen}
+                    onOpenChange={setIsNewGroupOpen}
+                    currentEmployeeId={employee?.id || ''}
+                    onConversationCreated={handleConversationCreated}
+                />
+
                 <IncomingCallModal
                     open={callState.status === 'ringing'}
                     callerName={callerName}

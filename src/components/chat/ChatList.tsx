@@ -5,15 +5,30 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Users } from 'lucide-react';
 
 interface ChatListProps {
     conversations: ChatConversation[];
     isLoading: boolean;
     selectedId: string | null;
+    currentEmployeeId: string;
     onSelect: (id: string) => void;
 }
 
-export function ChatList({ conversations, isLoading, selectedId, onSelect }: ChatListProps) {
+function getConversationDisplay(conv: ChatConversation, currentEmployeeId: string) {
+    if (conv.type === 'group') {
+        const title = conv.title || 'Group Chat';
+        const initials = title.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+        return { title, initials, avatarUrl: undefined, isGroup: true, memberCount: conv.members?.length || 0 };
+    }
+
+    const otherMember = conv.members?.find(m => m.employee_id !== currentEmployeeId)?.employee;
+    const title = otherMember ? `${otherMember.first_name} ${otherMember.last_name}` : 'Unknown Chat';
+    const initials = title.split(' ').map(n => n[0]).join('').toUpperCase();
+    return { title, initials, avatarUrl: otherMember?.avatar_url, isGroup: false, memberCount: 0 };
+}
+
+export function ChatList({ conversations, isLoading, selectedId, currentEmployeeId, onSelect }: ChatListProps) {
     if (isLoading) {
         return (
             <div className="space-y-3">
@@ -33,9 +48,7 @@ export function ChatList({ conversations, isLoading, selectedId, onSelect }: Cha
     return (
         <div className="space-y-2 overflow-y-auto h-full pr-2 custom-scrollbar">
             {conversations.map((conv) => {
-                const otherMember = conv.members?.find(m => m.employee?.id !== conv.id)?.employee; // Simplistic for now
-                const title = conv.title || (otherMember ? `${otherMember.first_name} ${otherMember.last_name}` : 'Unknown Chat');
-                const initials = title.split(' ').map(n => n[0]).join('').toUpperCase();
+                const display = getConversationDisplay(conv, currentEmployeeId);
 
                 return (
                     <Card
@@ -49,18 +62,29 @@ export function ChatList({ conversations, isLoading, selectedId, onSelect }: Cha
                         <CardContent className="p-3">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-12 w-12 ring-2 ring-primary/5">
-                                    <AvatarImage src={otherMember?.avatar_url} />
-                                    <AvatarFallback>{initials}</AvatarFallback>
+                                    {display.isGroup ? (
+                                        <AvatarFallback className="bg-primary/10 text-primary">
+                                            <Users className="h-5 w-5" />
+                                        </AvatarFallback>
+                                    ) : (
+                                        <>
+                                            <AvatarImage src={display.avatarUrl} />
+                                            <AvatarFallback>{display.initials}</AvatarFallback>
+                                        </>
+                                    )}
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start mb-0.5">
-                                        <h4 className="font-semibold text-sm truncate">{title}</h4>
+                                        <h4 className="font-semibold text-sm truncate">{display.title}</h4>
                                         <span className="text-[10px] text-muted-foreground">
                                             {format(new Date(conv.updated_at), 'hh:mm a')}
                                         </span>
                                     </div>
                                     <p className="text-xs text-muted-foreground truncate">
-                                        {conv.last_message?.content || 'No messages yet'}
+                                        {display.isGroup
+                                            ? `${display.memberCount} members`
+                                            : (conv.last_message?.content || 'No messages yet')
+                                        }
                                     </p>
                                 </div>
                             </div>

@@ -1139,6 +1139,10 @@ export type Database = {
         Args: { creator_id: string; target_id: string }
         Returns: string
       }
+      create_group_conversation: {
+        Args: { creator_id: string; group_title?: string; member_ids: string[] }
+        Returns: string
+      }
       exec_sql: { Args: { query: string }; Returns: undefined }
       find_direct_conversation: {
         Args: { user_a: string; user_b: string }
