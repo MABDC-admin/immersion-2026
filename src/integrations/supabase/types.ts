@@ -38,6 +38,30 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_workflows: {
+        Row: {
+          created_at: string
+          id: string
+          module: string
+          name: string
+          steps: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module: string
+          name: string
+          steps?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module?: string
+          name?: string
+          steps?: Json
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           clock_in: string | null
@@ -75,6 +99,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       candidates: {
         Row: {
@@ -116,6 +170,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      company_settings: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       course_enrollments: {
         Row: {
@@ -476,6 +572,33 @@ export type Database = {
           },
         ]
       }
+      leave_types: {
+        Row: {
+          carry_over: boolean
+          created_at: string
+          days_per_year: number
+          id: string
+          is_paid: boolean
+          name: string
+        }
+        Insert: {
+          carry_over?: boolean
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_paid?: boolean
+          name: string
+        }
+        Update: {
+          carry_over?: boolean
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_paid?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           address: string | null
@@ -576,6 +699,33 @@ export type Database = {
           },
         ]
       }
+      pay_grades: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          max_salary: number
+          min_salary: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          max_salary?: number
+          min_salary?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          max_salary?: number
+          min_salary?: number
+          name?: string
+        }
+        Relationships: []
+      }
       performance_reviews: {
         Row: {
           comments: string | null
@@ -657,6 +807,51 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_structures: {
+        Row: {
+          allowances: Json | null
+          base_salary: number
+          created_at: string
+          deductions: Json | null
+          employee_id: string
+          id: string
+          pay_grade_id: string | null
+        }
+        Insert: {
+          allowances?: Json | null
+          base_salary?: number
+          created_at?: string
+          deductions?: Json | null
+          employee_id: string
+          id?: string
+          pay_grade_id?: string | null
+        }
+        Update: {
+          allowances?: Json | null
+          base_salary?: number
+          created_at?: string
+          deductions?: Json | null
+          employee_id?: string
+          id?: string
+          pay_grade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_structures_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_structures_pay_grade_id_fkey"
+            columns: ["pay_grade_id"]
+            isOneToOne: false
+            referencedRelation: "pay_grades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -675,6 +870,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      work_schedules: {
+        Row: {
+          created_at: string
+          days_of_week: string[]
+          end_time: string
+          id: string
+          name: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_week?: string[]
+          end_time?: string
+          id?: string
+          name: string
+          start_time?: string
+        }
+        Update: {
+          created_at?: string
+          days_of_week?: string[]
+          end_time?: string
+          id?: string
+          name?: string
+          start_time?: string
         }
         Relationships: []
       }
@@ -697,7 +919,12 @@ export type Database = {
       is_admin_or_hr: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "hr_manager" | "employee"
+      app_role:
+        | "admin"
+        | "hr_manager"
+        | "employee"
+        | "payroll_officer"
+        | "manager"
       employee_status: "active" | "inactive" | "on_leave" | "terminated"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
     }
@@ -827,7 +1054,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "hr_manager", "employee"],
+      app_role: [
+        "admin",
+        "hr_manager",
+        "employee",
+        "payroll_officer",
+        "manager",
+      ],
       employee_status: ["active", "inactive", "on_leave", "terminated"],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
     },
