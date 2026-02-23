@@ -24,6 +24,13 @@ import Checklists from "./pages/onboarding/Checklists";
 import OnboardingDocuments from "./pages/onboarding/Documents";
 import Courses from "./pages/training/Courses";
 
+// Public pages
+import CareersPage from "./pages/careers/CareersPage";
+import PublicJobApplication from "./pages/careers/PublicJobApplication";
+
+// Admin
+import AdminPanel from "./pages/admin/AdminPanel";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,39 +41,15 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Navigate to="/dashboard" replace />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/employees"
-              element={
-                <ProtectedRoute>
-                  <Employees />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/employees/:id"
-              element={
-                <ProtectedRoute>
-                  <EmployeeDetail />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/careers/:jobId" element={<PublicJobApplication />} />
+
+            <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+            <Route path="/employees/:id" element={<ProtectedRoute><EmployeeDetail /></ProtectedRoute>} />
 
             {/* Leave Module */}
             <Route path="/leave/requests" element={<ProtectedRoute><LeaveRequests /></ProtectedRoute>} />
@@ -81,7 +64,6 @@ const App = () => (
             {/* Recruitment Module */}
             <Route path="/recruitment/jobs" element={<ProtectedRoute><JobPostings /></ProtectedRoute>} />
             <Route path="/recruitment/candidates" element={<ProtectedRoute><Candidates /></ProtectedRoute>} />
-            <Route path="/recruitment/interviews" element={<ProtectedRoute><JobPostings /></ProtectedRoute>} />
 
             {/* Performance Module */}
             <Route path="/performance/reviews" element={<ProtectedRoute><PerformanceReviews /></ProtectedRoute>} />
@@ -97,6 +79,10 @@ const App = () => (
             <Route path="/training/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
             <Route path="/training/enrollments" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
             <Route path="/training/certificates" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+
+            {/* Admin */}
+            <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

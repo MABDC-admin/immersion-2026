@@ -33,9 +33,41 @@ export function useJobPostings() {
                 .from('job_postings')
                 .select('*')
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
             return data as JobPosting[];
+        },
+    });
+}
+
+export function useCreateJobPosting() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (input: Omit<JobPosting, 'id' | 'created_at'>) => {
+            const { data, error } = await supabase
+                .from('job_postings')
+                .insert([input])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['job_postings'] });
+            toast.success('Job posting created');
+        },
+    });
+}
+
+export function useDeleteJobPosting() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('job_postings').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['job_postings'] });
+            toast.success('Job posting deleted');
         },
     });
 }
@@ -46,12 +78,8 @@ export function useCandidates() {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('candidates')
-                .select(`
-          *,
-          job:job_postings(*)
-        `)
+                .select(`*, job:job_postings(*)`)
                 .order('created_at', { ascending: false });
-
             if (error) throw error;
             return (data as unknown) as Candidate[];
         },
@@ -60,7 +88,6 @@ export function useCandidates() {
 
 export function useCreateCandidate() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (input: Omit<Candidate, 'id' | 'status' | 'created_at' | 'job'>) => {
             const { data, error } = await supabase
@@ -68,7 +95,6 @@ export function useCreateCandidate() {
                 .insert([input])
                 .select()
                 .single();
-
             if (error) throw error;
             return data;
         },
@@ -81,56 +107,39 @@ export function useCreateCandidate() {
 
 export function useApproveCandidate() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async ({ candidate, startDate }: { candidate: Candidate; startDate: string }) => {
-            // 1. Update candidate status
             const { error: updateError } = await supabase
                 .from('candidates')
                 .update({ status: 'approved' })
                 .eq('id', candidate.id);
-
             if (updateError) throw updateError;
 
-            // 2. Create employee record
             const { data: employee, error: employeeError } = await supabase
                 .from('employees')
-                .insert([
-                    {
-                        first_name: candidate.first_name,
-                        last_name: candidate.last_name,
-                        email: candidate.email,
-                        hire_date: startDate,
-                        status: 'active',
-                        job_title: candidate.job?.title || 'New Hire',
-                    },
-                ])
+                .insert([{
+                    first_name: candidate.first_name,
+                    last_name: candidate.last_name,
+                    email: candidate.email,
+                    hire_date: startDate,
+                    status: 'active' as const,
+                    job_title: candidate.job?.title || 'New Hire',
+                }])
                 .select()
                 .single();
-
             if (employeeError) throw employeeError;
 
-            // 3. Create onboarding checklist
             const { error: checklistError } = await supabase
                 .from('onboarding_checklists')
-                .insert([
-                    {
-                        employee_id: employee.id,
-                        title: `Onboarding: ${employee.first_name} ${employee.last_name}`,
-                        status: 'in_progress',
-                    },
-                ]);
-
+                .insert([{
+                    employee_id: employee.id,
+                    title: `Onboarding: ${employee.first_name} ${employee.last_name}`,
+                    status: 'in_progress',
+                }]);
             if (checklistError) throw checklistError;
 
-            // 4. Send Approval Email
             try {
-                await sendOnboardingEmail(
-                    candidate.email,
-                    candidate.first_name,
-                    candidate.last_name,
-                    startDate
-                );
+                await sendOnboardingEmail(candidate.email, candidate.first_name, candidate.last_name, startDate);
             } catch (emailError) {
                 console.error('Failed to send approval email:', emailError);
                 toast.error('Candidate approved, but failed to send email notification.');
@@ -149,14 +158,12 @@ export function useApproveCandidate() {
 
 export function useRejectCandidate() {
     const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (id: string) => {
             const { error } = await supabase
                 .from('candidates')
                 .update({ status: 'rejected' })
                 .eq('id', id);
-
             if (error) throw error;
         },
         onSuccess: () => {
