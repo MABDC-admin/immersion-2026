@@ -14,6 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          job_id: string | null
+          last_name: string
+          resume_url: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          job_id?: string | null
+          last_name: string
+          resume_url?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          job_id?: string | null
+          last_name?: string
+          resume_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          progress: number | null
+          status: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          progress?: number | null
+          status?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          progress?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_enrollments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string
@@ -187,114 +356,6 @@ export type Database = {
           },
         ]
       }
-      locations: {
-        Row: {
-          address: string | null
-          city: string
-          country: string
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          city: string
-          country: string
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          city?: string
-          country?: string
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          first_name: string | null
-          id: string
-          last_name: string | null
-          phone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      activities: {
-        Row: {
-          created_at: string
-          id: string
-          message: string
-          type: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message: string
-          type: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string
-          type?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       events: {
         Row: {
           created_at: string
@@ -318,95 +379,6 @@ export type Database = {
           type?: string
         }
         Relationships: []
-      }
-      leave_requests: {
-        Row: {
-          approved_by: string | null
-          created_at: string
-          employee_id: string
-          end_date: string
-          id: string
-          leave_type: string
-          reason: string | null
-          start_date: string
-          status: Database["public"]["Enums"]["leave_status"]
-        }
-        Insert: {
-          approved_by?: string | null
-          created_at?: string
-          employee_id: string
-          end_date: string
-          id?: string
-          leave_type: string
-          reason?: string | null
-          start_date: string
-          status?: Database["public"]["Enums"]["leave_status"]
-        }
-        Update: {
-          approved_by?: string | null
-          created_at?: string
-          employee_id?: string
-          end_date?: string
-          id?: string
-          leave_type?: string
-          reason?: string | null
-          start_date?: string
-          status?: Database["public"]["Enums"]["leave_status"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "leave_requests_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leave_requests_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance: {
-        Row: {
-          clock_in: string | null
-          clock_out: string | null
-          created_at: string
-          date: string
-          employee_id: string
-          id: string
-          status: string
-        }
-        Insert: {
-          clock_in?: string | null
-          clock_out?: string | null
-          created_at?: string
-          date: string
-          employee_id: string
-          id?: string
-          status?: string
-        }
-        Update: {
-          clock_in?: string | null
-          clock_out?: string | null
-          created_at?: string
-          date?: string
-          employee_id?: string
-          id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       job_postings: {
         Row: {
@@ -453,94 +425,86 @@ export type Database = {
           },
         ]
       }
-      candidates: {
+      leave_requests: {
         Row: {
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          job_id: string | null
-          last_name: string
-          resume_url: string | null
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          job_id?: string | null
-          last_name: string
-          resume_url?: string | null
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          job_id?: string | null
-          last_name?: string
-          resume_url?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "candidates_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "job_postings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      performance_reviews: {
-        Row: {
-          comments: string | null
+          approved_by: string | null
           created_at: string
           employee_id: string
+          end_date: string
           id: string
-          rating: number | null
-          review_date: string
-          reviewer_id: string | null
-          status: string
+          leave_type: string
+          reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["leave_status"]
         }
         Insert: {
-          comments?: string | null
+          approved_by?: string | null
           created_at?: string
           employee_id: string
+          end_date: string
           id?: string
-          rating?: number | null
-          review_date: string
-          reviewer_id?: string | null
-          status?: string
+          leave_type: string
+          reason?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["leave_status"]
         }
         Update: {
-          comments?: string | null
+          approved_by?: string | null
           created_at?: string
           employee_id?: string
+          end_date?: string
           id?: string
-          rating?: number | null
-          review_date?: string
-          reviewer_id?: string | null
-          status?: string
+          leave_type?: string
+          reason?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["leave_status"]
         }
         Relationships: [
           {
-            foreignKeyName: "performance_reviews_employee_id_fkey"
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "performance_reviews_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          city: string
+          country: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          country: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       onboarding_checklists: {
         Row: {
@@ -612,71 +576,107 @@ export type Database = {
           },
         ]
       }
-      courses: {
+      performance_reviews: {
         Row: {
-          created_at: string
-          description: string | null
-          duration: string | null
-          id: string
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          duration?: string | null
-          id?: string
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          duration?: string | null
-          id?: string
-          title?: string
-        }
-        Relationships: []
-      }
-      course_enrollments: {
-        Row: {
-          course_id: string
+          comments: string | null
           created_at: string
           employee_id: string
           id: string
-          progress: number | null
+          rating: number | null
+          review_date: string
+          reviewer_id: string | null
           status: string
         }
         Insert: {
-          course_id: string
+          comments?: string | null
           created_at?: string
           employee_id: string
           id?: string
-          progress?: number | null
+          rating?: number | null
+          review_date: string
+          reviewer_id?: string | null
           status?: string
         }
         Update: {
-          course_id?: string
+          comments?: string | null
           created_at?: string
           employee_id?: string
           id?: string
-          progress?: number | null
+          rating?: number | null
+          review_date?: string
+          reviewer_id?: string | null
           status?: string
         }
         Relationships: [
           {
-            foreignKeyName: "course_enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "course_enrollments_employee_id_fkey"
+            foreignKeyName: "performance_reviews_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "performance_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -713,122 +713,123 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "hr_manager", "employee"],
       employee_status: ["active", "inactive", "on_leave", "terminated"],
+      leave_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },
 } as const
