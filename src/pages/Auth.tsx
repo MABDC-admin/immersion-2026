@@ -1,45 +1,50 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const authSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function Auth() {
   const navigate = useNavigate();
   const { user, signIn, signUp, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [companyName, setCompanyName] = useState('Immersion HRMS');
+  const [companyName, setCompanyName] = useState("Immersion HRMS");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, isLoading, navigate]);
 
   useEffect(() => {
-    supabase.from('company_settings').select('name, logo_url').limit(1).maybeSingle().then(({ data }) => {
-      if (data?.name) setCompanyName(data.name);
-      if (data?.logo_url) setLogoUrl(data.logo_url);
-    });
+    supabase
+      .from("company_settings")
+      .select("name, logo_url")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.name) setCompanyName(data.name);
+        if (data?.logo_url) setLogoUrl(data.logo_url);
+      });
   }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = authSchema.safeParse({ email, password });
     if (!result.success) {
       toast.error(result.error.errors[0].message);
@@ -51,20 +56,20 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password");
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Welcome back!');
-      navigate('/');
+      toast.success("Welcome back!");
+      navigate("/");
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = authSchema.safeParse({ email, password });
     if (!result.success) {
       toast.error(result.error.errors[0].message);
@@ -76,14 +81,14 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        toast.error('This email is already registered. Please sign in instead.');
+      if (error.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created successfully! You can now sign in.');
-      navigate('/');
+      toast.success("Account created successfully! You can now sign in.");
+      navigate("/");
     }
   };
 
@@ -101,7 +106,7 @@ export default function Auth() {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
       </div>
-      
+
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0">
         <CardHeader className="text-center pb-2">
           {logoUrl ? (
@@ -114,9 +119,7 @@ export default function Auth() {
             </div>
           )}
           <CardTitle className="text-2xl font-bold">{companyName}</CardTitle>
-          <CardDescription>
-            Human Resource Management System
-          </CardDescription>
+          <CardDescription>Work Immersion Program</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -124,7 +127,7 @@ export default function Auth() {
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
@@ -149,16 +152,12 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Signing in...' : 'Sign In'}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
@@ -183,12 +182,8 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating account...' : 'Create Account'}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </TabsContent>
