@@ -500,7 +500,6 @@ export type Database = {
           email: string
           employee_id: string | null
           first_name: string
-          has_completed_tutorial: boolean
           hire_date: string
           id: string
           job_title: string | null
@@ -525,7 +524,6 @@ export type Database = {
           email: string
           employee_id?: string | null
           first_name: string
-          has_completed_tutorial?: boolean
           hire_date?: string
           id?: string
           job_title?: string | null
@@ -550,7 +548,6 @@ export type Database = {
           email?: string
           employee_id?: string | null
           first_name?: string
-          has_completed_tutorial?: boolean
           hire_date?: string
           id?: string
           job_title?: string | null
