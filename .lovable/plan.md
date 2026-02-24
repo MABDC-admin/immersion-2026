@@ -1,57 +1,43 @@
 
 
-# Plan: Direct Password Reset with Generated Password
+# Plan: Remove Clock In/Out from Employee Mobile View & Remove Lovable Tagger
 
-## Overview
-Instead of sending a password reset link (which requires the user to click a link and choose a new password), the system will generate a random 8-character password and email it directly to the user. The admin clicks "Reset Password", a new password is generated, updated on the account, and emailed to the employee.
+## 1. Remove Clock In/Out from Employee Dashboard (Mobile View)
 
-## How It Works
+The employee dashboard currently shows attendance-related cards in `TodaySummaryCards.tsx` -- a "Check-in" time card and a "Target Progress" hours card. These will be removed entirely since clock-in/out has been removed from the employee dashboard.
 
-1. Admin clicks the reset password button in User Management
-2. A new edge function generates a random 8-character password (uppercase + lowercase + numbers)
-3. The function uses the admin API to update the user's password directly
-4. The function sends the new password via email using the existing branded email template
-5. Admin sees a success message
+Additionally, the "View Attendance History" quick navigation link will be removed from the dashboard, and the "Attendance" item will be removed from the mobile bottom navigation bar.
 
-## Changes
+### Files to modify:
 
-### 1. New Backend Function: `reset-user-password`
-Creates a new backend function that:
-- Accepts `userId`, `email`, `firstName`, and `lastName`
-- Generates a random 8-character password with at least 1 uppercase, 1 lowercase, and 1 number
-- Uses the Admin API to update the user's password
-- Sends the new password via a branded email using Resend (reusing the company settings and email template pattern from the existing onboarding email function)
+- **`src/components/profile/TodaySummaryCards.tsx`** -- Remove the "Check-in" card (showing clock-in time) and the "Target Progress" card (showing cumulative hours). Replace with leave balance and training summary cards instead (using the data already passed as props).
 
-### 2. Update `supabase/config.toml`
-Add the new function configuration with `verify_jwt = false`.
+- **`src/components/profile/EmployeeDashboardView.tsx`** -- Remove the `useTodayAttendance` and `useAttendance` imports/hooks since they're no longer needed. Remove the `attendance` and `allAttendance` props from `TodaySummaryCards`. Remove the "View Attendance History" quick navigation link card.
 
-### 3. Update `UserManagementTab.tsx`
-Change `handlePasswordReset` to call the new `reset-user-password` function instead of `supabase.auth.resetPasswordForEmail()`. Pass `userId`, `email`, `firstName`, and `lastName` so the email can be personalized.
+- **`src/components/layout/BottomNav.tsx`** -- Remove the "Attendance" nav item (Clock icon, `/attendance` route) from the mobile bottom navigation.
+
+## 2. Remove Lovable Tagger Permanently
+
+The `lovable-tagger` plugin in `vite.config.ts` adds development-time component tagging. It will be removed entirely.
+
+### File to modify:
+
+- **`vite.config.ts`** -- Remove the `import { componentTagger } from "lovable-tagger"` line and remove `mode === "development" && componentTagger()` from the plugins array. Also fix the port from `8081` to `8080`.
 
 ## Technical Details
 
-### Password Generation Logic
+### TodaySummaryCards new content:
+The two cards will show:
+1. **Leave Balance** -- Total remaining leave days (already available via `leaveBalances` prop)
+2. **Active Training** -- Number of in-progress training courses (already available via `enrollments` prop)
+
+### BottomNav updated items:
 ```text
-Characters: A-Z, a-z, 0-9
-Length: 8 characters
-Guarantee: at least 1 uppercase, 1 lowercase, 1 digit
-Example output: "Kd7mRp2x"
+Home | Chat | Training | Profile
 ```
+(Attendance removed, 4 items instead of 5)
 
-### Edge Function Flow
-```text
-1. Receive { userId, email, firstName, lastName }
-2. Generate 8-char password
-3. supabaseAdmin.auth.admin.updateUserById(userId, { password })
-4. Fetch company_settings for branding
-5. Send email via Resend with new credentials
-6. Return success/error
+### vite.config.ts plugins:
+```typescript
+plugins: [react()],
 ```
-
-### Email Content
-The email will use the same branded template as onboarding emails, showing:
-- A greeting to the employee by name
-- The new password in a styled credentials box
-- A login button linking to the portal
-- A reminder to change the password after first login
-
