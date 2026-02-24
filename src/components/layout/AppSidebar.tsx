@@ -71,6 +71,13 @@ const navItems: NavItem[] = [
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
 
+// Supervisor-specific nav: only Dashboard, Interns (employee detail), and Evaluations
+const supervisorNavItems: NavItem[] = [
+  { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', employeeVisible: true },
+  { title: 'Interns', icon: Users, href: '__SUPERVISOR_PORTAL__', employeeVisible: true },
+  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: true },
+];
+
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin, userRole } = useAuth();
@@ -101,25 +108,23 @@ export function AppSidebar() {
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
 
-  const filteredItems = [...navItems];
+  const isSupervisor = employee?.job_title?.toLowerCase().includes('supervisor') && !isAdminOrHR;
 
-  // If we have an employee record, add "My Portal" to the top
-  if (employee) {
-    filteredItems.unshift({
-      title: 'My Portal',
-      icon: User,
-      href: `/employees/${employee.id}`,
-      employeeVisible: true,
+  const finalFilteredItems = (() => {
+    if (isSupervisor) {
+      return supervisorNavItems.map(item => {
+        if (item.href === '__SUPERVISOR_PORTAL__' && employee) {
+          return { ...item, href: `/employees/${employee.id}` };
+        }
+        return item;
+      });
+    }
+    return [...navItems].filter(item => {
+      if (item.adminOnly && !isAdmin) return false;
+      if (!isAdminOrHR && !item.employeeVisible) return false;
+      return true;
     });
-  }
-
-  // For regular employees: only show items marked employeeVisible
-  // For admin/HR: show everything except adminOnly (unless admin)
-  const finalFilteredItems = filteredItems.filter(item => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (!isAdminOrHR && !item.employeeVisible) return false;
-    return true;
-  });
+  })();
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">
