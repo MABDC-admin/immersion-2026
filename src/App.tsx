@@ -32,6 +32,9 @@ import PublicJobApplication from "./pages/careers/PublicJobApplication";
 // Admin
 import AdminPanel from "./pages/admin/AdminPanel";
 
+// Evaluations
+import EvaluationsPage from "./pages/evaluations/Evaluations";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -87,6 +90,9 @@ const App = () => (
 
             {/* Admin */}
             <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+
+            {/* Evaluations */}
+            <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

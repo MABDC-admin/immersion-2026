@@ -17,7 +17,9 @@ import {
   LayoutDashboard,
   ClipboardList,
   GraduationCap,
-  History
+  History,
+  Users,
+  ClipboardCheck
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,6 +58,10 @@ import { AvatarUpload } from '@/components/employees/AvatarUpload';
 import { DocumentUpload } from '@/components/employees/DocumentUpload';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
 import { CreateLeaveModal } from '@/components/leave/CreateLeaveModal';
+import { InternsList } from '@/components/supervisor/InternsList';
+import { EvaluationForm } from '@/components/evaluations/EvaluationForm';
+import { EvaluationDetail } from '@/components/evaluations/EvaluationDetail';
+import { useEvaluations, InternEvaluation } from '@/hooks/useEvaluations';
 import { format } from 'date-fns';
 
 const statusColors = {
@@ -89,6 +95,10 @@ export default function EmployeeDetail() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isEvalFormOpen, setIsEvalFormOpen] = useState(false);
+  const [preselectedInternId, setPreselectedInternId] = useState<string | null>(null);
+  const [selectedEvalView, setSelectedEvalView] = useState<InternEvaluation | null>(null);
+  const [selectedEvalEdit, setSelectedEvalEdit] = useState<InternEvaluation | null>(null);
 
   // Tabs Data
   const { data: attendanceHistory = [] } = useAttendance(id || '');
@@ -131,6 +141,20 @@ export default function EmployeeDetail() {
   const tenure = tenureYears > 0
     ? `${tenureYears} Year${tenureYears !== 1 ? 's' : ''} ${tenureMonths} Month${tenureMonths !== 1 ? 's' : ''}`
     : `${tenureMonths} Month${tenureMonths !== 1 ? 's' : ''}`;
+
+  // Supervisor detection
+  const isSupervisor = employee?.job_title?.toLowerCase().includes('supervisor');
+  const isViewingOwnProfile = employee?.user_id === user?.id;
+  const showSupervisorTabs = isSupervisor && isViewingOwnProfile;
+
+  // Evaluations data for supervisor tab
+  const { data: evaluations = [] } = useEvaluations(showSupervisorTabs ? employee.id : '');
+
+  const handleEvaluateIntern = (internId: string) => {
+    setPreselectedInternId(internId);
+    setSelectedEvalEdit(null);
+    setIsEvalFormOpen(true);
+  };
 
   const handleDelete = async () => {
     await deleteEmployee.mutateAsync(employee.id);
@@ -264,175 +288,223 @@ export default function EmployeeDetail() {
           </Card>
 
           <div className="flex-1 w-full min-w-0">
-            <Tabs defaultValue="dashboard" className="space-y-6 w-full">
+            <Tabs defaultValue={showSupervisorTabs ? "interns" : "dashboard"} className="space-y-6 w-full">
               <div className="sticky top-0 z-10 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b lg:border-none lg:p-0 lg:static overflow-hidden">
                 <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/40 no-scrollbar flex-nowrap scrollbar-hide">
-                  <TabsTrigger value="dashboard" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                    <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Dash
-                  </TabsTrigger>
-                  <TabsTrigger value="profile" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                    <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Profile
-                  </TabsTrigger>
-                  <TabsTrigger value="attendance" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Attendance
-                  </TabsTrigger>
-                  <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                    <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Leave
-                  </TabsTrigger>
-                  <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                    <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Training
-                  </TabsTrigger>
+                  {showSupervisorTabs ? (
+                    <>
+                      <TabsTrigger value="interns" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Interns
+                      </TabsTrigger>
+                      <TabsTrigger value="evaluations" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <ClipboardCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Evaluations
+                      </TabsTrigger>
+                      <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Leave
+                      </TabsTrigger>
+                      <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Training
+                      </TabsTrigger>
+                    </>
+                  ) : (
+                    <>
+                      <TabsTrigger value="dashboard" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Dash
+                      </TabsTrigger>
+                      <TabsTrigger value="profile" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Profile
+                      </TabsTrigger>
+                      <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Leave
+                      </TabsTrigger>
+                      <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Training
+                      </TabsTrigger>
+                    </>
+                  )}
                 </TabsList>
               </div>
 
-              <TabsContent value="dashboard" className="space-y-6">
-                <EmployeeDashboardView
-                  employeeId={id || ''}
-                  onUpdateProfile={() => setIsEditModalOpen(true)}
-                />
-              </TabsContent>
+              {/* Supervisor-only tabs */}
+              {showSupervisorTabs && (
+                <>
+                  <TabsContent value="interns" className="space-y-6">
+                    <Card className="border-l-4 border-l-primary shadow-sm">
+                      <CardHeader className="flex flex-row items-center justify-between pb-3">
+                        <CardTitle className="text-lg font-bold">Assigned Interns</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <InternsList supervisorId={employee.id} onEvaluate={handleEvaluateIntern} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-              <TabsContent value="profile" className="space-y-6 focus-visible:outline-none">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-l-4 border-l-primary shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-bold">Personal Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">First Name</p>
-                          <p className="text-sm font-medium">{employee.first_name}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Last Name</p>
-                          <p className="text-sm font-medium">{employee.last_name}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase font-medium">Email Address</p>
-                        <p className="text-sm font-medium">{employee.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase font-medium">Residential Address</p>
-                        <p className="text-sm font-medium">
-                          {[employee.address, employee.city, employee.country].filter(Boolean).join(', ') || 'Not provided'}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-l-4 border-l-hrms-warning shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-bold">Work Context</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Job Title</p>
-                          <p className="text-sm font-medium">{employee.job_title || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Department</p>
-                          <p className="text-sm font-medium">{employee.department?.name || 'Unassigned'}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Reporting Manager</p>
-                          <p className="text-sm font-medium">
-                            {employee.manager ? `${employee.manager.first_name} ${employee.manager.last_name}` : 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Base Location</p>
-                          <p className="text-sm font-medium">
-                            {employee.location ? `${employee.location.name} (${employee.location.city})` : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Hire Date</p>
-                          <p className="text-sm font-medium">{format(new Date(employee.hire_date), 'MMMM d, yyyy')}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-medium">Current Tenure</p>
-                          <p className="text-sm font-medium">{tenure}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="lg:col-span-2 border-l-4 border-l-hrms-success shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-bold">Employment Documents</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <DocumentUpload
-                        documents={documents}
-                        onUpload={handleDocumentUpload}
-                        onDelete={(doc) => deleteDocument.mutate({
-                          id: doc.id,
-                          filePath: doc.file_path,
-                          employeeId: employee.id
-                        })}
-                        onDownload={(doc) => downloadDocument.mutate({
-                          filePath: doc.file_path,
-                          fileName: doc.file_name
-                        })}
-                        isUploading={uploadDocument.isPending}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="attendance" className="space-y-6 focus-visible:outline-none">
-                <Card className="border-l-4 border-l-primary shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Attendance History</CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 sm:px-6">
-                    <div className="space-y-3">
-                      {attendanceHistory.map((record) => (
-                        <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card gap-2 shadow-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-primary/5">
-                              <Calendar className="h-4 w-4 text-primary" />
+                  <TabsContent value="evaluations" className="space-y-6">
+                    <Card className="border-l-4 border-l-primary shadow-sm">
+                      <CardHeader className="flex flex-row items-center justify-between pb-3">
+                        <CardTitle className="text-lg font-bold">DEPED Evaluations</CardTitle>
+                        <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={() => { setSelectedEvalEdit(null); setPreselectedInternId(null); setIsEvalFormOpen(true); }}>
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          New Evaluation
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="px-3 sm:px-6">
+                        <div className="space-y-3">
+                          {evaluations.map((ev) => (
+                            <div key={ev.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card gap-2 shadow-sm">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold">
+                                    {ev.intern ? `${ev.intern.first_name} ${ev.intern.last_name}` : 'Unknown'}
+                                  </span>
+                                  <Badge variant="outline" className={cn(
+                                    "text-[9px] font-bold uppercase px-2 rounded-full",
+                                    ev.status === 'submitted' ? 'text-primary border-primary/20' :
+                                    ev.status === 'finalized' ? 'text-hrms-success border-hrms-success/20' : 'text-muted-foreground'
+                                  )}>
+                                    {ev.status}
+                                  </Badge>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {format(new Date(ev.evaluation_period_start), 'MMM d')} – {format(new Date(ev.evaluation_period_end), 'MMM d, yyyy')}
+                                  {ev.overall_rating && ` • Rating: ${Number(ev.overall_rating).toFixed(2)}/5`}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSelectedEvalView(ev)}>View</Button>
+                                {ev.status === 'draft' && (
+                                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setSelectedEvalEdit(ev); setPreselectedInternId(null); setIsEvalFormOpen(true); }}>Edit</Button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold">{format(new Date(record.date), 'EEE, MMM d')}</span>
-                              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
-                                {record.clock_in ? format(new Date(record.clock_in), 'hh:mm a') : 'Missed'} -
-                                {record.clock_out ? format(new Date(record.clock_out), ' hh:mm a') : ' Pending'}
-                              </span>
+                          ))}
+                          {evaluations.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-8">No evaluations yet. Create one from the Interns tab.</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </>
+              )}
+
+              {/* Non-supervisor tabs */}
+              {!showSupervisorTabs && (
+                <>
+                  <TabsContent value="dashboard" className="space-y-6">
+                    <EmployeeDashboardView
+                      employeeId={id || ''}
+                      onUpdateProfile={() => setIsEditModalOpen(true)}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="profile" className="space-y-6 focus-visible:outline-none">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="border-l-4 border-l-primary shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-bold">Personal Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">First Name</p>
+                              <p className="text-sm font-medium">{employee.first_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Last Name</p>
+                              <p className="text-sm font-medium">{employee.last_name}</p>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto">
-                            <span className="text-[10px] sm:hidden text-muted-foreground font-medium italic">Status:</span>
-                            <Badge variant="outline" className={cn(
-                              "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
-                              record.status === 'present' ? 'text-hrms-success border-hrms-success/20 bg-hrms-success/5' : 'text-muted-foreground bg-muted/50'
-                            )}>
-                              {record.status}
-                            </Badge>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase font-medium">Email Address</p>
+                            <p className="text-sm font-medium">{employee.email}</p>
                           </div>
-                        </div>
-                      ))}
-                      {attendanceHistory.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-8">No attendance records found</p>
-                      )}
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase font-medium">Residential Address</p>
+                            <p className="text-sm font-medium">
+                              {[employee.address, employee.city, employee.country].filter(Boolean).join(', ') || 'Not provided'}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-l-4 border-l-hrms-warning shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-bold">Work Context</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Job Title</p>
+                              <p className="text-sm font-medium">{employee.job_title || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Department</p>
+                              <p className="text-sm font-medium">{employee.department?.name || 'Unassigned'}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Reporting Manager</p>
+                              <p className="text-sm font-medium">
+                                {employee.manager ? `${employee.manager.first_name} ${employee.manager.last_name}` : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Base Location</p>
+                              <p className="text-sm font-medium">
+                                {employee.location ? `${employee.location.name} (${employee.location.city})` : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Hire Date</p>
+                              <p className="text-sm font-medium">{format(new Date(employee.hire_date), 'MMMM d, yyyy')}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase font-medium">Current Tenure</p>
+                              <p className="text-sm font-medium">{tenure}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="lg:col-span-2 border-l-4 border-l-hrms-success shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-bold">Employment Documents</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <DocumentUpload
+                            documents={documents}
+                            onUpload={handleDocumentUpload}
+                            onDelete={(doc) => deleteDocument.mutate({
+                              id: doc.id,
+                              filePath: doc.file_path,
+                              employeeId: employee.id
+                            })}
+                            onDownload={(doc) => downloadDocument.mutate({
+                              filePath: doc.file_path,
+                              fileName: doc.file_name
+                            })}
+                            isUploading={uploadDocument.isPending}
+                          />
+                        </CardContent>
+                      </Card>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </TabsContent>
+                </>
+              )}
 
+              {/* Shared tabs: Leave & Training */}
               <TabsContent value="leave" className="space-y-6 focus-visible:outline-none">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-1 space-y-6">
@@ -558,6 +630,23 @@ export default function EmployeeDetail() {
         open={isLeaveModalOpen}
         onOpenChange={setIsLeaveModalOpen}
       />
+
+      {showSupervisorTabs && (
+        <>
+          <EvaluationForm
+            open={isEvalFormOpen}
+            onOpenChange={setIsEvalFormOpen}
+            evaluatorId={employee.id}
+            evaluation={selectedEvalEdit}
+            preselectedInternId={preselectedInternId}
+          />
+          <EvaluationDetail
+            open={!!selectedEvalView}
+            onOpenChange={() => setSelectedEvalView(null)}
+            evaluation={selectedEvalView}
+          />
+        </>
+      )}
     </MainLayout>
   );
 }

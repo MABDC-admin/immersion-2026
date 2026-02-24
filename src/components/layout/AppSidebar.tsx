@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Clock, UserPlus, TrendingUp,
-  UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield, User,
+  UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield, User, ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -67,6 +67,7 @@ const navItems: NavItem[] = [
       { title: 'Certificates', href: '/training/certificates' },
     ],
   },
+  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: false },
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
 
