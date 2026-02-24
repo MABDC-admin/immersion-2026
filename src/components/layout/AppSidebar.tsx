@@ -128,12 +128,29 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r-0" collapsible="icon">
       <SidebarHeader className="p-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <span className="text-lg font-bold text-sidebar-primary-foreground">IM</span>
+        {isSupervisor && employee ? (
+          <div className="flex flex-col items-center gap-2 py-2">
+            <Avatar className={cn("ring-2 ring-sidebar-primary/30", collapsed ? "h-10 w-10" : "h-20 w-20")}>
+              <AvatarImage src={employee.avatar_url || ''} alt={`${employee.first_name} ${employee.last_name}`} />
+              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-lg">
+                {`${employee.first_name[0]}${employee.last_name[0]}`.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <div className="text-center">
+                <p className="text-sm font-semibold text-sidebar-foreground">{employee.first_name} {employee.last_name}</p>
+                <p className="text-xs text-sidebar-foreground/60">{employee.job_title || 'Supervisor'}</p>
+              </div>
+            )}
           </div>
-          {!collapsed && <span className="text-xl font-bold text-sidebar-foreground">LOGO</span>}
-        </Link>
+        ) : (
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+              <span className="text-lg font-bold text-sidebar-primary-foreground">IM</span>
+            </div>
+            {!collapsed && <span className="text-xl font-bold text-sidebar-foreground">LOGO</span>}
+          </Link>
+        )}
       </SidebarHeader>
 
       <SidebarContent className="px-2">
