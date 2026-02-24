@@ -35,18 +35,27 @@ export function UserManagementTab() {
     updateRole.mutate({ userId, role });
   };
 
-  const handlePasswordReset = async (email: string | undefined, userId: string) => {
+  const handlePasswordReset = async (profile: any) => {
+    const email = profile.email;
     if (!email) {
       toast.error('No email found for this user');
       return;
     }
-    setResettingId(userId);
+    setResettingId(profile.user_id);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: {
+          userId: profile.user_id,
+          email,
+          firstName: profile.first_name || '',
+          lastName: profile.last_name || '',
+        },
+      });
       if (error) throw error;
-      toast.success(`Password reset email sent to ${email}`);
+      if (data?.error) throw new Error(data.error);
+      toast.success(`New password sent to ${email}`);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to send reset email');
+      toast.error(e.message || 'Failed to reset password');
     } finally {
       setResettingId(null);
     }
@@ -108,7 +117,7 @@ export function UserManagementTab() {
                     size="icon"
                     title="Send password reset"
                     disabled={resettingId === profile.user_id}
-                    onClick={() => handlePasswordReset(profile.email, profile.user_id)}
+                    onClick={() => handlePasswordReset(profile)}
                   >
                     <KeyRound className="h-4 w-4" />
                   </Button>
