@@ -23,8 +23,10 @@ export function useAllProfiles() {
       if (error) throw error;
       const { data: roles, error: rolesError } = await supabase.from('user_roles').select('*');
       if (rolesError) throw rolesError;
+      const { data: employees } = await supabase.from('employees').select('user_id, email');
       const roleMap = new Map(roles.map(r => [r.user_id, r.role]));
-      return profiles.map(p => ({ ...p, role: roleMap.get(p.user_id) || 'employee' })) as UserWithRole[];
+      const emailMap = new Map(employees?.map(e => [e.user_id, e.email]) || []);
+      return profiles.map(p => ({ ...p, role: roleMap.get(p.user_id) || 'employee', email: emailMap.get(p.user_id) || undefined })) as UserWithRole[];
     },
   });
 }
