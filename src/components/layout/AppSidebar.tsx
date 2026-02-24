@@ -74,6 +74,7 @@ const navItems: NavItem[] = [
 // Supervisor-specific nav: only Interns and Evaluations (no Dashboard)
 const supervisorNavItems: NavItem[] = [
   { title: 'Interns', icon: Users, href: '__SUPERVISOR_PORTAL__', employeeVisible: true },
+  { title: 'Attendance', icon: Clock, href: '/supervisor/attendance', employeeVisible: true },
   { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: true },
 ];
 

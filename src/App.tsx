@@ -17,6 +17,8 @@ import LeaveRequests from "./pages/leave/Requests";
 import LeaveCalendar from "./pages/leave/Calendar";
 import Attendance from "./pages/attendance/Attendance";
 import Timesheets from "./pages/attendance/Timesheets";
+import SupervisorAttendance from "./pages/attendance/SupervisorAttendance";
+import AttendanceKiosk from "./pages/attendance/AttendanceKiosk";
 import JobPostings from "./pages/recruitment/Jobs";
 import Candidates from "./pages/recruitment/Candidates";
 import PerformanceReviews from "./pages/performance/Reviews";
@@ -49,6 +51,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/careers" element={<CareersPage />} />
             <Route path="/careers/:jobId" element={<PublicJobApplication />} />
+            <Route path="/kiosk/:supervisorId" element={<AttendanceKiosk />} />
 
             <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -68,6 +71,7 @@ const App = () => (
             <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
             <Route path="/attendance/timesheets" element={<ProtectedRoute><Timesheets /></ProtectedRoute>} />
             <Route path="/attendance/reports" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+            <Route path="/supervisor/attendance" element={<ProtectedRoute><SupervisorAttendance /></ProtectedRoute>} />
 
             {/* Recruitment Module */}
             <Route path="/recruitment/jobs" element={<ProtectedRoute><JobPostings /></ProtectedRoute>} />
