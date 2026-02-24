@@ -610,6 +610,90 @@ export type Database = {
         }
         Relationships: []
       }
+      intern_evaluations: {
+        Row: {
+          adaptability: number | null
+          attendance_punctuality: number | null
+          comments: string | null
+          communication_skills: number | null
+          created_at: string
+          evaluation_date: string
+          evaluation_period_end: string
+          evaluation_period_start: string
+          evaluator_id: string
+          id: string
+          initiative_creativity: number | null
+          intern_id: string
+          overall_rating: number | null
+          professionalism: number | null
+          recommendations: string | null
+          status: string
+          teamwork_cooperation: number | null
+          updated_at: string
+          work_quality: number | null
+          work_quantity: number | null
+        }
+        Insert: {
+          adaptability?: number | null
+          attendance_punctuality?: number | null
+          comments?: string | null
+          communication_skills?: number | null
+          created_at?: string
+          evaluation_date?: string
+          evaluation_period_end: string
+          evaluation_period_start: string
+          evaluator_id: string
+          id?: string
+          initiative_creativity?: number | null
+          intern_id: string
+          overall_rating?: number | null
+          professionalism?: number | null
+          recommendations?: string | null
+          status?: string
+          teamwork_cooperation?: number | null
+          updated_at?: string
+          work_quality?: number | null
+          work_quantity?: number | null
+        }
+        Update: {
+          adaptability?: number | null
+          attendance_punctuality?: number | null
+          comments?: string | null
+          communication_skills?: number | null
+          created_at?: string
+          evaluation_date?: string
+          evaluation_period_end?: string
+          evaluation_period_start?: string
+          evaluator_id?: string
+          id?: string
+          initiative_creativity?: number | null
+          intern_id?: string
+          overall_rating?: number | null
+          professionalism?: number | null
+          recommendations?: string | null
+          status?: string
+          teamwork_cooperation?: number | null
+          updated_at?: string
+          work_quality?: number | null
+          work_quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intern_evaluations_evaluator_id_fkey"
+            columns: ["evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intern_evaluations_intern_id_fkey"
+            columns: ["intern_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_postings: {
         Row: {
           created_at: string
