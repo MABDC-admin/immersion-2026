@@ -6,7 +6,7 @@ import { AnnouncementsWidget } from './AnnouncementsWidget';
 import { MyTasksWidget } from './MyTasksWidget';
 import { CalendarPreview } from './CalendarPreview';
 import { CreateLeaveModal } from '@/components/leave/CreateLeaveModal';
-import { useAttendance, useTodayAttendance } from '@/hooks/useAttendance';
+
 import { useLeaveRequests } from '@/hooks/useLeave';
 import { useEnrollments } from '@/hooks/useTraining';
 import { useLeaveBalances, useAnnouncements } from '@/hooks/useDashboard';
@@ -14,7 +14,7 @@ import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight } from 'lucide-react';
 
 interface EmployeeDashboardViewProps {
     employeeId: string;
@@ -26,8 +26,6 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
     const { data: employee } = useCurrentEmployee(user?.id || '');
 
     // Dashboard Data
-    const { data: todayAttendance } = useTodayAttendance(employeeId);
-    const { data: allAttendance = [] } = useAttendance(employeeId);
     const { data: leaveRequests = [] } = useLeaveRequests(employeeId);
     const { data: leaveBalances = [] } = useLeaveBalances(employeeId);
     const { data: enrollments = [] } = useEnrollments(employeeId);
@@ -52,8 +50,6 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
             )}
 
             <TodaySummaryCards
-                attendance={todayAttendance}
-                allAttendance={allAttendance}
                 leaveBalances={leaveBalances}
                 enrollments={enrollments}
             />
@@ -65,7 +61,6 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                         onUpdateProfile={onUpdateProfile || (() => { })}
                     />
 
-                    {/* Quick Navigation Links */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Link to="/leave/requests">
                             <Card className="hover:bg-accent/50 transition-all cursor-pointer shadow-sm hover:shadow-md border border-muted/20">
@@ -75,19 +70,6 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                                             <Calendar className="h-6 w-6 text-primary" />
                                         </div>
                                         <span className="text-sm font-semibold">View Leave Calendar</span>
-                                    </div>
-                                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-50" />
-                                </CardContent>
-                            </Card>
-                        </Link>
-                        <Link to="/attendance">
-                            <Card className="hover:bg-accent/50 transition-all cursor-pointer shadow-sm hover:shadow-md border border-muted/20">
-                                <CardContent className="flex items-center justify-between p-5">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-2 rounded-lg bg-primary/10">
-                                            <Clock className="h-6 w-6 text-primary" />
-                                        </div>
-                                        <span className="text-sm font-semibold">View Attendance History</span>
                                     </div>
                                     <ArrowRight className="h-4 w-4 text-muted-foreground opacity-50" />
                                 </CardContent>
