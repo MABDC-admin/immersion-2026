@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Clock, MessageSquare, GraduationCap, User } from 'lucide-react';
+import { Home, MessageSquare, GraduationCap, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
@@ -15,11 +15,6 @@ export function BottomNav() {
             label: 'Home',
             icon: Home,
             to: '/dashboard',
-        },
-        {
-            label: 'Attendance',
-            icon: Clock,
-            to: '/attendance',
         },
         {
             label: 'Chat',
