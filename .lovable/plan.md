@@ -1,118 +1,194 @@
 
 
-# Plan: Restructure Application Roles and Dashboards
+# Plan: Restructure Supervisor Dashboard + Intern Module + DEPED Evaluation System
 
 ## Overview
 
-This plan restructures the dashboard experience by creating separate, clean views for Admin/Supervisor users vs. Intern/Employee users. It removes unnecessary widgets from the Admin dashboard, cleans up intern portals, and treats Supervisor as Admin-level access.
+This plan restructures the Supervisor portal (employee detail page) by removing unnecessary tabs, adding an "Interns" module to display assigned applicants, and creating a comprehensive DEPED Senior High School Immersion Evaluation system with proper database tables.
 
-## Changes
+## Current State
 
-### 1. Role Management - Treat Supervisor as Admin (`src/hooks/useAuth.tsx`)
+- Supervisors (Sheila Mae, Dennis, Glorie Ann, Eulogio, Myranel) have `job_title: "Supervisor"` but most have `role: "employee"` in `user_roles`
+- The `employees` table already has a `manager_id` column, but all values are currently `NULL` -- no supervisor-intern relationships exist yet
+- The employee portal (`/employees/:id`) shows tabs: Dashboard, Profile, Attendance, Leave, Training
+- Interns (Julian Magboo, Rome Anthony Dadula) exist but aren't linked to supervisors
 
-- Add `'manager'` (Supervisor) to the `isAdmin` check so Supervisors get Admin-level privileges
-- Change: `const isAdmin = userRole === 'admin' || userRole === 'manager';`
-- This gives Supervisors full access to manage assistant interns and all admin features
+## Database Changes
 
-### 2. Redesign Admin Dashboard (`src/pages/Dashboard.tsx`)
+### 1. Create `intern_evaluations` table
 
-Remove from Admin view:
-- `AdminAssignRole` component (the "Assign Role" button at the top)
-- `EmployeeDashboardView` (which contains leave balance, quick actions with "Request Leave", "My Tasks", "Schedule Preview")
-- `QuickActionsWidget` (the bottom quick actions grid)
-- `MakeAdminCard`
-- `TutorialDialog` (not relevant for admin)
+This table stores DEPED Senior High School Work Immersion evaluation records:
 
-Keep for Admin view (clean organizational overview):
-- Animated stat cards (Total Employees, Active, New Hires, On Leave)
-- Employee Status Chart
-- Department Distribution Chart
-- Recent Activity Widget
-- Upcoming Events Widget
+```text
+intern_evaluations
+-------------------------------
+id              (uuid, PK)
+intern_id       (uuid, FK -> employees.id)   -- the intern being evaluated
+evaluator_id    (uuid, FK -> employees.id)   -- the supervisor evaluating
+evaluation_date (date)
+evaluation_period_start (date)
+evaluation_period_end   (date)
+status          (text: draft, submitted, finalized)
+-- DEPED Criteria Scores (1-5 scale)
+attendance_punctuality    (integer)
+work_quality              (integer)
+work_quantity             (integer)
+initiative_creativity     (integer)
+teamwork_cooperation      (integer)
+communication_skills      (integer)
+professionalism           (integer)
+adaptability              (integer)
+overall_rating            (numeric, computed average)
+comments                  (text)
+recommendations           (text)
+created_at, updated_at    (timestamps)
+```
 
-Add for Admin view:
-- A clean welcome header with role badge
-- Quick navigation buttons to Admin Panel, Employees, Recruitment, Onboarding
+### 2. RLS Policies for `intern_evaluations`
 
-### 3. Clean Up Intern/Employee Dashboard (`src/pages/Dashboard.tsx`)
+- Supervisors can manage evaluations for their assigned interns (where `evaluator_id` matches their employee record)
+- Admin/HR can manage all evaluations
+- Interns can view their own evaluations (read-only)
 
-For regular employees (interns), show only:
-- Welcome card (already exists in `EmployeeDashboardView`)
-- `TodaySummaryCards` (Leave Balance + Active Training)
-- `QuickActions` (Request Leave, Update Profile, View Payslip)
-- `AnnouncementsWidget`
-- `View Leave Calendar` link
+### 3. Enable Realtime for `intern_evaluations`
 
-Remove from Intern view:
-- `MakeAdminCard` (the "Upgrade Your Role" card) -- remove entirely
-- `AdminAssignRole`
-- `MyTasksWidget` (currently empty/non-functional)
-- `CalendarPreview` (Schedule Preview)
+For live updates when evaluations are submitted.
 
-### 4. Remove Leave Balance and Request Leave from Supervisor/Admin View
+## Frontend Changes
 
-Since Supervisors get Admin-level access, they will see the Admin dashboard which already does not show leave balance or request leave. The `EmployeeDashboardView` (containing those widgets) will only render for non-admin roles.
+### 1. Restructure Supervisor Portal Tabs (`src/pages/EmployeeDetail.tsx`)
 
-### 5. Sidebar Cleanup (`src/components/layout/AppSidebar.tsx`)
+Detect if the viewed employee is a Supervisor (by checking `job_title` or role). For Supervisors viewing their own portal:
 
-- Remove "Time Attendance" from the sidebar for employees (keep only for admin/HR)
-- Ensure Supervisors (managers) see all admin sidebar items since they now have admin-level access
-- Remove the `Leave Balance` sub-item from the Leave menu for admin/supervisor users
+**Remove:** Dashboard tab, Profile tab content simplification, Attendance tab
+**Keep:** Leave tab, Training tab
+**Add:** Interns tab (new), Evaluations tab (new)
 
-### 6. Remove Unnecessary Components
+Tab layout for Supervisors:
+```text
+[Interns] [Evaluations] [Leave] [Training]
+```
 
-- Remove `MakeAdminCard` usage entirely from Dashboard (security concern -- allows self-role-upgrade)
-- Remove `AdminAssignRole` from Dashboard (duplicates Admin Panel functionality)
+Tab layout for Interns (unchanged):
+```text
+[Dashboard] [Profile] [Leave] [Training]
+```
+
+Note: Attendance tab is removed from Intern view as well per the request.
+
+### 2. Create Interns Tab Component (`src/components/supervisor/InternsList.tsx`)
+
+- Query employees where `manager_id` equals the supervisor's employee ID
+- Display intern cards with: name, avatar, department, status, quick-evaluate button
+- Empty state when no interns are assigned
+
+### 3. Create Evaluation Page (`src/pages/evaluations/Evaluations.tsx`)
+
+A dedicated page at `/evaluations` (also embedded as a tab) with:
+
+- List of all evaluations created by the supervisor
+- Filter by intern, date range, status
+- Create New Evaluation button
+
+### 4. Create Evaluation Form Component (`src/components/evaluations/EvaluationForm.tsx`)
+
+DEPED Work Immersion evaluation form with:
+- Intern selector (from assigned interns)
+- Evaluation period date range
+- 8 criteria scored on a 1-5 scale with descriptive labels:
+  1. Attendance and Punctuality
+  2. Quality of Work
+  3. Quantity of Work
+  4. Initiative and Creativity
+  5. Teamwork and Cooperation
+  6. Communication Skills
+  7. Professionalism and Work Ethics
+  8. Adaptability and Flexibility
+- Auto-calculated overall rating (average)
+- Comments and Recommendations text areas
+- Save as Draft / Submit buttons
+
+### 5. Create Evaluation Detail/View Component (`src/components/evaluations/EvaluationDetail.tsx`)
+
+- Read-only view of a completed evaluation
+- Print-friendly layout for DEPED submission
+- Rating visualization with progress bars
+
+### 6. Create Hook (`src/hooks/useEvaluations.tsx`)
+
+- `useEvaluations(evaluatorId)` -- fetch evaluations by supervisor
+- `useInternEvaluations(internId)` -- fetch evaluations for an intern
+- `useCreateEvaluation()` -- mutation to create
+- `useUpdateEvaluation()` -- mutation to update
+- `useAssignedInterns(supervisorId)` -- fetch interns by manager_id
+
+### 7. Update Sidebar (`src/components/layout/AppSidebar.tsx`)
+
+Add "Evaluations" nav item visible to Supervisors (admin-level users):
+
+```text
+Evaluations (ClipboardCheck icon) -> /evaluations
+```
+
+### 8. Update Routes (`src/App.tsx`)
+
+Add route:
+```text
+/evaluations -> Protected -> EvaluationsPage
+```
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/supervisor/InternsList.tsx` | Interns grid for supervisor portal |
+| `src/components/evaluations/EvaluationForm.tsx` | DEPED evaluation form modal |
+| `src/components/evaluations/EvaluationDetail.tsx` | Read-only evaluation view |
+| `src/pages/evaluations/Evaluations.tsx` | Evaluations list page |
+| `src/hooks/useEvaluations.tsx` | Data hooks for evaluations and intern assignment |
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/hooks/useAuth.tsx` | Add manager to isAdmin check |
-| `src/pages/Dashboard.tsx` | Split into Admin vs Employee views, remove unnecessary widgets |
-| `src/components/profile/EmployeeDashboardView.tsx` | Remove MyTasksWidget and CalendarPreview |
-| `src/components/layout/AppSidebar.tsx` | Adjust sidebar visibility for supervisor=admin, clean up nav items |
+| `src/pages/EmployeeDetail.tsx` | Restructure tabs based on role (Supervisor vs Intern) |
+| `src/components/layout/AppSidebar.tsx` | Add Evaluations nav item |
+| `src/App.tsx` | Add /evaluations route |
 
 ## Technical Details
 
-### Dashboard.tsx restructured layout:
+### Supervisor Detection Logic
 
-```text
-Admin/Supervisor View:
-+---------------------------+
-| Welcome, [Name] (Admin)   |
-+---------------------------+
-| [Stats Grid - 4 cards]    |
-+---------------------------+
-| [Status Chart] [Dept Chart]|
-+---------------------------+
-| [Recent Activity] [Events] |
-+---------------------------+
-
-Employee/Intern View:
-+---------------------------+
-| Welcome, [Name]           |
-+---------------------------+
-| [Leave Balance] [Training] |
-+---------------------------+
-| [Request Leave] [Profile]  |
-| [View Payslip]             |
-+---------------------------+
-| [View Leave Calendar]      |
-+---------------------------+
-| [Announcements]            |
-+---------------------------+
+```typescript
+const isSupervisor = employee?.job_title?.toLowerCase().includes('supervisor');
+const isViewingOwnProfile = employee?.user_id === user?.id;
+const showSupervisorTabs = isSupervisor && isViewingOwnProfile;
 ```
 
-### Auth role mapping:
-```text
-Before: isAdmin = userRole === 'admin'
-After:  isAdmin = userRole === 'admin' || userRole === 'manager'
+### Intern Assignment Query
+
+```typescript
+// Fetch interns assigned to a supervisor
+const { data: interns } = useQuery({
+  queryKey: ['assigned-interns', supervisorId],
+  queryFn: async () => {
+    const { data } = await supabase
+      .from('employees')
+      .select('*, department:departments(name)')
+      .eq('manager_id', supervisorId);
+    return data;
+  }
+});
 ```
 
-This means Supervisors (role: manager) automatically get:
-- Admin Panel access
-- All sidebar navigation items
-- Organizational Overview dashboard
-- No leave balance / request leave in their dashboard
+### Evaluation Scoring
+
+Each criterion is scored 1-5:
+- 5 = Outstanding
+- 4 = Very Satisfactory  
+- 3 = Satisfactory
+- 2 = Needs Improvement
+- 1 = Poor
+
+Overall rating = average of all 8 criteria scores.
 
