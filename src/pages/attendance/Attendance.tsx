@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { Loader2, Play, Square, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +40,13 @@ export default function Attendance() {
     const filteredAttendance = isAdminOrHR
         ? attendance
         : attendance.filter(record => record.employee_id === employeeId);
+
+    const myAttendance = attendance.filter(record => record.employee_id === employeeId);
+    const totalMinutes = myAttendance.reduce((acc, record) => {
+        if (!record.clock_in || !record.clock_out) return acc;
+        return acc + differenceInMinutes(new Date(record.clock_out), new Date(record.clock_in));
+    }, 0);
+    const totalHoursDisplay = `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
 
     const getStatusBadge = (status: string) => {
         switch (status.toLowerCase()) {
@@ -104,6 +111,17 @@ export default function Attendance() {
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {todayRecord?.clock_in && `In: ${format(new Date(todayRecord.clock_in), 'hh:mm a')}`}
                                     {todayRecord?.clock_out && ` • Out: ${format(new Date(todayRecord.clock_out), 'hh:mm a')}`}
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Total Hours</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{totalHoursDisplay}</div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Across {myAttendance.filter(r => r.clock_in && r.clock_out).length} recorded day{myAttendance.filter(r => r.clock_in && r.clock_out).length !== 1 ? 's' : ''}
                                 </p>
                             </CardContent>
                         </Card>
