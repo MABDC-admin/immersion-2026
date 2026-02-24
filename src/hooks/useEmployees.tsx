@@ -424,7 +424,7 @@ export function useUpdateTutorialStatus() {
     mutationFn: async ({ employeeId, completed }: { employeeId: string; completed: boolean }) => {
       const { data, error } = await supabase
         .from('employees')
-        .update({ has_completed_tutorial: completed })
+        .update({ has_completed_tutorial: completed } as never)
         .eq('id', employeeId)
         .select()
         .single();
