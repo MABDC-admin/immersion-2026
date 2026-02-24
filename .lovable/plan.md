@@ -1,50 +1,57 @@
 
 
-# Plan: Fix Employee Dashboard & User Management
+# Plan: Direct Password Reset with Generated Password
 
-## Changes Overview
+## Overview
+Instead of sending a password reset link (which requires the user to click a link and choose a new password), the system will generate a random 8-character password and email it directly to the user. The admin clicks "Reset Password", a new password is generated, updated on the account, and emailed to the employee.
 
-### 1. Remove Clock In/Out from Employee Dashboard
-Remove the clock in/clock out buttons from the `QuickActions` component and the `EmployeeDashboardView`, keeping only Request Leave, Update Profile, and View Payslip.
+## How It Works
 
-**Files to modify:**
-- `src/components/profile/QuickActions.tsx` -- Remove `onClockIn`, `onClockOut`, `isClockedIn`, `isClocking` props and the clock in/out button
-- `src/components/profile/EmployeeDashboardView.tsx` -- Remove clock in/out related hooks and props passed to `QuickActions`
+1. Admin clicks the reset password button in User Management
+2. A new edge function generates a random 8-character password (uppercase + lowercase + numbers)
+3. The function uses the admin API to update the user's password directly
+4. The function sends the new password via email using the existing branded email template
+5. Admin sees a success message
 
-### 2. Fix "No email found" in User Management
-The `profiles` table does not have an `email` column. The `useAllProfiles` hook fetches profiles but never resolves the user's email, so `profile.email` is always undefined.
+## Changes
 
-**Fix:** Join the `employees` table (which has an `email` column) by matching `user_id`, and use the employee email for password resets.
+### 1. New Backend Function: `reset-user-password`
+Creates a new backend function that:
+- Accepts `userId`, `email`, `firstName`, and `lastName`
+- Generates a random 8-character password with at least 1 uppercase, 1 lowercase, and 1 number
+- Uses the Admin API to update the user's password
+- Sends the new password via a branded email using Resend (reusing the company settings and email template pattern from the existing onboarding email function)
 
-**File to modify:**
-- `src/hooks/useAdmin.tsx` -- In `useAllProfiles`, also fetch from `employees` table and map emails to profiles via `user_id`
+### 2. Update `supabase/config.toml`
+Add the new function configuration with `verify_jwt = false`.
 
-### 3. Fix Edge Function Build Errors
-All 5 errors are `'error' is of type 'unknown'` in catch blocks. Fix by casting to `Error` type.
-
-**Files to modify:**
-- `supabase/functions/create-employee-account/index.ts` -- `(error as Error).message`
-- `supabase/functions/send-onboarding-email/index.ts` -- `(error as Error).message`
-- `supabase/functions/sync-github-migrations/index.ts` -- `(err as Error).message` (3 occurrences)
+### 3. Update `UserManagementTab.tsx`
+Change `handlePasswordReset` to call the new `reset-user-password` function instead of `supabase.auth.resetPasswordForEmail()`. Pass `userId`, `email`, `firstName`, and `lastName` so the email can be personalized.
 
 ## Technical Details
 
-### QuickActions simplified props:
-```typescript
-interface QuickActionsProps {
-    onRequestLeave: () => void;
-    onUpdateProfile: () => void;
-}
+### Password Generation Logic
+```text
+Characters: A-Z, a-z, 0-9
+Length: 8 characters
+Guarantee: at least 1 uppercase, 1 lowercase, 1 digit
+Example output: "Kd7mRp2x"
 ```
 
-### Email resolution in useAllProfiles:
-```typescript
-const { data: employees } = await supabase.from('employees').select('user_id, email');
-const emailMap = new Map(employees?.map(e => [e.user_id, e.email]));
-return profiles.map(p => ({
-  ...p,
-  role: roleMap.get(p.user_id) || 'employee',
-  email: emailMap.get(p.user_id) || null
-}));
+### Edge Function Flow
+```text
+1. Receive { userId, email, firstName, lastName }
+2. Generate 8-char password
+3. supabaseAdmin.auth.admin.updateUserById(userId, { password })
+4. Fetch company_settings for branding
+5. Send email via Resend with new credentials
+6. Return success/error
 ```
+
+### Email Content
+The email will use the same branded template as onboarding emails, showing:
+- A greeting to the employee by name
+- The new password in a styled credentials box
+- A login button linking to the portal
+- A reminder to change the password after first login
 
