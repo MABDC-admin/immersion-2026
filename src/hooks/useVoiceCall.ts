@@ -82,6 +82,25 @@ export function useVoiceCall(currentEmployeeId: string) {
     });
   }, []);
 
+  const endCall = useCallback(() => {
+    if (callState.remoteEmployeeId && callState.conversationId) {
+      sendSignal({
+        type: 'call-ended',
+        from: currentEmployeeId,
+        to: callState.remoteEmployeeId,
+        conversationId: callState.conversationId,
+      });
+    }
+    cleanup();
+    setCallState({
+      status: 'idle',
+      remoteEmployeeId: null,
+      conversationId: null,
+      isMuted: false,
+      callDuration: 0,
+    });
+  }, [callState.remoteEmployeeId, callState.conversationId, currentEmployeeId, sendSignal, cleanup]);
+
   const setupPeerConnection = useCallback(async () => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnection.current = pc;
@@ -125,7 +144,7 @@ export function useVoiceCall(currentEmployeeId: string) {
     };
 
     return pc;
-  }, [currentEmployeeId, callState.remoteEmployeeId, callState.conversationId, sendSignal, cleanup]);
+  }, [currentEmployeeId, callState.remoteEmployeeId, callState.conversationId, sendSignal, cleanup, endCall]);
 
   const startDurationTimer = useCallback(() => {
     setCallState((s) => ({ ...s, callDuration: 0 }));
@@ -317,25 +336,6 @@ export function useVoiceCall(currentEmployeeId: string) {
     if (callState.remoteEmployeeId && callState.conversationId) {
       sendSignal({
         type: 'call-rejected',
-        from: currentEmployeeId,
-        to: callState.remoteEmployeeId,
-        conversationId: callState.conversationId,
-      });
-    }
-    cleanup();
-    setCallState({
-      status: 'idle',
-      remoteEmployeeId: null,
-      conversationId: null,
-      isMuted: false,
-      callDuration: 0,
-    });
-  }, [callState.remoteEmployeeId, callState.conversationId, currentEmployeeId, sendSignal, cleanup]);
-
-  const endCall = useCallback(() => {
-    if (callState.remoteEmployeeId && callState.conversationId) {
-      sendSignal({
-        type: 'call-ended',
         from: currentEmployeeId,
         to: callState.remoteEmployeeId,
         conversationId: callState.conversationId,
