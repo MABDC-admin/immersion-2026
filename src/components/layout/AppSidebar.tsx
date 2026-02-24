@@ -71,9 +71,8 @@ const navItems: NavItem[] = [
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
 
-// Supervisor-specific nav: only Dashboard, Interns (employee detail), and Evaluations
+// Supervisor-specific nav: only Interns and Evaluations (no Dashboard)
 const supervisorNavItems: NavItem[] = [
-  { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', employeeVisible: true },
   { title: 'Interns', icon: Users, href: '__SUPERVISOR_PORTAL__', employeeVisible: true },
   { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: true },
 ];
