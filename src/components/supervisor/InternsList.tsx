@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useAssignedInterns } from '@/hooks/useEvaluations';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,9 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Users, ClipboardCheck, Clock, LogIn, LogOut, ChevronDown, FileText, CalendarDays, Timer } from 'lucide-react';
+import { Users, ClipboardCheck, Clock, LogIn, LogOut, ChevronDown, FileText, CalendarDays, Timer, QrCode, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInMinutes } from 'date-fns';
+import { QRCodeSVG } from 'qrcode.react';
 
 const statusColors: Record<string, string> = {
   active: 'bg-hrms-success text-white',
@@ -95,9 +96,47 @@ function calculateTotalHours(records: any[]): { totalMinutes: number; totalHours
 }
 
 // Target OJT hours (configurable)
-const TARGET_HOURS = 500;
+const TARGET_HOURS = 80;
 
-function InternExpandedSection({ intern }: { intern: any }) {
+function InternQRCode({ intern, supervisorId }: { intern: any; supervisorId: string }) {
+  const qrRef = useRef<HTMLDivElement>(null);
+  const qrValue = JSON.stringify({ employeeId: intern.id, supervisorId });
+
+  const handleDownload = useCallback(() => {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      ctx?.drawImage(img, 0, 0, 300, 300);
+      const a = document.createElement('a');
+      a.download = `qr-${intern.first_name}-${intern.last_name}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  }, [intern]);
+
+  return (
+    <div className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border bg-muted/30">
+      <div ref={qrRef}>
+        <QRCodeSVG value={qrValue} size={160} level="M" />
+      </div>
+      <p className="text-[10px] text-muted-foreground text-center">
+        {intern.first_name} {intern.last_name}
+      </p>
+      <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleDownload}>
+        <Download className="h-3 w-3" /> Download QR
+      </Button>
+    </div>
+  );
+}
+
+function InternExpandedSection({ intern, supervisorId }: { intern: any; supervisorId: string }) {
   const { data: historyRecords = [], isLoading: historyLoading } = useInternAttendanceHistory(intern.id, true);
   const { data: resumeUrl, isLoading: resumeLoading } = useInternResume(intern.email, true);
   const { totalMinutes, totalHoursStr } = calculateTotalHours(historyRecords);
@@ -105,6 +144,15 @@ function InternExpandedSection({ intern }: { intern: any }) {
 
   return (
     <div className="mt-3 pt-3 border-t border-border space-y-4 animate-fade-in">
+      {/* QR Code */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <QrCode className="h-4 w-4 text-primary" />
+          <h5 className="text-sm font-semibold text-foreground">QR Code</h5>
+        </div>
+        <InternQRCode intern={intern} supervisorId={supervisorId} />
+      </div>
+
       {/* Total Hours Progress */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -297,22 +345,24 @@ export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
                   )}
                 </div>
 
-                {onEvaluate && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs shrink-0"
-                    onClick={(e) => { e.stopPropagation(); onEvaluate(intern.id); }}
-                  >
-                    <ClipboardCheck className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Evaluate</span>
-                  </Button>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {onEvaluate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={(e) => { e.stopPropagation(); onEvaluate(intern.id); }}
+                    >
+                      <ClipboardCheck className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Evaluate</span>
+                    </Button>
+                  )}
+                </div>
 
                 <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0", isExpanded && "rotate-180")} />
               </div>
 
-              {isExpanded && <InternExpandedSection intern={intern} />}
+              {isExpanded && <InternExpandedSection intern={intern} supervisorId={supervisorId} />}
             </CardContent>
           </Card>
         );
