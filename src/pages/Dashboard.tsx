@@ -19,7 +19,7 @@ import { useUpdateTutorialStatus } from '@/hooks/useEmployees';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
-  const { user, isAdmin, userRole } = useAuth();
+  const { user, isAdmin, isManager, userRole } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
@@ -101,12 +101,12 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Admin/HR Specific Content */}
-        {(isAdmin || userRole === 'hr_manager') && (
+        {/* Admin/HR/Manager Specific Content */}
+        {(isAdmin || isManager || userRole === 'hr_manager') && (
           <div className="space-y-6 pt-6 border-t">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Organizational Overview</h2>
-              {userRole !== 'admin' && <MakeAdminCard />}
+              {userRole !== 'admin' && userRole !== 'manager' && <MakeAdminCard />}
             </div>
 
             {/* Animated Stats Grid */}
@@ -137,7 +137,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {!isAdmin && userRole !== 'admin' && userRole !== 'hr_manager' && (
+        {!isAdmin && !isManager && userRole !== 'admin' && userRole !== 'hr_manager' && userRole !== 'manager' && (
           <MakeAdminCard />
         )}
       </div>

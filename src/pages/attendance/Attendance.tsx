@@ -13,10 +13,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Attendance() {
-    const { user, isAdmin, userRole } = useAuth();
+    const { user, isAdmin, isManager, userRole } = useAuth();
     const { data: employee } = useCurrentEmployee(user?.id || '');
     const employeeId = employee?.id || '';
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+    const isSupervisor = isAdmin || isManager;
 
     const { data: attendance = [], isLoading } = useAttendance();
     const { data: todayRecord, isLoading: isLoadingToday } = useTodayAttendance(employeeId);
@@ -63,47 +64,51 @@ export default function Attendance() {
                             {isAdminOrHR ? 'Track and manage employee attendance.' : 'View your attendance records.'}
                         </p>
                     </div>
-                    <div className="flex gap-2">
-                        {!employeeId ? (
-                            <Button disabled variant="outline">
-                                <Clock className="h-4 w-4 mr-2" />
-                                Loading...
-                            </Button>
-                        ) : !todayRecord?.clock_in ? (
-                            <Button onClick={handleClockIn} disabled={clockIn.isPending || isLoadingToday}>
-                                <Play className="h-4 w-4 mr-2" />
-                                Clock In
-                            </Button>
-                        ) : !todayRecord?.clock_out ? (
-                            <Button variant="destructive" onClick={handleClockOut} disabled={clockOut.isPending || isLoadingToday}>
-                                <Square className="h-4 w-4 mr-2" />
-                                Clock Out
-                            </Button>
-                        ) : (
-                            <Button disabled variant="outline">
-                                <Clock className="h-4 w-4 mr-2" />
-                                Work Completed
-                            </Button>
-                        )}
-                    </div>
+                    {!isSupervisor && (
+                        <div className="flex gap-2">
+                            {!employeeId ? (
+                                <Button disabled variant="outline">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Loading...
+                                </Button>
+                            ) : !todayRecord?.clock_in ? (
+                                <Button onClick={handleClockIn} disabled={clockIn.isPending || isLoadingToday}>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Clock In
+                                </Button>
+                            ) : !todayRecord?.clock_out ? (
+                                <Button variant="destructive" onClick={handleClockOut} disabled={clockOut.isPending || isLoadingToday}>
+                                    <Square className="h-4 w-4 mr-2" />
+                                    Clock Out
+                                </Button>
+                            ) : (
+                                <Button disabled variant="outline">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Work Completed
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Today's Status</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {todayRecord?.clock_in ? 'Clocked In' : 'Not Clocked In'}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {todayRecord?.clock_in && `In: ${format(new Date(todayRecord.clock_in), 'hh:mm a')}`}
-                                {todayRecord?.clock_out && ` • Out: ${format(new Date(todayRecord.clock_out), 'hh:mm a')}`}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+                {!isSupervisor && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Today's Status</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {todayRecord?.clock_in ? 'Clocked In' : 'Not Clocked In'}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {todayRecord?.clock_in && `In: ${format(new Date(todayRecord.clock_in), 'hh:mm a')}`}
+                                    {todayRecord?.clock_out && ` • Out: ${format(new Date(todayRecord.clock_out), 'hh:mm a')}`}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
