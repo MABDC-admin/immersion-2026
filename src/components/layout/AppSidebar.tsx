@@ -30,12 +30,11 @@ const navItems: NavItem[] = [
   {
     title: 'Leave', icon: Calendar, employeeVisible: true, subItems: [
       { title: 'Leave Requests', href: '/leave/requests' },
-      { title: 'Leave Balance', href: '/leave/balance' },
       { title: 'Leave Calendar', href: '/leave/calendar' },
     ],
   },
   {
-    title: 'Time Attendance', icon: Clock, employeeVisible: true, subItems: [
+    title: 'Time Attendance', icon: Clock, subItems: [
       { title: 'Attendance', href: '/attendance' },
       { title: 'Timesheets', href: '/attendance/timesheets' },
       { title: 'Reports', href: '/attendance/reports' },
