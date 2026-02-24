@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { TodaySummaryCards } from './TodaySummaryCards';
 import { QuickActions } from './QuickActions';
 import { AnnouncementsWidget } from './AnnouncementsWidget';
-import { MyTasksWidget } from './MyTasksWidget';
-import { CalendarPreview } from './CalendarPreview';
 import { CreateLeaveModal } from '@/components/leave/CreateLeaveModal';
 
 import { useLeaveRequests } from '@/hooks/useLeave';
@@ -78,10 +76,6 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                     </div>
 
                     <AnnouncementsWidget announcements={announcements} />
-                </div>
-                <div className="space-y-6 md:space-y-8">
-                    <MyTasksWidget />
-                    <CalendarPreview leaveRequests={leaveRequests} />
                 </div>
             </div>
 

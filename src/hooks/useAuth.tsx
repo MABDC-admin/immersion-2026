@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRole(null);
   };
 
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'manager';
   const isHrManager = userRole === 'hr_manager';
   const isManager = userRole === 'manager';
   const canManageEmployees = isAdmin || isHrManager;
