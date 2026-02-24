@@ -112,10 +112,10 @@ serve(async (req) => {
         await supabaseAdmin.from("applied_migrations").insert({
           filename: file.name,
           status: "error",
-          error_message: err.message,
+          error_message: (err as Error).message,
           content_hash: file.sha,
         });
-        results.push({ filename: file.name, status: "error", error: err.message });
+        results.push({ filename: file.name, status: "error", error: (err as Error).message });
       }
     }
 
@@ -128,7 +128,7 @@ serve(async (req) => {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

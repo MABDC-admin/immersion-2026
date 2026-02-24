@@ -6,7 +6,7 @@ import { AnnouncementsWidget } from './AnnouncementsWidget';
 import { MyTasksWidget } from './MyTasksWidget';
 import { CalendarPreview } from './CalendarPreview';
 import { CreateLeaveModal } from '@/components/leave/CreateLeaveModal';
-import { useAttendance, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
+import { useAttendance, useTodayAttendance } from '@/hooks/useAttendance';
 import { useLeaveRequests } from '@/hooks/useLeave';
 import { useEnrollments } from '@/hooks/useTraining';
 import { useLeaveBalances, useAnnouncements } from '@/hooks/useDashboard';
@@ -28,22 +28,12 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
     // Dashboard Data
     const { data: todayAttendance } = useTodayAttendance(employeeId);
     const { data: allAttendance = [] } = useAttendance(employeeId);
-    const clockIn = useClockIn();
-    const clockOut = useClockOut();
     const { data: leaveRequests = [] } = useLeaveRequests(employeeId);
     const { data: leaveBalances = [] } = useLeaveBalances(employeeId);
     const { data: enrollments = [] } = useEnrollments(employeeId);
     const { data: announcements = [] } = useAnnouncements();
 
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
-
-    const handleClockIn = () => {
-        clockIn.mutate({ employeeId });
-    };
-
-    const handleClockOut = () => {
-        if (todayAttendance?.id) clockOut.mutate({ id: todayAttendance.id });
-    };
 
     return (
         <div className="space-y-4 animate-fade-in">
@@ -71,12 +61,8 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                 <div className="lg:col-span-2 space-y-6 md:space-y-8">
                     <QuickActions
-                        onClockIn={handleClockIn}
-                        onClockOut={handleClockOut}
                         onRequestLeave={() => setIsLeaveModalOpen(true)}
                         onUpdateProfile={onUpdateProfile || (() => { })}
-                        isClockedIn={!!todayAttendance?.clock_in && !todayAttendance?.clock_out}
-                        isClocking={clockIn.isPending || clockOut.isPending}
                     />
 
                     {/* Quick Navigation Links */}
