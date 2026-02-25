@@ -44,27 +44,37 @@ const statusColors: Record<string, string> = {
 };
 
 export default function TaskDashboard() {
-    const { user } = useAuth();
+    const { user, isAdmin, userRole } = useAuth();
+    const isAdminOrHR = isAdmin || userRole === 'hr_manager';
     const { data: employee } = useCurrentEmployee(user?.id || '');
-    const { data: tasks = [], isLoading } = useSupervisorTasks(employee?.id || '');
+    const { data: tasks = [], isLoading } = useSupervisorTasks(employee?.id || '', isAdminOrHR);
     const createTask = useCreateTask();
     const updateTask = useUpdateTask();
     const deleteTask = useDeleteTask();
     const { toast } = useToast();
 
-    // Fetch interns under this supervisor
+    // Fetch interns under this supervisor (or all interns if admin)
     const { data: myInterns = [] } = useQuery({
-        queryKey: ['supervisor-interns', employee?.id],
+        queryKey: ['supervisor-interns', employee?.id, isAdminOrHR],
         queryFn: async () => {
-            if (!employee?.id) return [];
-            const { data, error } = await supabase
+            if (!employee?.id && !isAdminOrHR) return [];
+
+            let query = supabase
                 .from('employees')
-                .select('id, first_name, last_name, avatar_url, email')
-                .eq('manager_id', employee.id);
+                .select('id, first_name, last_name, avatar_url, email');
+
+            if (!isAdminOrHR) {
+                query = query.eq('manager_id', employee!.id);
+            }
+            // Need a way to filter only interns/employees. 
+            // In a better setup, there's a specific role enum on employees, 
+            // but for now, if admin, we pull everyone who could potentially be assigned tasks.
+
+            const { data, error } = await query;
             if (error) throw error;
             return data || [];
         },
-        enabled: !!employee?.id,
+        enabled: !!employee?.id || isAdminOrHR,
     });
 
     const [isFormOpen, setIsFormOpen] = useState(false);

@@ -71,31 +71,6 @@ export default function Attendance() {
                             {isAdminOrHR ? 'Track and manage employee attendance.' : 'View your attendance records.'}
                         </p>
                     </div>
-                    {!isSupervisor && (
-                        <div className="flex gap-2">
-                            {!employeeId ? (
-                                <Button disabled variant="outline">
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Loading...
-                                </Button>
-                            ) : !todayRecord?.clock_in ? (
-                                <Button onClick={handleClockIn} disabled={clockIn.isPending || isLoadingToday}>
-                                    <Play className="h-4 w-4 mr-2" />
-                                    Clock In
-                                </Button>
-                            ) : !todayRecord?.clock_out ? (
-                                <Button variant="destructive" onClick={handleClockOut} disabled={clockOut.isPending || isLoadingToday}>
-                                    <Square className="h-4 w-4 mr-2" />
-                                    Clock Out
-                                </Button>
-                            ) : (
-                                <Button disabled variant="outline">
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Work Completed
-                                </Button>
-                            )}
-                        </div>
-                    )}
                 </div>
 
                 {!isSupervisor && (

@@ -21,20 +21,26 @@ export interface InternTask {
     supervisor?: { first_name: string; last_name: string };
 }
 
-export function useSupervisorTasks(supervisorId: string) {
+export function useSupervisorTasks(supervisorId: string, isAdmin: boolean = false) {
     return useQuery({
-        queryKey: ['supervisor-tasks', supervisorId],
+        queryKey: ['supervisor-tasks', supervisorId, isAdmin],
         queryFn: async () => {
-            if (!supervisorId) return [];
-            const { data, error } = await supabase
+            if (!supervisorId && !isAdmin) return [];
+
+            let query = supabase
                 .from('intern_tasks')
                 .select('*, intern:employees!intern_tasks_intern_id_fkey(first_name, last_name, avatar_url, email)')
-                .eq('supervisor_id', supervisorId)
                 .order('created_at', { ascending: false });
+
+            if (!isAdmin) {
+                query = query.eq('supervisor_id', supervisorId);
+            }
+
+            const { data, error } = await query;
             if (error) throw error;
             return (data || []) as InternTask[];
         },
-        enabled: !!supervisorId,
+        enabled: !!supervisorId || isAdmin,
     });
 }
 
