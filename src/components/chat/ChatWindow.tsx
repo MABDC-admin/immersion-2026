@@ -42,6 +42,7 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
     const [newMessage, setNewMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -344,7 +345,7 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                                                 src={supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl}
                                                 alt={msg.metadata.file_name}
                                                 className="w-full h-auto min-h-[100px] object-cover cursor-pointer transition-transform hover:scale-[1.02]"
-                                                onClick={() => window.open(supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl, '_blank')}
+                                                onClick={() => setPreviewImage(supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl)}
                                             />
                                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                                                 <Image className="h-8 w-8 text-white/70" />
@@ -359,7 +360,7 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                                                         src={supabase.storage.from('chat-attachments').getPublicUrl(img.file_path).data.publicUrl}
                                                         alt={img.file_name}
                                                         className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                                        onClick={() => window.open(supabase.storage.from('chat-attachments').getPublicUrl(img.file_path).data.publicUrl, '_blank')}
+                                                        onClick={() => setPreviewImage(supabase.storage.from('chat-attachments').getPublicUrl(img.file_path).data.publicUrl)}
                                                     />
                                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                                                         <Image className="h-6 w-6 text-white/70" />
@@ -461,6 +462,28 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                     </Button>
                 </form>
             </div>
+
+            {/* Image Preview Modal */}
+            {previewImage && (
+                <div
+                    className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full h-10 w-10 z-50"
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <X className="h-6 w-6" />
+                    </Button>
+                    <img
+                        src={previewImage}
+                        alt="Preview"
+                        className="max-w-full max-h-full object-contain drop-shadow-2xl animate-in zoom-in-95 duration-200"
+                    />
+                </div>
+            )}
         </div>
     );
 }
