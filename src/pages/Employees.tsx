@@ -6,7 +6,8 @@ import { EmployeeGrid } from '@/components/employees/EmployeeGrid';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
-import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees';
+import { useEmployees, useDeleteEmployee, useCurrentEmployee } from '@/hooks/useEmployees';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { EmployeeWithRelations } from '@/types/employee';
@@ -16,6 +17,10 @@ const ITEMS_PER_PAGE = 12;
 export default function Employees() {
   const navigate = useNavigate();
   const { data: employees = [], isLoading, error } = useEmployees();
+  const { user, isAdmin, userRole } = useAuth();
+  const { data: viewerEmployee } = useCurrentEmployee(user?.id || '');
+  const isSupervisor = userRole === 'supervisor';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [groupBy, setGroupBy] = useState<'location' | 'department' | 'none'>('location');
@@ -28,7 +33,14 @@ export default function Employees() {
 
   // Filter employees
   const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
+    let result = employees;
+
+    // For supervisors, only show assigned interns (manager_id = viewerEmployee.id)
+    if (isSupervisor && viewerEmployee) {
+      result = result.filter(emp => emp.manager_id === viewerEmployee.id);
+    }
+
+    return result.filter((employee) => {
       // Search filter
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
@@ -43,7 +55,7 @@ export default function Employees() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [employees, searchQuery, statusFilter]);
+  }, [employees, searchQuery, statusFilter, isSupervisor, viewerEmployee]);
 
   // Pagination
   const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);

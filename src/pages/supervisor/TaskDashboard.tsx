@@ -93,6 +93,7 @@ export default function TaskDashboard() {
     const [feedback, setFeedback] = useState('');
     const [newProgress, setNewProgress] = useState('');
     const [newStatus, setNewStatus] = useState('');
+    const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
     const resetForm = () => {
         setTaskTitle(''); setTaskDesc(''); setTaskInternId(''); setTaskDueDate(''); setTaskPriority('medium');
@@ -111,12 +112,20 @@ export default function TaskDashboard() {
         setIsFormOpen(true);
     };
 
-    const openDetail = (task: InternTask) => {
+    const openDetail = async (task: InternTask) => {
         setViewingTask(task);
         setFeedback(task.supervisor_feedback || '');
         setNewProgress(String(task.progress));
         setNewStatus(task.status);
         setIsDetailOpen(true);
+        setSignedUrl(null);
+
+        if (task.submission_file_path) {
+            const { data } = await supabase.storage
+                .from('task-submissions')
+                .createSignedUrl(task.submission_file_path, 3600);
+            if (data?.signedUrl) setSignedUrl(data.signedUrl);
+        }
     };
 
     const handleSubmitTask = async () => {
@@ -415,12 +424,30 @@ export default function TaskDashboard() {
                                     <p className="text-[10px] text-hrms-warning uppercase font-bold mb-1">Intern Submission</p>
                                     <p className="text-sm">{viewingTask.submission_notes}</p>
                                     {viewingTask.submission_file_path && (
-                                        <Button variant="outline" size="sm" className="mt-2 text-xs gap-1" onClick={async () => {
-                                            const { data } = await supabase.storage.from('task-submissions').createSignedUrl(viewingTask.submission_file_path!, 3600);
-                                            if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-                                        }}>
-                                            <Eye className="h-3 w-3" />View File
-                                        </Button>
+                                        <div className="mt-3 space-y-2">
+                                            {signedUrl ? (
+                                                <div className="rounded-lg overflow-hidden border bg-black/5">
+                                                    {viewingTask.submission_file_path.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
+                                                        <video src={signedUrl} controls className="w-full max-h-[300px]" />
+                                                    ) : viewingTask.submission_file_path.toLowerCase().endsWith('.pdf') ? (
+                                                        <iframe src={signedUrl} className="w-full h-[400px]" title="PDF Preview" />
+                                                    ) : viewingTask.submission_file_path.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
+                                                        <img src={signedUrl} alt="Submission" className="w-full object-contain max-h-[400px]" />
+                                                    ) : (
+                                                        <div className="p-8 text-center">
+                                                            <p className="text-xs text-muted-foreground mb-3">Preview not available for this file type.</p>
+                                                            <Button variant="outline" size="sm" onClick={() => window.open(signedUrl, '_blank')}>
+                                                                <Eye className="h-3 w-3 mr-2" /> Open in New Tab
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="h-20 flex items-center justify-center border border-dashed rounded-lg">
+                                                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}

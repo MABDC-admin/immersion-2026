@@ -40,6 +40,7 @@ import OjtManagement from "./pages/admin/OjtManagement";
 
 // Supervisor
 import TaskDashboard from "./pages/supervisor/TaskDashboard";
+import SupervisorJournalsView from "./pages/supervisor/SupervisorJournalsView";
 
 // Intern
 import MyTasks from "./pages/intern/MyTasks";
@@ -107,6 +108,7 @@ const App = () => (
 
             {/* New Intern Modules */}
             <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
+            <Route path="/journal/:internId" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
             <Route path="/my-evaluations" element={<ProtectedRoute><MyEvaluations /></ProtectedRoute>} />
             <Route path="/my-documents" element={<ProtectedRoute><MyDocuments /></ProtectedRoute>} />
 
@@ -116,6 +118,7 @@ const App = () => (
             {/* Admin OJT + Supervisor Tasks + Intern Tasks */}
             <Route path="/admin/ojt" element={<ProtectedRoute><OjtManagement /></ProtectedRoute>} />
             <Route path="/supervisor/tasks" element={<ProtectedRoute><TaskDashboard /></ProtectedRoute>} />
+            <Route path="/supervisor/journals" element={<ProtectedRoute><SupervisorJournalsView /></ProtectedRoute>} />
             <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

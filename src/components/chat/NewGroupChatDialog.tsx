@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Loader2, Users, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,17 +20,28 @@ interface NewGroupChatDialogProps {
 
 export function NewGroupChatDialog({ open, onOpenChange, currentEmployeeId, onConversationCreated }: NewGroupChatDialogProps) {
     const { data: employees, isLoading } = useEmployees();
+    const { userRole } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const [groupName, setGroupName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
 
-    const filteredEmployees = employees?.filter(emp =>
-        emp.id !== currentEmployeeId &&
-        (emp.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const isSupervisor = userRole === 'supervisor';
+
+    const filteredEmployees = employees?.filter(emp => {
+        const isNotMe = emp.id !== currentEmployeeId;
+        const matchesSearch =
+            emp.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             emp.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            emp.email.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+            emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // If supervisor, only show assigned interns (manager_id = currentEmployeeId)
+        if (isSupervisor) {
+            return isNotMe && matchesSearch && emp.manager_id === currentEmployeeId;
+        }
+
+        return isNotMe && matchesSearch;
+    });
 
     const selectedEmployees = employees?.filter(emp => selectedMembers.includes(emp.id)) || [];
 

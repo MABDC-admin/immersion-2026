@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useChat } from '@/hooks/useChat';
+import { Badge } from '@/components/ui/badge';
 
 interface NavItem {
   title: string;
@@ -24,6 +26,7 @@ interface NavItem {
   subItems?: { title: string; href: string }[];
   adminOnly?: boolean;
   employeeVisible?: boolean;
+  badge?: number;
 }
 
 // Full nav for Admin / HR
@@ -73,6 +76,7 @@ const navItems: NavItem[] = [
   },
   { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
   { title: 'Work Immersion', icon: Target, href: '/admin/ojt' },
+  { title: 'Chat', icon: MessageSquare, href: '/chat' },
   { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
@@ -132,33 +136,80 @@ export function AppSidebar() {
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const isSupervisor = userRole === 'supervisor';
+
+  const { useTotalUnreadCount } = useChat();
+  const totalUnreadCount = useTotalUnreadCount(employee?.id || '');
 
   // Build final nav items based on role
   const finalFilteredItems = (() => {
     if (isAdminOrHR) {
-      // Admin/HR/Supervisors see the full admin sidebar
+      // Admin/HR see the full admin sidebar
       return [...navItems].filter(item => {
         if (item.adminOnly && !isAdmin) return false;
         return true;
+      }).map(item => {
+        if (item.title === 'Chat') {
+          return { ...item, badge: totalUnreadCount };
+        }
+        return item;
       });
     }
+
+    if (isSupervisor) {
+      // Chat is now second item
+      const supervisorSpecificItems = [
+        { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+        { title: 'Chat', icon: MessageSquare, href: '/chat', badge: totalUnreadCount },
+        { title: 'Interns', icon: Users, href: '/employees' },
+        { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
+        { title: 'Daily Journal', icon: BookOpen, href: '/supervisor/journals' },
+        { title: 'Attendance', icon: Clock, href: '/supervisor/attendance' },
+        { title: 'Tasks', icon: ListChecks, href: '/supervisor/tasks' },
+      ];
+
+      // Personal Tools for Supervisor
+      const personalTools = [
+        {
+          title: 'My Workspace', icon: User, subItems: [
+            { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/profile' },
+            { title: 'My Journal', href: '/journal' },
+            { title: 'My Attendance', href: '/attendance' },
+            { title: 'My Documents', href: '/my-documents' },
+            { title: 'Leave Requests', href: '/leave/requests' },
+          ]
+        }
+      ];
+
+      return [...supervisorSpecificItems, ...personalTools];
+    }
+
     // Employees / Interns see the employee-focused sidebar
     return employeeNavItems.map(item => {
-      if (item.href === '__MY_PROFILE__' && employee) {
-        return { ...item, href: `/employees/${employee.id}` };
+      let updatedItem = { ...item };
+      if (item.title === 'Chat') {
+        updatedItem.badge = totalUnreadCount;
       }
-      return item;
+      if (item.href === '__MY_PROFILE__' && employee) {
+        updatedItem.href = `/employees/${employee.id}`;
+      }
+      return updatedItem;
     });
   })();
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">
       <SidebarHeader className="p-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <span className="text-lg font-bold text-sidebar-primary-foreground">IM</span>
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-sidebar-primary rounded-xl flex items-center justify-center shadow-lg ring-4 ring-sidebar-primary/10">
+            <span className="text-lg font-black text-sidebar-primary-foreground tracking-tighter">WI</span>
           </div>
-          {!collapsed && <span className="text-xl font-bold text-sidebar-foreground">LOGO</span>}
+          {!collapsed && (
+            <div className="flex flex-col leading-none">
+              <span className="text-lg font-bold text-sidebar-foreground tracking-tight">Work</span>
+              <span className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-widest">Immersion</span>
+            </div>
+          )}
         </Link>
       </SidebarHeader>
 
@@ -195,7 +246,16 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={isActive(item.href)} className={cn(isActive(item.href) && 'bg-sidebar-accent text-sidebar-accent-foreground')}>
                       <Link to={item.href || '/'}>
                         <item.icon className="h-5 w-5" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && (
+                          <div className="flex items-center justify-between flex-1">
+                            <span>{item.title}</span>
+                            {item.badge !== undefined && item.badge > 0 && (
+                              <Badge variant="destructive" className="h-4 min-w-[16px] px-1 text-[10px] flex items-center justify-center rounded-full ml-auto">
+                                {item.badge > 99 ? '99+' : item.badge}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   )}

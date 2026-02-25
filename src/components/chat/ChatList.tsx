@@ -13,6 +13,7 @@ interface ChatListProps {
     selectedId: string | null;
     currentEmployeeId: string;
     onSelect: (id: string) => void;
+    onlineEmployeeIds?: Set<string>;
 }
 
 function getConversationDisplay(conv: ChatConversation, currentEmployeeId: string) {
@@ -28,7 +29,7 @@ function getConversationDisplay(conv: ChatConversation, currentEmployeeId: strin
     return { title, initials, avatarUrl: otherMember?.avatar_url, isGroup: false, memberCount: 0 };
 }
 
-export function ChatList({ conversations, isLoading, selectedId, currentEmployeeId, onSelect }: ChatListProps) {
+export function ChatList({ conversations, isLoading, selectedId, currentEmployeeId, onSelect, onlineEmployeeIds }: ChatListProps) {
     if (isLoading) {
         return (
             <div className="space-y-3">
@@ -71,6 +72,14 @@ export function ChatList({ conversations, isLoading, selectedId, currentEmployee
                                             <AvatarImage src={display.avatarUrl} />
                                             <AvatarFallback>{display.initials}</AvatarFallback>
                                         </>
+                                    )}
+                                    {!display.isGroup && (
+                                        <div className={cn(
+                                            "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
+                                            onlineEmployeeIds?.has(conversations.find(c => c.id === conv.id)?.members?.find(m => m.employee_id !== currentEmployeeId)?.employee_id || '')
+                                                ? "bg-green-500"
+                                                : "bg-gray-300"
+                                        )} />
                                     )}
                                 </Avatar>
                                 <div className="flex-1 min-w-0">

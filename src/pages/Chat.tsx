@@ -17,10 +17,24 @@ import { Plus, MessageSquare, User, Users } from 'lucide-react';
 export default function ChatPage() {
     const { user, userRole, isAdmin, isHrManager } = useAuth();
     const { data: employee } = useCurrentEmployee(user?.id || '');
-    const { useConversations } = useChat();
-    const { data: conversations = [], isLoading, refetch } = useConversations(employee?.id || '');
+    const { useConversations, useGlobalChatSync, usePresence } = useChat();
+    const { data: allConversations = [], isLoading, refetch } = useConversations(employee?.id || '');
+    useGlobalChatSync(employee?.id || '');
+    const { onlineEmployeeIds, typingUsers, setTyping } = usePresence(employee?.id || '');
     const { data: allEmployees = [] } = useEmployees();
-    const isSupervisor = employee ? allEmployees.some(e => e.manager_id === employee.id) : false;
+
+    const isSupervisor = userRole === 'supervisor';
+    const assignedInternIds = allEmployees
+        .filter(e => e.manager_id === employee?.id)
+        .map(e => e.id);
+
+    // Filter conversations for supervisors: only keep those involving an assigned intern
+    const conversations = isSupervisor
+        ? allConversations.filter(conv =>
+            conv.members?.some(m => assignedInternIds.includes(m.employee_id))
+        )
+        : allConversations;
+
     const canCreateGroupChat = isAdmin || isHrManager || isSupervisor;
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
@@ -81,6 +95,7 @@ export default function ChatPage() {
                             selectedId={selectedConversationId}
                             currentEmployeeId={employee?.id || ''}
                             onSelect={setSelectedConversationId}
+                            onlineEmployeeIds={onlineEmployeeIds}
                         />
                     </div>
                 </div>
@@ -96,6 +111,9 @@ export default function ChatPage() {
                             onInitiateCall={handleInitiateCall}
                             onEndCall={endCall}
                             onToggleMute={toggleMute}
+                            onlineEmployeeIds={onlineEmployeeIds}
+                            typingUsers={typingUsers}
+                            setTyping={setTyping}
                         />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">

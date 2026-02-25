@@ -6,6 +6,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, UserPlus, Loader2 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -18,15 +19,27 @@ interface NewChatDialogProps {
 
 export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConversationCreated }: NewChatDialogProps) {
     const { data: employees, isLoading } = useEmployees();
+    const { userRole } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreating, setIsCreating] = useState(false);
 
-    const filteredEmployees = employees?.filter(emp =>
-        emp.id !== currentEmployeeId &&
-        (emp.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const isSupervisor = userRole === 'supervisor';
+    const currentEmployee = employees?.find(e => e.id === currentEmployeeId);
+
+    const filteredEmployees = employees?.filter(emp => {
+        const isNotMe = emp.id !== currentEmployeeId;
+        const matchesSearch =
+            emp.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             emp.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            emp.email.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+            emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // If supervisor, only show assigned interns (manager_id = currentEmployeeId)
+        if (isSupervisor) {
+            return isNotMe && matchesSearch && emp.manager_id === currentEmployeeId;
+        }
+
+        return isNotMe && matchesSearch;
+    });
 
     const handleCreateChat = async (targetEmployeeId: string) => {
         setIsCreating(true);

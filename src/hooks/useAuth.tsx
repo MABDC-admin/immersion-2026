@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'hr_manager' | 'employee' | 'manager' | 'payroll_officer';
+type AppRole = 'admin' | 'hr_manager' | 'employee' | 'manager' | 'payroll_officer' | 'supervisor';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +15,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isHrManager: boolean;
   isManager: boolean;
+  isSupervisor: boolean;
   canManageEmployees: boolean;
 }
 
@@ -98,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -114,9 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRole(null);
   };
 
-  const isAdmin = userRole === 'admin' || userRole === 'manager';
+  const isAdmin = userRole === 'admin';
   const isHrManager = userRole === 'hr_manager';
   const isManager = userRole === 'manager';
+  const isSupervisor = userRole === 'supervisor';
   const canManageEmployees = isAdmin || isHrManager;
 
   return (
@@ -132,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isHrManager,
         isManager,
+        isSupervisor,
         canManageEmployees,
       }}
     >

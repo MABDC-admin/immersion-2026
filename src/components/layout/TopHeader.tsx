@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SlidersHorizontal, Search, Plus, Bell, LogOut } from 'lucide-react';
+import { SlidersHorizontal, Search, Plus, Bell, LogOut, Clock, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,6 +26,12 @@ export function TopHeader({ onAddNew }: TopHeaderProps) {
   const { user, signOut, userRole, canManageEmployees } = useAuth();
   const { data: employee } = useCurrentEmployee(user?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -38,6 +44,21 @@ export function TopHeader({ onAddNew }: TopHeaderProps) {
     <header className="h-16 border-b bg-card flex items-center justify-between px-4 gap-4">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        <div className="hidden md:flex items-center gap-4 px-3 py-1.5 bg-muted/30 rounded-full border border-muted/50">
+          <div className="flex items-center gap-2 text-primary">
+            <Calendar className="h-4 w-4" />
+            <span className="text-xs font-semibold whitespace-nowrap">
+              {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="h-4 w-[1px] bg-muted/50" />
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span className="text-xs font-medium tabular-nums whitespace-nowrap">
+              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

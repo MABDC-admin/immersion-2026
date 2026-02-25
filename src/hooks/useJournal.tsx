@@ -10,6 +10,7 @@ export interface JournalEntry {
     challenges: string | null;
     supervisor_notes: string | null;
     hours_worked: number | null;
+    status: 'draft' | 'pending' | 'approved' | 'rejected';
     created_at: string;
     updated_at: string;
 }
@@ -70,6 +71,8 @@ export function useUpdateJournalEntry() {
             learnings?: string;
             challenges?: string;
             hours_worked?: number;
+            status?: 'draft' | 'pending' | 'approved' | 'rejected';
+            supervisor_notes?: string;
         }) => {
             const { data, error } = await supabase
                 .from('intern_journals')
@@ -99,5 +102,69 @@ export function useDeleteJournalEntry() {
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employeeId] });
         },
+    });
+}
+export function useApproveJournalEntry() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            id,
+            employeeId,
+            status,
+            supervisor_notes,
+        }: {
+            id: string;
+            employeeId: string;
+            status: 'approved' | 'rejected';
+            supervisor_notes?: string;
+        }) => {
+            const { data, error } = await supabase
+                .from('intern_journals')
+                .update({ status, supervisor_notes })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employeeId] });
+            queryClient.invalidateQueries({ queryKey: ['pending-journal-approvals'] });
+        },
+    });
+}
+
+export function usePendingJournalApprovals(supervisorId: string) {
+    return useQuery({
+        queryKey: ['pending-journal-approvals', supervisorId],
+        queryFn: async () => {
+            if (!supervisorId) return [];
+
+            // First get assigned intern IDs
+            const { data: interns, error: internsError } = await supabase
+                .from('employees')
+                .select('id')
+                .eq('manager_id', supervisorId);
+
+            if (internsError) throw internsError;
+            if (!interns || interns.length === 0) return [];
+
+            const internIds = interns.map(i => i.id);
+
+            // Then get pending journals for these interns
+            const { data, error } = await supabase
+                .from('intern_journals')
+                .select(`
+                    *,
+                    employee:employees(first_name, last_name, avatar_url)
+                `)
+                .in('employee_id', internIds)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data as any[];
+        },
+        enabled: !!supervisorId,
     });
 }

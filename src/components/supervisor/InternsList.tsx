@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAssignedInterns } from '@/hooks/useEvaluations';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Users, ClipboardCheck, Clock, LogIn, LogOut, ChevronDown, FileText, CalendarDays, Timer, QrCode, Download } from 'lucide-react';
+import { Users, ClipboardCheck, Clock, LogIn, LogOut, ChevronDown, FileText, CalendarDays, Timer, QrCode, Download, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInMinutes } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
@@ -59,6 +60,21 @@ function useInternAttendanceHistory(internId: string, enabled: boolean) {
         .eq('employee_id', internId)
         .order('date', { ascending: false })
         .limit(30);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+  });
+}
+
+function useInternAttendanceTotal(internId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['intern-attendance-total', internId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('employee_id', internId);
       if (error) throw error;
       return data || [];
     },
@@ -138,8 +154,9 @@ function InternQRCode({ intern, supervisorId }: { intern: any; supervisorId: str
 
 function InternExpandedSection({ intern, supervisorId }: { intern: any; supervisorId: string }) {
   const { data: historyRecords = [], isLoading: historyLoading } = useInternAttendanceHistory(intern.id, true);
+  const { data: totalRecords = [] } = useInternAttendanceTotal(intern.id, true);
   const { data: resumeUrl, isLoading: resumeLoading } = useInternResume(intern.email, true);
-  const { totalMinutes, totalHoursStr } = calculateTotalHours(historyRecords);
+  const { totalMinutes, totalHoursStr } = calculateTotalHours(totalRecords);
   const progressPercent = Math.min((totalMinutes / 60 / TARGET_HOURS) * 100, 100);
 
   return (
@@ -258,6 +275,7 @@ function InternExpandedSection({ intern, supervisorId }: { intern: any; supervis
 }
 
 export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
+  const navigate = useNavigate();
   const { data: interns = [], isLoading } = useAssignedInterns(supervisorId);
   const internIds = interns.map((i: any) => i.id);
   const { data: attendanceRecords = [] } = useInternsAttendance(internIds);
@@ -317,7 +335,12 @@ export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-sm truncate">{intern.first_name} {intern.last_name}</h4>
+                    <h4
+                      className="font-bold text-sm truncate hover:text-primary cursor-pointer transition-colors"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/journal/${intern.id}`); }}
+                    >
+                      {intern.first_name} {intern.last_name}
+                    </h4>
                     <Badge className={cn("text-[9px] font-bold uppercase px-2 rounded-full shrink-0", statusColors[intern.status] || 'bg-muted')}>
                       {intern.status}
                     </Badge>
@@ -346,11 +369,20 @@ export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs h-8"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/journal/${intern.id}`); }}
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Journal</span>
+                  </Button>
                   {onEvaluate && (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1.5 text-xs"
+                      className="gap-1.5 text-xs h-8 border-hrms-success/20 hover:bg-hrms-success/5 hover:text-hrms-success"
                       onClick={(e) => { e.stopPropagation(); onEvaluate(intern.id); }}
                     >
                       <ClipboardCheck className="h-3.5 w-3.5" />

@@ -7,6 +7,7 @@ import { useLeaveBalances, useAnnouncements } from '@/hooks/useDashboard';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useEnrollments } from '@/hooks/useTraining';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
+import { useJournalEntries, usePendingJournalApprovals } from '@/hooks/useJournal';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,11 +50,18 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
     const { data: enrollments = [] } = useEnrollments(employeeId);
     const { data: announcements = [] } = useAnnouncements();
     const { data: attendanceRecords = [] } = useAttendance(employeeId);
+    const { data: journalEntries = [] } = useJournalEntries(employeeId);
+    const { data: pendingApprovals = [] } = usePendingJournalApprovals(employee?.id || '');
 
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
     // Work Immersion Hours calculation
-    const totalOjtHours = useMemo(() => calculateTotalHours(attendanceRecords), [attendanceRecords]);
+    const totalOjtHours = useMemo(() => {
+        const attendanceHours = calculateTotalHours(attendanceRecords);
+        const journalHours = journalEntries.reduce((sum, entry) => sum + (Number(entry.hours_worked) || 0), 0);
+        return Math.round((attendanceHours + journalHours) * 10) / 10;
+    }, [attendanceRecords, journalEntries]);
+
     const ojtProgress = Math.min((totalOjtHours / TARGET_OJT_HOURS) * 100, 100);
 
     // Today's attendance
@@ -104,6 +112,49 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
 
                             </div>
                         </div>
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2 h-9 text-xs font-bold bg-hrms-success/5 hover:bg-hrms-success/10 border-hrms-success/20 text-hrms-success"
+                                onClick={() => navigate('/journal')}
+                            >
+                                <BookOpen className="h-4 w-4" />
+                                View My Journal
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Supervisor: Pending Approvals Alert */}
+            {pendingApprovals.length > 0 && (
+                <Card className="border-l-4 border-l-hrms-warning bg-hrms-warning/5 shadow-sm animate-pulse-subtle">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-hrms-warning/20">
+                                <Clock className="h-5 w-5 text-hrms-warning" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-hrms-warning">Pending Journal Approvals</h4>
+                                <p className="text-xs text-muted-foreground">
+                                    You have {pendingApprovals.length} journal {pendingApprovals.length === 1 ? 'entry' : 'entries'} awaiting your review.
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            className="bg-hrms-warning hover:bg-hrms-warning/90 text-[11px] h-8 font-bold"
+                            onClick={() => {
+                                // For now, navigate to the first intern's journal
+                                // In a more complex UI, this might open a review modal or a list
+                                const firstEntry = pendingApprovals[0];
+                                navigate(`/journal/${firstEntry.employee_id}`);
+                            }}
+                        >
+                            Review Now
+                            <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                        </Button>
                     </CardContent>
                 </Card>
             )}

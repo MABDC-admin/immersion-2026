@@ -83,7 +83,8 @@ export default function EmployeeDetail() {
   const navigate = useNavigate();
   const { user, isAdmin, userRole } = useAuth();
   const isOwnProfile = user?.id === id;
-  const canEdit = isAdmin || userRole === 'hr_manager' || isOwnProfile;
+  const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const canEdit = isAdminOrHR || isOwnProfile;
 
   const { data: employee, isLoading, error } = useEmployee(id || '');
   const deleteEmployee = useDeleteEmployee();

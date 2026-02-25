@@ -10,6 +10,7 @@ import { DepartmentDistributionChart } from '@/components/dashboard/DepartmentDi
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidget';
 import { EmployeeDashboardView } from '@/components/profile/EmployeeDashboardView';
+import { SupervisorDashboardView } from '@/components/supervisor/SupervisorDashboardView';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { useState } from 'react';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
-  const { user, isAdmin, userRole } = useAuth();
+  const { user, isAdmin, userRole, isSupervisor } = useAuth();
   const { data: employee } = useCurrentEmployee(user?.id || '');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -65,7 +66,11 @@ export default function Dashboard() {
                   <p className="text-muted-foreground mt-1">Organizational Overview</p>
                 </div>
                 <Badge variant="secondary" className="text-sm px-3 py-1">
-                  {userRole === 'admin' ? 'Administrator' : userRole === 'manager' ? 'Supervisor' : 'HR Manager'}
+                  {userRole === 'admin' ? 'Administrator' :
+                    userRole === 'supervisor' ? 'Supervisor' :
+                      userRole === 'manager' ? 'Manager' :
+                        userRole === 'hr_manager' ? 'HR Manager' :
+                          'Payroll Officer'}
                 </Badge>
               </CardContent>
             </Card>
@@ -104,6 +109,11 @@ export default function Dashboard() {
               <UpcomingEventsWidget />
             </div>
           </>
+        ) : isSupervisor ? (
+          /* ========== SUPERVISOR DASHBOARD ========== */
+          <SupervisorDashboardView
+            supervisorId={employee?.id || ''}
+          />
         ) : (
           /* ========== EMPLOYEE / INTERN DASHBOARD ========== */
           <EmployeeDashboardView

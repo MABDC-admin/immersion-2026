@@ -30,7 +30,8 @@ export interface ChatMessage {
     conversation_id: string;
     sender_id: string;
     content: string;
-    type: 'text' | 'attachment' | 'system';
+    type: 'text' | 'attachment' | 'system' | 'image' | 'video' | 'file' | 'gallery';
+    metadata?: Record<string, any>;
     is_edited: boolean;
     is_deleted: boolean;
     created_at: string;
@@ -44,5 +45,6 @@ export interface ChatMessage {
 export interface SendMessageInput {
     conversation_id: string;
     content: string;
-    type?: 'text' | 'attachment' | 'system';
+    type?: 'text' | 'attachment' | 'system' | 'image' | 'video' | 'file' | 'gallery';
+    metadata?: Record<string, any>;
 }
