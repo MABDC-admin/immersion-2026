@@ -20,6 +20,21 @@ export interface Employee {
   twitter_url?: string;
   slack_username?: string;
   has_completed_tutorial?: boolean;
+  emirates_id?: string;
+  visa_status?: string;
+  visa_number?: string;
+  visa_expiry?: string;
+  passport_number?: string;
+  passport_expiry?: string;
+  uae_address?: string;
+  home_country_address?: string;
+  emergency_contact_uae_name?: string;
+  emergency_contact_uae_phone?: string;
+  emergency_contact_home_name?: string;
+  emergency_contact_home_phone?: string;
+  religion?: string;
+  nationality?: string;
+  marital_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -73,6 +88,21 @@ export interface CreateEmployeeInput {
   linkedin_url?: string;
   twitter_url?: string;
   slack_username?: string;
+  emirates_id?: string;
+  visa_status?: string;
+  visa_number?: string;
+  visa_expiry?: string;
+  passport_number?: string;
+  passport_expiry?: string;
+  uae_address?: string;
+  home_country_address?: string;
+  emergency_contact_uae_name?: string;
+  emergency_contact_uae_phone?: string;
+  emergency_contact_home_name?: string;
+  emergency_contact_home_phone?: string;
+  religion?: string;
+  nationality?: string;
+  marital_status?: string;
 }
 
 export interface Activity {

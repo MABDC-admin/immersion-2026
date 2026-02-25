@@ -287,34 +287,42 @@ export default function EmployeeDetail() {
             </Card>
 
             <div className="flex-1 w-full min-w-0">
-              <Tabs defaultValue="dashboard" className="space-y-6 w-full">
+              <Tabs defaultValue={isAdminOrHR ? "dashboard" : "profile"} className="space-y-6 w-full">
                 <div className="sticky top-0 z-10 -mx-4 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b lg:border-none lg:p-0 lg:static overflow-hidden">
                   <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/40 no-scrollbar flex-nowrap scrollbar-hide">
-                    <TabsTrigger value="dashboard" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                      <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      Dash
-                    </TabsTrigger>
+                    {isAdminOrHR && (
+                      <TabsTrigger value="dashboard" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Dash
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="profile" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
                       <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       Profile
                     </TabsTrigger>
-                    <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                      <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      Leave
-                    </TabsTrigger>
-                    <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
-                      <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      Training
-                    </TabsTrigger>
+                    {isAdminOrHR && (
+                      <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Leave
+                      </TabsTrigger>
+                    )}
+                    {isAdminOrHR && (
+                      <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Training
+                      </TabsTrigger>
+                    )}
                   </TabsList>
                 </div>
 
-                <TabsContent value="dashboard" className="space-y-6">
-                  <EmployeeDashboardView
-                    employeeId={id || ''}
-                    onUpdateProfile={() => setIsEditModalOpen(true)}
-                  />
-                </TabsContent>
+                {isAdminOrHR && (
+                  <TabsContent value="dashboard" className="space-y-6">
+                    <EmployeeDashboardView
+                      employeeId={id || ''}
+                      onUpdateProfile={() => setIsEditModalOpen(true)}
+                    />
+                  </TabsContent>
+                )}
 
                 <TabsContent value="profile" className="space-y-6 focus-visible:outline-none">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
