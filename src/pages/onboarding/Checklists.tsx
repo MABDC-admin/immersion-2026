@@ -5,6 +5,7 @@ import {
     useUpdateOnboardingStatus, useToggleOnboardingItem,
     useCreateOnboardingItem, useDeleteOnboardingItem,
 } from '@/hooks/useOnboarding';
+import { useAuth } from '@/hooks/useAuth';
 import { useEmployees } from '@/hooks/useEmployees';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,8 @@ import { useToast } from '@/hooks/use-toast';
 export default function Checklists() {
     const { data: checklists = [], isLoading } = useOnboardingChecklists();
     const { data: employees = [] } = useEmployees();
+    const { isAdmin, userRole } = useAuth();
+    const isAdminOrHR = isAdmin || userRole === 'hr_manager';
     const createChecklist = useCreateChecklist();
     const deleteChecklist = useDeleteChecklist();
     const updateStatus = useUpdateOnboardingStatus();
@@ -244,9 +247,11 @@ export default function Checklists() {
                                                             Reopen
                                                         </Button>
                                                     ) : null}
-                                                    <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); handleDelete(checklist.id); }}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
+                                                    {isAdminOrHR && (
+                                                        <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); handleDelete(checklist.id); }}>
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    )}
                                                     <CollapsibleTrigger asChild>
                                                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                                             <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
@@ -271,13 +276,15 @@ export default function Checklists() {
                                                         {item.description && (
                                                             <span className="text-[10px] text-muted-foreground hidden sm:inline truncate max-w-[200px]">{item.description}</span>
                                                         )}
-                                                        <Button
-                                                            variant="ghost" size="sm"
-                                                            className="h-6 w-6 p-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                                                            onClick={() => handleDeleteItem(item.id)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
+                                                        {isAdminOrHR && (
+                                                            <Button
+                                                                variant="ghost" size="sm"
+                                                                className="h-6 w-6 p-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                                                onClick={() => handleDeleteItem(item.id)}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 ))}
 
