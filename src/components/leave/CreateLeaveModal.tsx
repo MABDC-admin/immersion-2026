@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Paperclip, X } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { useCreateLeaveRequest } from '@/hooks/useLeave';
 import { useEmployees } from '@/hooks/useEmployees';
 import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const leaveFormSchema = z.object({
     employee_id: z.string().uuid('Please select an employee'),
@@ -39,12 +41,15 @@ type LeaveFormValues = z.infer<typeof leaveFormSchema>;
 interface CreateLeaveModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    employeeId?: string; // When provided, auto-fill and hide employee dropdown
+    employeeId?: string;
 }
 
 export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeaveModalProps) {
     const createLeave = useCreateLeaveRequest();
     const { data: employees = [] } = useEmployees();
+    const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<LeaveFormValues>({
         resolver: zodResolver(leaveFormSchema),
@@ -57,22 +62,57 @@ export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeave
         },
     });
 
-    // When employeeId prop changes, update the form value
     useEffect(() => {
         if (employeeId) {
             form.setValue('employee_id', employeeId);
         }
     }, [employeeId, form]);
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('File size must be less than 5MB');
+                return;
+            }
+            setAttachmentFile(file);
+        }
+    };
+
+    const uploadAttachment = async (employeeId: string): Promise<string | undefined> => {
+        if (!attachmentFile) return undefined;
+        setUploading(true);
+        try {
+            const fileExt = attachmentFile.name.split('.').pop();
+            const filePath = `${employeeId}/${Date.now()}.${fileExt}`;
+            const { error } = await supabase.storage
+                .from('leave-attachments')
+                .upload(filePath, attachmentFile);
+            if (error) throw error;
+            const { data: urlData } = supabase.storage
+                .from('leave-attachments')
+                .getPublicUrl(filePath);
+            return urlData.publicUrl;
+        } catch (err: any) {
+            toast.error('Failed to upload attachment');
+            return undefined;
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const onSubmit = async (values: LeaveFormValues) => {
+        const attachmentUrl = await uploadAttachment(values.employee_id);
         await createLeave.mutateAsync({
             employee_id: values.employee_id,
             leave_type: values.leave_type,
             start_date: format(values.start_date, 'yyyy-MM-dd'),
             end_date: format(values.end_date, 'yyyy-MM-dd'),
             reason: values.reason || undefined,
+            attachment_url: attachmentUrl,
         });
         form.reset({ employee_id: employeeId || '', leave_type: 'Annual Leave', start_date: new Date(), end_date: new Date(), reason: '' });
+        setAttachmentFile(null);
         onOpenChange(false);
     };
 
@@ -85,7 +125,6 @@ export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeave
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        {/* Only show employee dropdown for admin/HR (when no employeeId is provided) */}
                         {!employeeId && (
                             <FormField
                                 control={form.control}
@@ -127,11 +166,8 @@ export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeave
                                         </FormControl>
                                         <SelectContent>
                                             <SelectItem value="Annual Leave">Annual Leave</SelectItem>
-                                            <SelectItem value="Sick Leave">Sick Leave</SelectItem>
-                                            <SelectItem value="Maternity Leave">Maternity Leave</SelectItem>
-                                            <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
-                                            <SelectItem value="Unpaid Leave">Unpaid Leave</SelectItem>
-                                            <SelectItem value="Other">Other</SelectItem>
+                                            <SelectItem value="Local Leave">Local Leave</SelectItem>
+                                            <SelectItem value="LOP">LOP (Loss of Pay)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -202,10 +238,43 @@ export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeave
                             )}
                         />
 
+                        {/* Attachment Upload */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Attachment</label>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                className="hidden"
+                            />
+                            {attachmentFile ? (
+                                <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
+                                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm truncate flex-1">{attachmentFile.name}</span>
+                                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAttachmentFile(null)}>
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <Paperclip className="h-4 w-4 mr-2" />
+                                    Attach supporting document
+                                </Button>
+                            )}
+                            <p className="text-xs text-muted-foreground">PDF, JPG, PNG, DOC (max 5MB)</p>
+                        </div>
+
                         <div className="flex justify-end gap-3 pt-4">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button type="submit" disabled={createLeave.isPending}>
-                                {createLeave.isPending ? 'Submitting...' : 'Submit Request'}
+                            <Button type="submit" disabled={createLeave.isPending || uploading}>
+                                {createLeave.isPending || uploading ? 'Submitting...' : 'Submit Request'}
                             </Button>
                         </div>
                     </form>
