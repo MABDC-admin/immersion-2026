@@ -75,9 +75,11 @@ serve(async (req) => {
     // Generate password
     const newPassword = generatePassword();
 
-    // Update user password
+    // Update user password and ensure email is synced
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       password: newPassword,
+      email: email,
+      email_confirm: true,
     });
 
     if (updateError) {

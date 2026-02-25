@@ -45,14 +45,17 @@ export default function Auth() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = authSchema.safeParse({ email, password });
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    const result = authSchema.safeParse({ email: cleanEmail, password: cleanPassword });
     if (!result.success) {
       toast.error(result.error.errors[0].message);
       return;
     }
 
     setIsSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(cleanEmail, cleanPassword);
     setIsSubmitting(false);
 
     if (error) {
@@ -70,7 +73,10 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = authSchema.safeParse({ email, password });
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    const result = authSchema.safeParse({ email: cleanEmail, password: cleanPassword });
     if (!result.success) {
       toast.error(result.error.errors[0].message);
       return;
