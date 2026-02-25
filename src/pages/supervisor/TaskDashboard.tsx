@@ -120,10 +120,17 @@ export default function TaskDashboard() {
     };
 
     const handleSubmitTask = async () => {
-        if (!employee || !taskTitle.trim() || !taskInternId) {
+        if (!taskTitle.trim() || !taskInternId) {
             toast({ title: 'Please fill in title and select an intern', variant: 'destructive' });
             return;
         }
+
+        const supervisorId = employee?.id || user?.id;
+        if (!supervisorId) {
+            toast({ title: 'Error: Could not identify supervisor ID', variant: 'destructive' });
+            return;
+        }
+
         try {
             if (editingTask) {
                 await updateTask.mutateAsync({
@@ -137,7 +144,7 @@ export default function TaskDashboard() {
                 toast({ title: 'Task updated' });
             } else {
                 await createTask.mutateAsync({
-                    supervisor_id: employee.id,
+                    supervisor_id: supervisorId,
                     intern_id: taskInternId,
                     title: taskTitle.trim(),
                     description: taskDesc.trim() || undefined,

@@ -27,7 +27,7 @@ export function BottomNav() {
         ? [
             { label: 'Employees', icon: Users, to: '/employees' },
             { label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' },
-            { label: 'OJT', icon: Target, to: '/admin/ojt' },
+            { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
         ]
         : [

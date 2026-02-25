@@ -96,8 +96,8 @@ export default function OjtManagement() {
         <MainLayout>
             <div className="space-y-6 animate-fade-in">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold">OJT Progress Management</h1>
-                    <p className="text-sm text-muted-foreground">Override and adjust intern OJT records</p>
+                    <h1 className="text-xl md:text-2xl font-bold">Work Immersion Tracking</h1>
+                    <p className="text-sm text-muted-foreground">Override and adjust intern Work Immersion records</p>
                 </div>
 
                 {/* Stats */}
@@ -212,9 +212,9 @@ export default function OjtManagement() {
             <Dialog open={isOverrideOpen} onOpenChange={setIsOverrideOpen}>
                 <DialogContent className="sm:max-w-lg w-[95vw]">
                     <DialogHeader>
-                        <DialogTitle>OJT Override</DialogTitle>
+                        <DialogTitle>Work Immersion Override</DialogTitle>
                         <DialogDescription>
-                            {selectedIntern && `Adjust OJT progress for ${selectedIntern.first_name} ${selectedIntern.last_name}`}
+                            {selectedIntern && `Adjust Work Immersion progress for ${selectedIntern.first_name} ${selectedIntern.last_name}`}
                         </DialogDescription>
                     </DialogHeader>
 

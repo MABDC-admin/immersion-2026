@@ -25,7 +25,7 @@ interface EmployeeDashboardViewProps {
     onUpdateProfile?: () => void;
 }
 
-// Target OJT hours
+// Target Work Immersion hours
 const TARGET_OJT_HOURS = 80;
 
 function calculateTotalHours(records: any[]): number {
@@ -52,7 +52,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
 
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
-    // OJT Hours calculation
+    // Work Immersion Hours calculation
     const totalOjtHours = useMemo(() => calculateTotalHours(attendanceRecords), [attendanceRecords]);
     const ojtProgress = Math.min((totalOjtHours / TARGET_OJT_HOURS) * 100, 100);
 
@@ -108,9 +108,9 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                 </Card>
             )}
 
-            {/* OJT Progress + Stats Row */}
+            {/* Work Immersion Progress + Stats Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* OJT Hours Progress — large card */}
+                {/* Work Immersion Hours Progress — large card */}
                 <Card className="lg:col-span-2 border-l-4 border-l-hrms-success shadow-sm">
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between mb-3">
@@ -119,7 +119,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                                     <Target className="h-5 w-5 text-hrms-success" />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-bold">OJT Hours Progress</h4>
+                                    <h4 className="text-sm font-bold">Work Immersion Hours Progress</h4>
                                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                                         Target: {TARGET_OJT_HOURS} hours
                                     </p>
@@ -157,7 +157,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                                 <span className="font-semibold">{attendanceRecords.length}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">OJT Progress</span>
+                                <span className="text-muted-foreground">Work Immersion Progress</span>
                                 <span className="font-semibold">{ojtProgress.toFixed(0)}%</span>
                             </div>
                         </div>
@@ -206,7 +206,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                             <Target className="h-5 w-5 text-purple-500" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">OJT Progress</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Work Immersion Progress</p>
                             <p className="text-lg font-bold">{ojtProgress.toFixed(0)}%</p>
                         </div>
                     </CardContent>

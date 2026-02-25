@@ -72,7 +72,7 @@ const navItems: NavItem[] = [
     ],
   },
   { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
-  { title: 'OJT Management', icon: Target, href: '/admin/ojt' },
+  { title: 'Work Immersion', icon: Target, href: '/admin/ojt' },
   { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
