@@ -45,6 +45,41 @@ export function useOnboardingChecklists() {
     });
 }
 
+export function useCreateChecklist() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { employee_id: string; title: string }) => {
+            const { data: checklist, error } = await supabase
+                .from('onboarding_checklists')
+                .insert([{ ...data, status: 'in_progress' }])
+                .select()
+                .single();
+            if (error) throw error;
+            return checklist;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['onboarding_checklists'] });
+            toast.success('Checklist created');
+        },
+    });
+}
+
+export function useDeleteChecklist() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            // Delete items first, then checklist
+            await supabase.from('onboarding_items').delete().eq('checklist_id', id);
+            const { error } = await supabase.from('onboarding_checklists').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['onboarding_checklists'] });
+            toast.success('Checklist deleted');
+        },
+    });
+}
+
 export function useUpdateOnboardingStatus() {
     const queryClient = useQueryClient();
 
@@ -63,6 +98,37 @@ export function useUpdateOnboardingStatus() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['onboarding_checklists'] });
             toast.success('Onboarding status updated');
+        },
+    });
+}
+
+export function useCreateOnboardingItem() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { checklist_id: string; title: string; description?: string; due_date?: string }) => {
+            const { data: item, error } = await supabase
+                .from('onboarding_items')
+                .insert([data])
+                .select()
+                .single();
+            if (error) throw error;
+            return item;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['onboarding_checklists'] });
+        },
+    });
+}
+
+export function useDeleteOnboardingItem() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('onboarding_items').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['onboarding_checklists'] });
         },
     });
 }

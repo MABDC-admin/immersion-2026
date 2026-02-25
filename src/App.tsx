@@ -26,6 +26,9 @@ import NewHires from "./pages/onboarding/NewHires";
 import Checklists from "./pages/onboarding/Checklists";
 import OnboardingDocuments from "./pages/onboarding/Documents";
 import Courses from "./pages/training/Courses";
+import Journal from "./pages/journal/Journal";
+import MyEvaluations from "./pages/evaluations/MyEvaluations";
+import MyDocuments from "./pages/documents/MyDocuments";
 
 // Public pages
 import CareersPage from "./pages/careers/CareersPage";
@@ -33,6 +36,13 @@ import PublicJobApplication from "./pages/careers/PublicJobApplication";
 
 // Admin
 import AdminPanel from "./pages/admin/AdminPanel";
+import OjtManagement from "./pages/admin/OjtManagement";
+
+// Supervisor
+import TaskDashboard from "./pages/supervisor/TaskDashboard";
+
+// Intern
+import MyTasks from "./pages/intern/MyTasks";
 
 // Evaluations
 import EvaluationsPage from "./pages/evaluations/Evaluations";
@@ -95,8 +105,18 @@ const App = () => (
             {/* Admin */}
             <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
 
+            {/* New Intern Modules */}
+            <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
+            <Route path="/my-evaluations" element={<ProtectedRoute><MyEvaluations /></ProtectedRoute>} />
+            <Route path="/my-documents" element={<ProtectedRoute><MyDocuments /></ProtectedRoute>} />
+
             {/* Evaluations */}
             <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
+
+            {/* Admin OJT + Supervisor Tasks + Intern Tasks */}
+            <Route path="/admin/ojt" element={<ProtectedRoute><OjtManagement /></ProtectedRoute>} />
+            <Route path="/supervisor/tasks" element={<ProtectedRoute><TaskDashboard /></ProtectedRoute>} />
+            <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

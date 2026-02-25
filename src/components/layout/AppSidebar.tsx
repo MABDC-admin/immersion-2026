@@ -3,6 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, Clock, UserPlus, TrendingUp,
   UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield, User, ClipboardCheck,
+  BookOpen, FileText, MessageSquare, ListChecks, Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,12 +19,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
+  className?: string;
   href?: string;
   subItems?: { title: string; href: string }[];
   adminOnly?: boolean;
-  employeeVisible?: boolean; // If true, visible to regular employees
+  employeeVisible?: boolean;
 }
 
+// Full nav for Admin / HR
 const navItems: NavItem[] = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', employeeVisible: true },
   { title: 'Employee', icon: Users, href: '/employees' },
@@ -38,6 +41,7 @@ const navItems: NavItem[] = [
       { title: 'Attendance', href: '/attendance' },
       { title: 'Timesheets', href: '/attendance/timesheets' },
       { title: 'Reports', href: '/attendance/reports' },
+      { title: 'Supervisor View', href: '/supervisor/attendance' },
     ],
   },
   {
@@ -67,15 +71,36 @@ const navItems: NavItem[] = [
       { title: 'Certificates', href: '/training/certificates' },
     ],
   },
-  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: false },
+  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
+  { title: 'OJT Management', icon: Target, href: '/admin/ojt' },
+  { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
 ];
 
-// Supervisor-specific nav: only Interns and Evaluations (no Dashboard)
-const supervisorNavItems: NavItem[] = [
-  { title: 'Interns', icon: Users, href: '__SUPERVISOR_PORTAL__', employeeVisible: true },
-  { title: 'Attendance', icon: Clock, href: '/supervisor/attendance', employeeVisible: true },
-  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', employeeVisible: true },
+// Intern / Employee nav — full access to relevant modules
+const employeeNavItems: NavItem[] = [
+  { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { title: 'My Profile', icon: User, href: '__MY_PROFILE__' },
+  { title: 'Attendance', icon: Clock, href: '/attendance' },
+  { title: 'Daily Journal', icon: BookOpen, href: '/journal' },
+  { title: 'My Evaluations', icon: ClipboardCheck, href: '/my-evaluations' },
+  { title: 'Onboarding', icon: UserCheck, href: '/onboarding/checklists' },
+  { title: 'My Documents', icon: FileText, href: '/my-documents' },
+  {
+    title: 'Leave', icon: Calendar, subItems: [
+      { title: 'Leave Requests', href: '/leave/requests' },
+      { title: 'Leave Calendar', href: '/leave/calendar' },
+    ],
+  },
+  {
+    title: 'Training', icon: GraduationCap, subItems: [
+      { title: 'Courses', href: '/training/courses' },
+      { title: 'Enrollments', href: '/training/enrollments' },
+      { title: 'Certificates', href: '/training/certificates' },
+    ],
+  },
+  { title: 'Chat', icon: MessageSquare, href: '/chat' },
+  { title: 'My Tasks', icon: ListChecks, href: '/my-tasks' },
 ];
 
 export function AppSidebar() {
@@ -108,50 +133,33 @@ export function AppSidebar() {
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
 
-  const isSupervisor = employee?.job_title?.toLowerCase().includes('supervisor') && !isAdminOrHR;
-
+  // Build final nav items based on role
   const finalFilteredItems = (() => {
-    if (isSupervisor) {
-      return supervisorNavItems.map(item => {
-        if (item.href === '__SUPERVISOR_PORTAL__' && employee) {
-          return { ...item, href: `/employees/${employee.id}` };
-        }
-        return item;
+    if (isAdminOrHR) {
+      // Admin/HR/Supervisors see the full admin sidebar
+      return [...navItems].filter(item => {
+        if (item.adminOnly && !isAdmin) return false;
+        return true;
       });
     }
-    return [...navItems].filter(item => {
-      if (item.adminOnly && !isAdmin) return false;
-      if (!isAdminOrHR && !item.employeeVisible) return false;
-      return true;
+    // Employees / Interns see the employee-focused sidebar
+    return employeeNavItems.map(item => {
+      if (item.href === '__MY_PROFILE__' && employee) {
+        return { ...item, href: `/employees/${employee.id}` };
+      }
+      return item;
     });
   })();
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">
       <SidebarHeader className="p-4">
-        {isSupervisor && employee ? (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <Avatar className={cn("ring-2 ring-sidebar-primary/30", collapsed ? "h-10 w-10" : "h-20 w-20")}>
-              <AvatarImage src={employee.avatar_url || ''} alt={`${employee.first_name} ${employee.last_name}`} />
-              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-lg">
-                {`${employee.first_name[0]}${employee.last_name[0]}`.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {!collapsed && (
-              <div className="text-center">
-                <p className="text-sm font-semibold text-sidebar-foreground">{employee.first_name} {employee.last_name}</p>
-                <p className="text-xs text-sidebar-foreground/60">{employee.job_title || 'Supervisor'}</p>
-              </div>
-            )}
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+            <span className="text-lg font-bold text-sidebar-primary-foreground">IM</span>
           </div>
-        ) : (
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-              <span className="text-lg font-bold text-sidebar-primary-foreground">IM</span>
-            </div>
-            {!collapsed && <span className="text-xl font-bold text-sidebar-foreground">LOGO</span>}
-          </Link>
-        )}
+          {!collapsed && <span className="text-xl font-bold text-sidebar-foreground">LOGO</span>}
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-2">
@@ -201,7 +209,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="" />
+            <AvatarImage src={employee?.avatar_url || ''} />
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">{userInitials}</AvatarFallback>
           </Avatar>
           {!collapsed && (

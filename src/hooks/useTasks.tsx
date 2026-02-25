@@ -1,0 +1,128 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface InternTask {
+    id: string;
+    supervisor_id: string;
+    intern_id: string;
+    title: string;
+    description: string | null;
+    due_date: string | null;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    status: 'pending' | 'in_progress' | 'submitted' | 'completed' | 'overdue';
+    progress: number;
+    submission_notes: string | null;
+    submission_file_path: string | null;
+    supervisor_feedback: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    intern?: { first_name: string; last_name: string; avatar_url?: string; email: string };
+    supervisor?: { first_name: string; last_name: string };
+}
+
+export function useSupervisorTasks(supervisorId: string) {
+    return useQuery({
+        queryKey: ['supervisor-tasks', supervisorId],
+        queryFn: async () => {
+            if (!supervisorId) return [];
+            const { data, error } = await supabase
+                .from('intern_tasks')
+                .select('*, intern:employees!intern_tasks_intern_id_fkey(first_name, last_name, avatar_url, email)')
+                .eq('supervisor_id', supervisorId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return (data || []) as InternTask[];
+        },
+        enabled: !!supervisorId,
+    });
+}
+
+export function useInternTasks(internId: string) {
+    return useQuery({
+        queryKey: ['intern-tasks', internId],
+        queryFn: async () => {
+            if (!internId) return [];
+            const { data, error } = await supabase
+                .from('intern_tasks')
+                .select('*, supervisor:employees!intern_tasks_supervisor_id_fkey(first_name, last_name)')
+                .eq('intern_id', internId)
+                .order('due_date', { ascending: true });
+            if (error) throw error;
+            return (data || []) as InternTask[];
+        },
+        enabled: !!internId,
+    });
+}
+
+export function useCreateTask() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (task: {
+            supervisor_id: string;
+            intern_id: string;
+            title: string;
+            description?: string;
+            due_date?: string;
+            priority?: string;
+        }) => {
+            const { data, error } = await supabase
+                .from('intern_tasks')
+                .insert([task] as any)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, vars) => {
+            qc.invalidateQueries({ queryKey: ['supervisor-tasks', vars.supervisor_id] });
+            qc.invalidateQueries({ queryKey: ['intern-tasks', vars.intern_id] });
+        },
+    });
+}
+
+export function useUpdateTask() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...updates }: { id: string;[key: string]: any }) => {
+            const { data, error } = await supabase
+                .from('intern_tasks')
+                .update(updates as any)
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['supervisor-tasks'] });
+            qc.invalidateQueries({ queryKey: ['intern-tasks'] });
+        },
+    });
+}
+
+export function useDeleteTask() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('intern_tasks').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['supervisor-tasks'] });
+            qc.invalidateQueries({ queryKey: ['intern-tasks'] });
+        },
+    });
+}
+
+export function useUploadTaskFile() {
+    return useMutation({
+        mutationFn: async ({ taskId, file }: { taskId: string; file: File }) => {
+            const ext = file.name.split('.').pop();
+            const path = `${taskId}/${Date.now()}.${ext}`;
+            const { error } = await supabase.storage.from('task-submissions').upload(path, file);
+            if (error) throw error;
+            return path;
+        },
+    });
+}
