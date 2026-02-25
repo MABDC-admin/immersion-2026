@@ -1,108 +1,124 @@
 
 
-## Plan: Supervisor Attendance Module with QR Code Scanning
+## Comprehensive Leave Management System
 
 ### Overview
-This plan covers four changes:
-1. Change TARGET_HOURS from 500 to 80
-2. Add a new "Attendance" page for supervisors showing all interns' time clock records
-3. Add the "Attendance" link to the supervisor sidebar
-4. Add QR code generation for each intern (button + display in dropdown)
+Rebuild the Leave Requests page (`/leave/requests`) into a full-featured Leave Management system with leave balance cards, tabbed approval workflow, attachment uploads, and email notifications on approve/reject. Also enhance the Leave Calendar page for HR team availability view.
 
 ---
 
-### 1. Change Target Hours to 80
-**File:** `src/components/supervisor/InternsList.tsx`
-- Change `const TARGET_HOURS = 500;` to `const TARGET_HOURS = 80;`
+### 1. Update Leave Types in the Form
+
+**File:** `src/components/leave/CreateLeaveModal.tsx`
+
+Replace the current hardcoded leave type options with the requested types:
+- LOP (Loss of Pay)
+- Annual Leave
+- Local Leave
+
+Add an attachment upload field using the existing `employee-documents` storage bucket. The form schema will be extended with an optional `attachment` file field.
 
 ---
 
-### 2. New Supervisor Attendance Page
+### 2. Create Leave Balance Cards Component
 
-**New file:** `src/pages/attendance/SupervisorAttendance.tsx`
+**New file:** `src/components/leave/LeaveBalanceCards.tsx`
 
-A dedicated page at `/supervisor/attendance` that shows:
-- A summary card with total interns and today's attendance count
-- A table listing all attendance records for the supervisor's interns (fetched via the existing RLS policy that allows supervisors to view their interns' attendance)
-- Filter by intern name and date range
-- Each row shows: Intern Name, Date, Clock In, Clock Out, Hours, Status
-
-The page will:
-- Use `useAuth` and `useCurrentEmployee` to get the supervisor's employee ID
-- Query `employees` where `manager_id = supervisorId` to get intern list
-- Query `attendance` table filtered by those intern IDs (RLS already supports this)
+Display card-based leave balances per type using data from the existing `leave_balances` table. Each card shows:
+- Leave type name
+- Remaining days / Total days
+- Used days
+- A visual progress bar (`Progress` component)
+- Color-coded warning when balance is low (e.g., less than 3 days remaining turns amber/red)
 
 ---
 
-### 3. Attendance Kiosk Page with QR Scanning
+### 3. Rebuild Leave Requests Page with Tabbed Workflow
 
-**New file:** `src/pages/attendance/AttendanceKiosk.tsx`
+**File:** `src/pages/leave/Requests.tsx`
 
-A public-facing kiosk page at `/kiosk/:supervisorId` that:
-- Shows the supervisor's name and a QR scanner interface
-- When an intern's QR code is scanned, it reads the intern's employee ID from the QR data
-- Automatically clocks the intern in or out (clock in if no record today, clock out if already clocked in)
-- Shows a confirmation with the intern's name and timestamp
-- This page does NOT require authentication -- it uses a backend edge function for the actual clock-in/clock-out
+Complete redesign into a modern dashboard layout:
 
-**New edge function:** `supabase/functions/kiosk-clock/index.ts`
-- Accepts POST with `{ employeeId, supervisorId }`
-- Validates the employee is managed by the supervisor
-- Inserts or updates the attendance record using the service role key
-- Returns success with clock-in or clock-out status
-
----
-
-### 4. QR Code Generation
-
-**Install dependency:** `qrcode.react` -- a lightweight React component for rendering QR codes
-
-**Changes to `src/components/supervisor/InternsList.tsx`:**
-- Add a "Generate QR" button on each intern card (next to "Evaluate")
-- The QR code encodes a JSON string: `{ "employeeId": "<intern-id>", "supervisorId": "<supervisor-id>" }`
-- Display the QR code inside the expanded dropdown section as well
-- Add a download/print button for the QR code
-
----
-
-### 5. Sidebar Update
-
-**File:** `src/components/layout/AppSidebar.tsx`
-
-Add "Attendance" to `supervisorNavItems`:
 ```text
-supervisorNavItems = [
-  Interns -> /employees/{supervisorId}
-  Attendance -> /supervisor/attendance
-  Evaluations -> /evaluations
-]
++--------------------------------------------------+
+| Leave Management                                  |
++--------------------------------------------------+
+| [Balance Card: LOP] [Balance Card: Annual] [...]  |
++--------------------------------------------------+
+| [Request Leave Button]                            |
++--------------------------------------------------+
+| Tabs: [All] [Pending] [Approved] [Rejected]      |
+| +----------------------------------------------+ |
+| | Employee | Type | Duration | Status | Actions | |
+| +----------------------------------------------+ |
++--------------------------------------------------+
 ```
 
+- **Employee view**: Shows their own balances + their requests in tabs
+- **HR/Admin view**: Shows team-wide overview with quick approve/reject buttons on the Pending tab
+- Each tab filters the leave requests by status
+- Status badges with color indicators (yellow=pending, green=approved, red=rejected)
+
 ---
 
-### 6. Route Registration
+### 4. Email Notification on Approve/Reject
 
-**File:** `src/App.tsx`
+**File:** `supabase/functions/send-onboarding-email/index.ts`
 
-Add routes:
-- `/supervisor/attendance` -> `SupervisorAttendance` (protected)
-- `/kiosk/:supervisorId` -> `AttendanceKiosk` (public, no auth required)
+Extend the existing edge function to handle a new `type: "leave_status"` email. The email will include:
+- Employee name
+- Leave type and dates
+- New status (Approved/Rejected)
+- Company branding (reusing existing template)
+
+**File:** `src/hooks/useLeave.tsx`
+
+Update `useUpdateLeaveStatus` mutation to:
+1. Update the status in the database
+2. Fetch the employee's email from the `employees` table
+3. Call the edge function to send the status notification email
+
+---
+
+### 5. Attachment Upload Support
+
+**File:** `src/components/leave/CreateLeaveModal.tsx`
+
+Add a file input field for uploading supporting documents (medical certificates, etc.). Files will be uploaded to a new `leave-attachments` storage bucket.
+
+**Database migration:**
+- Add `attachment_url` column (text, nullable) to `leave_requests` table
+- Create `leave-attachments` storage bucket (public: false) with appropriate RLS policies
+
+---
+
+### 6. Enhanced Leave Calendar (HR Dashboard)
+
+**File:** `src/pages/leave/Calendar.tsx`
+
+Update the existing calendar to also serve as an HR availability dashboard:
+- Add a legend showing leave type colors including the new types (LOP, Local Leave)
+- Show team member count available per day
+- Keep existing calendar grid layout
 
 ---
 
 ### Technical Details
 
-**Database changes:** None required. The existing `attendance` table and RLS policies already support supervisor viewing intern attendance. The edge function will use the service role key to bypass RLS for kiosk clock-in/out.
+**Files to create:**
+- `src/components/leave/LeaveBalanceCards.tsx` -- balance cards component
 
-**New files:**
-- `src/pages/attendance/SupervisorAttendance.tsx` -- supervisor's attendance dashboard
-- `src/pages/attendance/AttendanceKiosk.tsx` -- public kiosk page with QR scanner
-- `supabase/functions/kiosk-clock/index.ts` -- edge function for unauthenticated clock-in/out
+**Files to modify:**
+- `src/pages/leave/Requests.tsx` -- full redesign with tabs, balance cards, modern layout
+- `src/components/leave/CreateLeaveModal.tsx` -- updated leave types, attachment upload
+- `src/hooks/useLeave.tsx` -- add email sending on status update, add leave balance query hook
+- `supabase/functions/send-onboarding-email/index.ts` -- add leave status email type
+- `src/types/employee.ts` -- add `attachment_url` to `LeaveRequest` and `CreateLeaveRequestInput`
+- `src/pages/leave/Calendar.tsx` -- add new leave type colors
 
-**Modified files:**
-- `src/components/supervisor/InternsList.tsx` -- TARGET_HOURS change, QR code button + display
-- `src/components/layout/AppSidebar.tsx` -- add Attendance nav item
-- `src/App.tsx` -- add new routes
+**Database migration:**
+- Add `attachment_url` column to `leave_requests` table
+- Create `leave-attachments` storage bucket with RLS policies for employees to upload and HR/admin to view
 
-**New dependency:** `qrcode.react` for QR code rendering
+**No new dependencies required** -- uses existing UI components (Tabs, Progress, Card, Badge, etc.) and the existing Resend email integration.
 
