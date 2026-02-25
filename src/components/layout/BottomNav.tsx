@@ -1,7 +1,7 @@
 import { useLocation, Link } from 'react-router-dom';
 import {
     ListChecks, BookOpen, MessageSquare,
-    Users, ClipboardCheck, Target, Clock,
+    Users, ClipboardCheck, Target, Clock, Home
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +31,7 @@ export function BottomNav() {
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
         ]
         : [
+            { label: 'Home', icon: Home, to: '/dashboard' },
             { label: 'Tasks', icon: ListChecks, to: '/my-tasks' },
             { label: 'Journal', icon: BookOpen, to: '/journal' },
             { label: 'Attendance', icon: Clock, to: '/attendance' },
