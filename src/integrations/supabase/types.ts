@@ -786,6 +786,7 @@ export type Database = {
       leave_requests: {
         Row: {
           approved_by: string | null
+          attachment_url: string | null
           created_at: string
           employee_id: string
           end_date: string
@@ -797,6 +798,7 @@ export type Database = {
         }
         Insert: {
           approved_by?: string | null
+          attachment_url?: string | null
           created_at?: string
           employee_id: string
           end_date: string
@@ -808,6 +810,7 @@ export type Database = {
         }
         Update: {
           approved_by?: string | null
+          attachment_url?: string | null
           created_at?: string
           employee_id?: string
           end_date?: string

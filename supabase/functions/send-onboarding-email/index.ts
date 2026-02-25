@@ -15,9 +15,12 @@ interface EmailPayload {
   firstName: string;
   lastName: string;
   startDate?: string;
-  type?: "onboarding" | "approval";
+  type?: "onboarding" | "approval" | "leave_status";
   username?: string;
   password?: string;
+  leaveType?: string;
+  endDate?: string;
+  leaveStatus?: string;
 }
 
 interface CompanySettings {
@@ -123,14 +126,42 @@ serve(async (req) => {
   }
 
   try {
-    const { to, firstName, lastName, startDate, type, username, password }: EmailPayload = await req.json();
+    const { to, firstName, lastName, startDate, type, username, password, leaveType, endDate, leaveStatus }: EmailPayload = await req.json();
     const company = await getCompanySettings();
     const credentialsHtml = buildCredentialsBox(username, password);
 
     let subject: string;
     let bodyContent: string;
 
-    if (type === "approval") {
+    if (type === "leave_status") {
+      const statusLabel = leaveStatus === "approved" ? "Approved ✅" : "Rejected ❌";
+      const statusColor = leaveStatus === "approved" ? "#10b981" : "#ef4444";
+      subject = `Leave Request ${leaveStatus === "approved" ? "Approved" : "Rejected"}`;
+      bodyContent = `
+        <p>Dear <strong>${firstName} ${lastName}</strong>,</p>
+        <p>Your leave request has been <strong style="color:${statusColor};">${statusLabel}</strong>.</p>
+        <div style="margin:20px 0;padding:16px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
+          <table cellpadding="0" cellspacing="0" style="width:100%;">
+            <tr>
+              <td style="padding:6px 0;color:#6b7280;font-size:14px;width:110px;">Leave Type:</td>
+              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${leaveType || "N/A"}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:#6b7280;font-size:14px;">Start Date:</td>
+              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${startDate || "N/A"}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:#6b7280;font-size:14px;">End Date:</td>
+              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${endDate || "N/A"}</td>
+            </tr>
+          </table>
+        </div>
+        <p>If you have any questions, please contact the HR department.</p>
+        <br />
+        <p>Best regards,</p>
+        <p><strong>HR Department</strong><br/>${company.name}</p>
+      `;
+    } else if (type === "approval") {
       subject = "Confirmation of Onboarding";
       bodyContent = `
         <p>Dear <strong>${firstName} ${lastName}</strong>,</p>

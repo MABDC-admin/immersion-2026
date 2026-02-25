@@ -101,12 +101,14 @@ export interface LeaveRequest {
   end_date: string;
   status: LeaveStatus;
   reason?: string;
+  attachment_url?: string;
   approved_by?: string;
   created_at: string;
   employee?: {
     first_name: string;
     last_name: string;
     avatar_url?: string;
+    email?: string;
   };
 }
 
@@ -116,4 +118,15 @@ export interface CreateLeaveRequestInput {
   start_date: string;
   end_date: string;
   reason?: string;
+  attachment_url?: string;
+}
+
+export interface LeaveBalance {
+  id: string;
+  employee_id: string;
+  leave_type: string;
+  total_days: number;
+  used_days: number;
+  remaining_days: number;
+  year: number;
 }

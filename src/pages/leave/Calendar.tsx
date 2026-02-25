@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isWithinInterval, parseISO } from 'date-fns';
 
-const leaveTypeColors: Record<string, string> = {
-    'Annual Leave': 'bg-primary/20 text-primary',
-    'Sick Leave': 'bg-destructive/20 text-destructive',
-    'Personal Leave': 'bg-yellow-500/20 text-yellow-600',
-    'Maternity Leave': 'bg-pink-500/20 text-pink-600',
+const leaveTypeColors: Record<string, { bg: string; text: string; label: string }> = {
+    'Annual Leave': { bg: 'bg-primary/20', text: 'text-primary', label: 'Annual Leave' },
+    'Local Leave': { bg: 'bg-amber-500/20', text: 'text-amber-600', label: 'Local Leave' },
+    'LOP': { bg: 'bg-destructive/20', text: 'text-destructive', label: 'LOP' },
+    'Sick Leave': { bg: 'bg-orange-500/20', text: 'text-orange-600', label: 'Sick Leave' },
 };
 
 export default function LeaveCalendar() {
@@ -35,12 +35,28 @@ export default function LeaveCalendar() {
         });
     };
 
+    // Count total employees (unique) on leave per day for availability
+    const getTotalEmployees = () => {
+        const uniqueIds = new Set(approvedLeaves.map(l => l.employee_id));
+        return uniqueIds.size;
+    };
+
     return (
         <MainLayout>
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">Leave Calendar</h1>
-                    <p className="text-muted-foreground">View organization-wide approved leave schedule.</p>
+                    <p className="text-muted-foreground">View organization-wide approved leave schedule and team availability.</p>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3">
+                    {Object.entries(leaveTypeColors).map(([key, val]) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                            <div className={`h-3 w-3 rounded-sm ${val.bg}`} />
+                            <span className="text-xs text-muted-foreground">{val.label}</span>
+                        </div>
+                    ))}
                 </div>
 
                 {isLoading ? (
@@ -67,15 +83,25 @@ export default function LeaveCalendar() {
                                     const isToday = isSameDay(day, new Date());
                                     return (
                                         <div key={day.toISOString()} className={`h-24 border rounded-lg p-1 overflow-hidden ${isToday ? 'border-primary bg-primary/5' : 'bg-card'}`}>
-                                            <div className={`text-xs font-medium mb-1 ${isToday ? 'text-primary' : 'text-foreground'}`}>
-                                                {format(day, 'd')}
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <span className={`text-xs font-medium ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                                                    {format(day, 'd')}
+                                                </span>
+                                                {leaves.length > 0 && (
+                                                    <Badge variant="secondary" className="text-[9px] h-4 px-1">
+                                                        {leaves.length} off
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="space-y-0.5">
-                                                {leaves.slice(0, 2).map(leave => (
-                                                    <div key={leave.id} className={`text-[10px] px-1 py-0.5 rounded truncate ${leaveTypeColors[leave.leave_type] || 'bg-muted text-muted-foreground'}`}>
-                                                        {leave.employee?.first_name?.[0]}.{leave.employee?.last_name}
-                                                    </div>
-                                                ))}
+                                                {leaves.slice(0, 2).map(leave => {
+                                                    const colorConfig = leaveTypeColors[leave.leave_type] || { bg: 'bg-muted', text: 'text-muted-foreground' };
+                                                    return (
+                                                        <div key={leave.id} className={`text-[10px] px-1 py-0.5 rounded truncate ${colorConfig.bg} ${colorConfig.text}`}>
+                                                            {leave.employee?.first_name?.[0]}.{leave.employee?.last_name}
+                                                        </div>
+                                                    );
+                                                })}
                                                 {leaves.length > 2 && (
                                                     <div className="text-[10px] text-muted-foreground">+{leaves.length - 2} more</div>
                                                 )}
