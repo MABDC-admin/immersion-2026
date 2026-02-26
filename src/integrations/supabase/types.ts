@@ -201,6 +201,7 @@ export type Database = {
       candidates: {
         Row: {
           created_at: string
+          cv_data: Json | null
           email: string
           first_name: string
           id: string
@@ -211,6 +212,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cv_data?: Json | null
           email: string
           first_name: string
           id?: string
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cv_data?: Json | null
           email?: string
           first_name?: string
           id?: string
@@ -489,78 +492,173 @@ export type Database = {
           },
         ]
       }
+      employee_tasks: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          employee_id: string | null
+          id: string
+          is_completed: boolean | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address: string | null
           avatar_url: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          bank_swift_code: string | null
           city: string | null
           country: string | null
           created_at: string
+          cv_data: Json | null
           department_id: string | null
           email: string
+          emergency_contact_home_name: string | null
+          emergency_contact_home_phone: string | null
+          emergency_contact_uae_name: string | null
+          emergency_contact_uae_phone: string | null
+          emirates_id: string | null
           employee_id: string | null
           first_name: string
           hire_date: string
+          home_country_address: string | null
           id: string
           job_title: string | null
           last_name: string
           linkedin_url: string | null
           location_id: string | null
           manager_id: string | null
+          marital_status: string | null
+          nationality: string | null
+          passport_expiry: string | null
+          passport_number: string | null
           phone: string | null
+          religion: string | null
           slack_username: string | null
           status: Database["public"]["Enums"]["employee_status"]
           twitter_url: string | null
+          uae_address: string | null
           updated_at: string
           user_id: string | null
+          visa_expiry: string | null
+          visa_number: string | null
+          visa_status: string | null
         }
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_swift_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          cv_data?: Json | null
           department_id?: string | null
           email: string
+          emergency_contact_home_name?: string | null
+          emergency_contact_home_phone?: string | null
+          emergency_contact_uae_name?: string | null
+          emergency_contact_uae_phone?: string | null
+          emirates_id?: string | null
           employee_id?: string | null
           first_name: string
           hire_date?: string
+          home_country_address?: string | null
           id?: string
           job_title?: string | null
           last_name: string
           linkedin_url?: string | null
           location_id?: string | null
           manager_id?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
+          religion?: string | null
           slack_username?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
           twitter_url?: string | null
+          uae_address?: string | null
           updated_at?: string
           user_id?: string | null
+          visa_expiry?: string | null
+          visa_number?: string | null
+          visa_status?: string | null
         }
         Update: {
           address?: string | null
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_swift_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
+          cv_data?: Json | null
           department_id?: string | null
           email?: string
+          emergency_contact_home_name?: string | null
+          emergency_contact_home_phone?: string | null
+          emergency_contact_uae_name?: string | null
+          emergency_contact_uae_phone?: string | null
+          emirates_id?: string | null
           employee_id?: string | null
           first_name?: string
           hire_date?: string
+          home_country_address?: string | null
           id?: string
           job_title?: string | null
           last_name?: string
           linkedin_url?: string | null
           location_id?: string | null
           manager_id?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
+          religion?: string | null
           slack_username?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
           twitter_url?: string | null
+          uae_address?: string | null
           updated_at?: string
           user_id?: string | null
+          visa_expiry?: string | null
+          visa_number?: string | null
+          visa_status?: string | null
         }
         Relationships: [
           {
@@ -688,6 +786,176 @@ export type Database = {
           {
             foreignKeyName: "intern_evaluations_intern_id_fkey"
             columns: ["intern_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intern_journals: {
+        Row: {
+          activities: string
+          challenges: string | null
+          created_at: string
+          employee_id: string
+          entry_date: string
+          hours_worked: number | null
+          id: string
+          learnings: string | null
+          status: string
+          supervisor_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          activities: string
+          challenges?: string | null
+          created_at?: string
+          employee_id: string
+          entry_date?: string
+          hours_worked?: number | null
+          id?: string
+          learnings?: string | null
+          status?: string
+          supervisor_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activities?: string
+          challenges?: string | null
+          created_at?: string
+          employee_id?: string
+          entry_date?: string
+          hours_worked?: number | null
+          id?: string
+          learnings?: string | null
+          status?: string
+          supervisor_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intern_journals_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intern_ojt_overrides: {
+        Row: {
+          admin_id: string
+          completion_status: string | null
+          created_at: string
+          hours_value: number | null
+          id: string
+          intern_id: string
+          notes: string | null
+          override_type: string
+          progress_pct: number | null
+        }
+        Insert: {
+          admin_id: string
+          completion_status?: string | null
+          created_at?: string
+          hours_value?: number | null
+          id?: string
+          intern_id: string
+          notes?: string | null
+          override_type: string
+          progress_pct?: number | null
+        }
+        Update: {
+          admin_id?: string
+          completion_status?: string | null
+          created_at?: string
+          hours_value?: number | null
+          id?: string
+          intern_id?: string
+          notes?: string | null
+          override_type?: string
+          progress_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intern_ojt_overrides_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intern_ojt_overrides_intern_id_fkey"
+            columns: ["intern_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intern_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          intern_id: string
+          priority: string
+          progress: number
+          status: string
+          submission_file_path: string | null
+          submission_notes: string | null
+          supervisor_feedback: string | null
+          supervisor_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          intern_id: string
+          priority?: string
+          progress?: number
+          status?: string
+          submission_file_path?: string | null
+          submission_notes?: string | null
+          supervisor_feedback?: string | null
+          supervisor_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          intern_id?: string
+          priority?: string
+          progress?: number
+          status?: string
+          submission_file_path?: string | null
+          submission_notes?: string | null
+          supervisor_feedback?: string | null
+          supervisor_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intern_tasks_intern_id_fkey"
+            columns: ["intern_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intern_tasks_supervisor_id_fkey"
+            columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
@@ -1039,6 +1307,56 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_records: {
+        Row: {
+          allowances: number | null
+          basic_salary: number
+          created_at: string | null
+          deductions: number | null
+          employee_id: string | null
+          id: string
+          net_pay: number | null
+          payslip_url: string | null
+          period: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowances?: number | null
+          basic_salary: number
+          created_at?: string | null
+          deductions?: number | null
+          employee_id?: string | null
+          id?: string
+          net_pay?: number | null
+          payslip_url?: string | null
+          period: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowances?: number | null
+          basic_salary?: number
+          created_at?: string | null
+          deductions?: number | null
+          employee_id?: string | null
+          id?: string
+          net_pay?: number | null
+          payslip_url?: string | null
+          period?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_reviews: {
         Row: {
           comments: string | null
@@ -1255,6 +1573,7 @@ export type Database = {
         | "employee"
         | "payroll_officer"
         | "manager"
+        | "supervisor"
       conversation_type: "direct" | "group" | "hr_support"
       employee_status: "active" | "inactive" | "on_leave" | "terminated"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
@@ -1391,6 +1710,7 @@ export const Constants = {
         "employee",
         "payroll_officer",
         "manager",
+        "supervisor",
       ],
       conversation_type: ["direct", "group", "hr_support"],
       employee_status: ["active", "inactive", "on_leave", "terminated"],

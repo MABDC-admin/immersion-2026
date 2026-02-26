@@ -20,7 +20,7 @@ export function useJournalEntries(employeeId: string) {
         queryKey: ['journal-entries', employeeId],
         queryFn: async () => {
             if (!employeeId) return [];
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_journals')
                 .select('*')
                 .eq('employee_id', employeeId)
@@ -43,9 +43,9 @@ export function useCreateJournalEntry() {
             challenges?: string;
             hours_worked?: number;
         }) => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_journals')
-                .insert([entry] as any)
+                .insert([entry])
                 .select()
                 .single();
             if (error) throw error;
@@ -74,9 +74,9 @@ export function useUpdateJournalEntry() {
             status?: 'draft' | 'pending' | 'approved' | 'rejected';
             supervisor_notes?: string;
         }) => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_journals')
-                .update(updates as any)
+                .update(updates)
                 .eq('id', id)
                 .select()
                 .single();
@@ -93,7 +93,7 @@ export function useDeleteJournalEntry() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, employeeId }: { id: string; employeeId: string }) => {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('intern_journals')
                 .delete()
                 .eq('id', id);
@@ -118,7 +118,7 @@ export function useApproveJournalEntry() {
             status: 'approved' | 'rejected';
             supervisor_notes?: string;
         }) => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_journals')
                 .update({ status, supervisor_notes })
                 .eq('id', id)
@@ -152,7 +152,7 @@ export function usePendingJournalApprovals(supervisorId: string) {
             const internIds = interns.map(i => i.id);
 
             // Then get pending journals for these interns
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_journals')
                 .select(`
                     *,

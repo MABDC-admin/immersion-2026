@@ -19,7 +19,7 @@ export function useOjtOverrides(internId: string) {
         queryKey: ['ojt-overrides', internId],
         queryFn: async () => {
             if (!internId) return [];
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_ojt_overrides')
                 .select('*, admin:employees!intern_ojt_overrides_admin_id_fkey(first_name, last_name)')
                 .eq('intern_id', internId)
@@ -43,9 +43,9 @@ export function useCreateOjtOverride() {
             completion_status?: string;
             notes?: string;
         }) => {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('intern_ojt_overrides')
-                .insert([override] as any)
+                .insert([override])
                 .select()
                 .single();
             if (error) throw error;
@@ -89,15 +89,14 @@ export function useAllInternsOjt() {
             if (ae) throw ae;
 
             // Fetch all overrides
-            const { data: overrides, error: oe } = await supabase
+            const { data: overrides, error: oe } = await (supabase as any)
                 .from('intern_ojt_overrides')
                 .select('*')
                 .in('intern_id', internIds);
             if (oe) throw oe;
 
-            // Calculate per intern
-            return (interns || []).map(intern => {
-                const records = (attendance || []).filter(a => a.employee_id === intern.id);
+            return (interns || []).map((intern: any) => {
+                const records = (attendance || []).filter((a: any) => a.employee_id === intern.id);
                 let baseMinutes = 0;
                 for (const r of records) {
                     if (r.clock_in && r.clock_out) {
@@ -106,7 +105,7 @@ export function useAllInternsOjt() {
                 }
                 const baseHours = Math.round((baseMinutes / 60) * 10) / 10;
 
-                const internOverrides = (overrides || []).filter(o => o.intern_id === intern.id);
+                const internOverrides = (overrides || []).filter((o: any) => o.intern_id === intern.id);
                 let adjustedHours = baseHours;
                 let effectiveProgress: number | null = null;
                 let completionStatus = 'in_progress';
