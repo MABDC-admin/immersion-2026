@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Clock, BookOpen, ClipboardCheck, FileText, Calendar, ArrowRight, ListChecks,
-    Timer, Target, CalendarPlus, UserPen, GraduationCap, MessageSquare,
+    Timer, Target, CalendarPlus, UserPen, GraduationCap, MessageSquare, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -122,6 +122,44 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
                                 <BookOpen className="h-4 w-4" />
                                 View My Journal
                             </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* AI Profile Summary (From CV extraction) */}
+            {employee?.cv_data && (
+                <Card className="shadow-sm border-l-4 border-l-purple-500 bg-purple-500/5">
+                    <CardContent className="p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Sparkles className="h-5 w-5 text-purple-500" />
+                            <h4 className="font-bold text-sm">AI Profile Summary (From CV)</h4>
+                        </div>
+                        <div className="space-y-4">
+                            {employee.cv_data.summary && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-bold">Professional Summary</p>
+                                    <p className="text-sm">{employee.cv_data.summary}</p>
+                                </div>
+                            )}
+                            {employee.cv_data.skills && employee.cv_data.skills.length > 0 && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-bold">Skills</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {employee.cv_data.skills.map((skill: string) => (
+                                            <Badge key={skill} variant="secondary" className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                                                {skill}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {employee.cv_data.experience_years !== undefined && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-bold">Experience</p>
+                                    <p className="text-sm">{employee.cv_data.experience_years} years</p>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

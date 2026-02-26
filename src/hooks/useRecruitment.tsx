@@ -21,6 +21,7 @@ export interface Candidate {
     email: string;
     resume_url: string | null;
     status: string;
+    cv_data?: any;
     created_at: string;
     job?: JobPosting;
 }
@@ -126,6 +127,7 @@ export function useApproveCandidate() {
                     hire_date: startDate,
                     status: 'active' as const,
                     job_title: candidate.job?.title || 'New Hire',
+                    cv_data: candidate.cv_data,
                 }])
                 .select()
                 .single();

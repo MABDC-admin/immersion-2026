@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { Loader2, CheckCircle, XCircle, UserPlus, Mail, Calendar, FileText, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, UserPlus, Mail, Calendar, FileText, ExternalLink, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -87,13 +87,20 @@ export default function Candidates() {
                                             </TableCell>
                                             <TableCell>{candidate.job?.title || 'General Application'}</TableCell>
                                             <TableCell>
-                                                {candidate.resume_url ? (
-                                                    <a href={candidate.resume_url} target="_blank" rel="noopener noreferrer">
-                                                        <Button variant="ghost" size="sm"><FileText className="h-4 w-4 mr-1" />View CV</Button>
-                                                    </a>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">No resume</span>
-                                                )}
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    {candidate.resume_url ? (
+                                                        <a href={candidate.resume_url} target="_blank" rel="noopener noreferrer">
+                                                            <Button variant="ghost" size="sm" className="h-8 px-2"><FileText className="h-4 w-4 mr-1" />View CV</Button>
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground px-2">No resume</span>
+                                                    )}
+                                                    {candidate.cv_data && (
+                                                        <Badge variant="secondary" className="text-[10px] h-5 bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20">
+                                                            <Sparkles className="h-3 w-3 mr-1" /> AI Parsed
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={config.variant} className={config.className}>{config.label}</Badge>
