@@ -35,6 +35,7 @@ export interface Employee {
   religion?: string;
   nationality?: string;
   marital_status?: string;
+  cv_data?: any;
   created_at: string;
   updated_at: string;
 }
