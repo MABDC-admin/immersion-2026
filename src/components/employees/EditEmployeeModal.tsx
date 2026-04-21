@@ -34,7 +34,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useUpdateEmployee, useLocations, useDepartments, useEmployees } from '@/hooks/useEmployees';
+import { useUpdateEmployee, useLocations, useDepartments, useSupervisorOptions } from '@/hooks/useEmployees';
 import type { EmployeeWithRelations } from '@/types/employee';
 
 const employeeFormSchema = z.object({
@@ -83,7 +83,7 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
   const updateEmployee = useUpdateEmployee();
   const { data: locations = [] } = useLocations();
   const { data: departments = [] } = useDepartments();
-  const { data: employees = [] } = useEmployees();
+  const { data: supervisors = [] } = useSupervisorOptions();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -203,8 +203,7 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
     onOpenChange(false);
   };
 
-  // Filter out current employee from manager options
-  const managerOptions = employees.filter(emp => emp.id !== employee.id);
+  const supervisorOptions = supervisors.filter((supervisor) => supervisor.id !== employee.id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -350,21 +349,25 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
                   name="manager_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Manager</FormLabel>
+                      <FormLabel>Supervisor</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select manager" />
+                            <SelectValue placeholder="Select supervisor" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {managerOptions.map((emp) => (
+                          {supervisorOptions.map((emp) => (
                             <SelectItem key={emp.id} value={emp.id}>
                               {emp.first_name} {emp.last_name}
+                              {emp.job_title ? ` • ${emp.job_title}` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        This controls which supervisor portal can access this employee.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

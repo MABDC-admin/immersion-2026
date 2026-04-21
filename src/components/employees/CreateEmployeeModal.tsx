@@ -34,7 +34,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useCreateEmployee, useLocations, useDepartments, useEmployees } from '@/hooks/useEmployees';
+import { useCreateEmployee, useLocations, useDepartments, useSupervisorOptions } from '@/hooks/useEmployees';
 import { supabase } from '@/integrations/supabase/client';
 import { sendOnboardingEmail } from '@/lib/email';
 
@@ -68,7 +68,7 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
   const createEmployee = useCreateEmployee();
   const { data: locations = [] } = useLocations();
   const { data: departments = [] } = useDepartments();
-  const { data: employees = [] } = useEmployees();
+  const { data: supervisors = [] } = useSupervisorOptions();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -291,21 +291,25 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
                   name="manager_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Manager</FormLabel>
+                      <FormLabel>Supervisor</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select manager" />
+                            <SelectValue placeholder="Select supervisor" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {employees.map((emp) => (
+                          {supervisors.map((emp) => (
                             <SelectItem key={emp.id} value={emp.id}>
                               {emp.first_name} {emp.last_name}
+                              {emp.job_title ? ` • ${emp.job_title}` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Assigned employees will appear only in this supervisor&apos;s portal.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

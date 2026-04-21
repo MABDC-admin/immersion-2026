@@ -5,6 +5,17 @@ import type { Employee, EmployeeWithRelations, EmployeeDocument, CreateEmployeeI
 
 export type { Employee, EmployeeWithRelations, EmployeeDocument };
 
+export interface SupervisorOption {
+  id: string;
+  user_id: string | null;
+  first_name: string;
+  last_name: string;
+  job_title: string | null;
+  department: {
+    name: string;
+  } | null;
+}
+
 export function useEmployees() {
   return useQuery({
     queryKey: ['employees'],
@@ -129,6 +140,38 @@ export function useCurrentEmployee(userId: string) {
   });
 }
 
+export function useSupervisorOptions() {
+  return useQuery({
+    queryKey: ['supervisor-options'],
+    queryFn: async () => {
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'supervisor');
+
+      if (roleError) throw roleError;
+
+      const supervisorUserIds = Array.from(
+        new Set((roleData || []).map((record) => record.user_id).filter(Boolean))
+      );
+
+      if (supervisorUserIds.length === 0) {
+        return [] as SupervisorOption[];
+      }
+
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, user_id, first_name, last_name, job_title, department:departments(name)')
+        .in('user_id', supervisorUserIds)
+        .order('first_name', { ascending: true })
+        .order('last_name', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as SupervisorOption[];
+    },
+  });
+}
+
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
 
@@ -145,6 +188,7 @@ export function useCreateEmployee() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['supervisor-options'] });
       toast.success('Employee created successfully');
     },
     onError: (error) => {
@@ -172,6 +216,7 @@ export function useUpdateEmployee() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['supervisor-options'] });
       toast.success('Employee updated successfully');
     },
     onError: (error) => {
@@ -195,6 +240,7 @@ export function useDeleteEmployee() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['supervisor-options'] });
       toast.success('Employee deleted successfully');
     },
     onError: (error) => {

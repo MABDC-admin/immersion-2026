@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const ROLE_PRIORITY = ['admin', 'hr_manager', 'supervisor', 'manager', 'payroll_officer', 'employee'] as const;
+
+function resolvePrimaryRole(roles: string[]) {
+  return ROLE_PRIORITY.find((role) => roles.includes(role)) || 'employee';
+}
+
 export interface UserWithRole {
   id: string;
   user_id: string;
@@ -24,9 +30,18 @@ export function useAllProfiles() {
       const { data: roles, error: rolesError } = await supabase.from('user_roles').select('*');
       if (rolesError) throw rolesError;
       const { data: employees } = await supabase.from('employees').select('user_id, email');
-      const roleMap = new Map(roles.map(r => [r.user_id, r.role]));
+      const groupedRoles = new Map<string, string[]>();
+      roles.forEach((roleRecord) => {
+        const existing = groupedRoles.get(roleRecord.user_id) || [];
+        existing.push(roleRecord.role);
+        groupedRoles.set(roleRecord.user_id, existing);
+      });
       const emailMap = new Map(employees?.map(e => [e.user_id, e.email]) || []);
-      return profiles.map(p => ({ ...p, role: roleMap.get(p.user_id) || 'employee', email: emailMap.get(p.user_id) || undefined })) as UserWithRole[];
+      return profiles.map((profile) => ({
+        ...profile,
+        role: resolvePrimaryRole(groupedRoles.get(profile.user_id) || []),
+        email: emailMap.get(profile.user_id) || undefined,
+      })) as UserWithRole[];
     },
   });
 }

@@ -3,6 +3,11 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 type AppRole = 'admin' | 'hr_manager' | 'employee' | 'manager' | 'payroll_officer' | 'supervisor';
+const ROLE_PRIORITY: AppRole[] = ['admin', 'hr_manager', 'supervisor', 'manager', 'payroll_officer', 'employee'];
+
+function resolvePrimaryRole(roles: string[]) {
+  return ROLE_PRIORITY.find((role) => roles.includes(role)) ?? null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -33,16 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching user role:', error);
         return null;
       }
 
-      return data?.role as AppRole | null;
+      const roles = (data || []).map((record) => record.role).filter(Boolean) as string[];
+      return resolvePrimaryRole(roles);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       return null;
