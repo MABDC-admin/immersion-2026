@@ -6,7 +6,7 @@ import { EmployeeGrid } from '@/components/employees/EmployeeGrid';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
-import { useEmployees, useDeleteEmployee, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
+import { isSupervisorLikeEmployee, useEmployees, useDeleteEmployee, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -45,7 +45,7 @@ export default function Employees() {
     }
 
     if (isPrincipal) {
-      result = result.filter((emp) => !supervisorIds.has(emp.id));
+      result = result.filter((emp) => !isSupervisorLikeEmployee(emp, supervisorIds));
     }
 
     return result.filter((employee) => {

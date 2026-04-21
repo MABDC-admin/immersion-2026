@@ -14,7 +14,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useEmployees, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
+import { isSupervisorLikeEmployee, useEmployees, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { AnimatedStatCard } from '@/components/dashboard/AnimatedStatCard';
 import { EmployeeStatusChart } from '@/components/dashboard/EmployeeStatusChart';
@@ -40,8 +40,12 @@ export default function Dashboard() {
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
   const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
   const visibleEmployees = useMemo(
-    () => (isPrincipal ? employees.filter((currentEmployee) => !supervisorIds.has(currentEmployee.id)) : employees),
+    () => (isPrincipal ? employees.filter((currentEmployee) => !isSupervisorLikeEmployee(currentEmployee, supervisorIds)) : employees),
     [employees, isPrincipal, supervisorIds]
+  );
+  const hiddenSupervisorCount = useMemo(
+    () => employees.filter((currentEmployee) => isSupervisorLikeEmployee(currentEmployee, supervisorIds)).length,
+    [employees, supervisorIds]
   );
 
   const stats = useMemo(() => {
@@ -112,7 +116,7 @@ export default function Dashboard() {
                       </div>
                       <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
                         <p className="text-[11px] uppercase tracking-[0.18em] text-sky-100/80">Supervisors excluded</p>
-                        <p className="mt-1 text-2xl font-semibold">{supervisors.length}</p>
+                        <p className="mt-1 text-2xl font-semibold">{hiddenSupervisorCount}</p>
                       </div>
                     </div>
                   </div>
@@ -191,7 +195,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hidden by design</p>
-                      <p className="mt-2 text-3xl font-semibold">{supervisors.length}</p>
+                      <p className="mt-2 text-3xl font-semibold">{hiddenSupervisorCount}</p>
                     </div>
                     <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-600">
                       <Shield className="h-5 w-5" />

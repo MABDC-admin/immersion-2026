@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
+  isSupervisorLikeEmployee,
   useEmployee,
   useDeleteEmployee,
   useUploadAvatar,
@@ -136,7 +137,7 @@ export default function EmployeeDetail() {
     );
   }
 
-  if (isPrincipal && supervisorIds.has(employee.id)) {
+  if (isPrincipal && isSupervisorLikeEmployee(employee, supervisorIds)) {
     return <Navigate to="/employees" replace />;
   }
 

@@ -16,6 +16,14 @@ export interface SupervisorOption {
   } | null;
 }
 
+export function isSupervisorLikeEmployee(
+  employee: Pick<Employee, 'id' | 'job_title'>,
+  supervisorIds: Set<string>
+) {
+  const jobTitle = employee.job_title?.toLowerCase() || '';
+  return supervisorIds.has(employee.id) || jobTitle.includes('supervisor');
+}
+
 export function useEmployees() {
   return useQuery({
     queryKey: ['employees'],
