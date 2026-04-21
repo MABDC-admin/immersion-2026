@@ -37,6 +37,7 @@ import PublicJobApplication from "./pages/careers/PublicJobApplication";
 // Admin
 import AdminPanel from "./pages/admin/AdminPanel";
 import OjtManagement from "./pages/admin/OjtManagement";
+import EmployeeJournals from "./pages/admin/EmployeeJournals";
 
 // Supervisor
 import TaskDashboard from "./pages/supervisor/TaskDashboard";
@@ -117,6 +118,7 @@ const App = () => (
 
             {/* Admin OJT + Supervisor Tasks + Intern Tasks */}
             <Route path="/admin/ojt" element={<ProtectedRoute><OjtManagement /></ProtectedRoute>} />
+            <Route path="/admin/employee-journals" element={<ProtectedRoute><EmployeeJournals /></ProtectedRoute>} />
             <Route path="/supervisor/tasks" element={<ProtectedRoute><TaskDashboard /></ProtectedRoute>} />
             <Route path="/supervisor/journals" element={<ProtectedRoute><SupervisorJournalsView /></ProtectedRoute>} />
             <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,27 +17,50 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
-import { BookOpen, Plus, Edit2, Trash2, Clock, Calendar, CheckCircle2, XCircle, Send } from 'lucide-react';
+import {
+    BookOpen,
+    CheckCircle2,
+    Clock,
+    Calendar,
+    Edit2,
+    FileImage,
+    Film,
+    Loader2,
+    Plus,
+    Send,
+    Trash2,
+    Upload,
+    X,
+    XCircle,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee, useEmployee } from '@/hooks/useEmployees';
 import {
-    useJournalEntries,
-    useCreateJournalEntry,
-    useUpdateJournalEntry,
-    useDeleteJournalEntry,
     useApproveJournalEntry,
-    JournalEntry,
+    useCreateJournalEntry,
+    useDeleteJournalAttachment,
+    useDeleteJournalEntry,
+    useJournalEntries,
+    useUpdateJournalEntry,
+    useUploadJournalAttachments,
+    type JournalAttachment,
+    type JournalEntry,
 } from '@/hooks/useJournal';
 import { format, isToday, isYesterday, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AttachmentPreviewItem {
+    file: File;
+    previewUrl: string;
+}
 
 export default function Journal() {
     const { internId } = useParams<{ internId: string }>();
     const { user, isAdmin, userRole } = useAuth();
     const { data: viewerEmployee } = useCurrentEmployee(user?.id || '');
 
-    // If internId is provided, we're viewing someone else's journal
     const targetEmployeeId = internId || viewerEmployee?.id || '';
     const isViewingOwnJournal = !internId || internId === viewerEmployee?.id;
 
@@ -48,18 +71,37 @@ export default function Journal() {
     const updateEntry = useUpdateJournalEntry();
     const deleteEntry = useDeleteJournalEntry();
     const approveEntry = useApproveJournalEntry();
+    const uploadAttachments = useUploadJournalAttachments();
+    const deleteAttachment = useDeleteJournalAttachment();
     const { toast } = useToast();
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
-
-    // Form state
     const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [activities, setActivities] = useState('');
     const [learnings, setLearnings] = useState('');
     const [challenges, setChallenges] = useState('');
     const [hoursWorked, setHoursWorked] = useState('');
     const [supervisorNotes, setSupervisorNotes] = useState('');
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previewAttachment, setPreviewAttachment] = useState<{
+        url: string;
+        type: string;
+        name: string;
+    } | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const selectedFilePreviews = useMemo<AttachmentPreviewItem[]>(
+        () => selectedFiles.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+        [selectedFiles]
+    );
+
+    useEffect(() => {
+        return () => {
+            selectedFilePreviews.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+        };
+    }, [selectedFilePreviews]);
 
     const resetForm = () => {
         setEntryDate(format(new Date(), 'yyyy-MM-dd'));
@@ -68,6 +110,7 @@ export default function Journal() {
         setChallenges('');
         setHoursWorked('');
         setSupervisorNotes('');
+        setSelectedFiles([]);
         setEditingEntry(null);
     };
 
@@ -83,7 +126,34 @@ export default function Journal() {
         setLearnings(entry.learnings || '');
         setChallenges(entry.challenges || '');
         setHoursWorked(entry.hours_worked?.toString() || '');
+        setSelectedFiles([]);
         setIsFormOpen(true);
+    };
+
+    const handleFilesPicked = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        const allowedFiles = files.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
+        const rejectedCount = files.length - allowedFiles.length;
+
+        if (rejectedCount > 0) {
+            toast({
+                title: 'Some files were skipped',
+                description: 'Only image and video files can be attached to a journal entry.',
+                variant: 'destructive',
+            });
+        }
+
+        setSelectedFiles((current) => [...current, ...allowedFiles]);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const removePendingFile = (indexToRemove: number) => {
+        setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove));
     };
 
     const handleSubmit = async () => {
@@ -93,8 +163,10 @@ export default function Journal() {
         }
 
         try {
+            let savedEntry: JournalEntry;
+
             if (editingEntry) {
-                await updateEntry.mutateAsync({
+                savedEntry = await updateEntry.mutateAsync({
                     id: editingEntry.id,
                     employeeId: targetEmployee.id,
                     activities: activities.trim(),
@@ -104,7 +176,7 @@ export default function Journal() {
                 });
                 toast({ title: 'Journal entry updated' });
             } else {
-                await createEntry.mutateAsync({
+                savedEntry = await createEntry.mutateAsync({
                     employee_id: targetEmployee.id,
                     entry_date: entryDate,
                     activities: activities.trim(),
@@ -114,6 +186,19 @@ export default function Journal() {
                 });
                 toast({ title: 'Journal entry saved' });
             }
+
+            if (selectedFiles.length > 0) {
+                await uploadAttachments.mutateAsync({
+                    journalId: savedEntry.id,
+                    employeeId: targetEmployee.id,
+                    files: selectedFiles,
+                });
+                toast({
+                    title: 'Media uploaded',
+                    description: `${selectedFiles.length} ${selectedFiles.length === 1 ? 'file was' : 'files were'} attached to this journal entry.`,
+                });
+            }
+
             setIsFormOpen(false);
             resetForm();
         } catch (err: any) {
@@ -131,6 +216,20 @@ export default function Journal() {
         }
     };
 
+    const handleDeleteAttachment = async (attachment: JournalAttachment) => {
+        if (!targetEmployee) return;
+        try {
+            await deleteAttachment.mutateAsync({
+                attachmentId: attachment.id,
+                filePath: attachment.file_path,
+                employeeId: targetEmployee.id,
+            });
+            toast({ title: 'Attachment removed' });
+        } catch (err: any) {
+            toast({ title: 'Error removing attachment', description: err.message, variant: 'destructive' });
+        }
+    };
+
     const handleStatusUpdate = async (id: string, status: 'pending' | 'approved' | 'rejected', notes?: string) => {
         if (!targetEmployee) return;
         try {
@@ -142,7 +241,7 @@ export default function Journal() {
                     id,
                     employeeId: targetEmployee.id,
                     status: status as any,
-                    supervisor_notes: notes
+                    supervisor_notes: notes,
                 });
                 toast({ title: `Journal ${status}` });
             }
@@ -184,13 +283,65 @@ export default function Journal() {
     };
 
     const formatDateLabel = (dateStr: string) => {
-        const d = parseISO(dateStr);
-        if (isToday(d)) return 'Today';
-        if (isYesterday(d)) return 'Yesterday';
-        return format(d, 'EEEE, MMMM d, yyyy');
+        const date = parseISO(dateStr);
+        if (isToday(date)) return 'Today';
+        if (isYesterday(date)) return 'Yesterday';
+        return format(date, 'EEEE, MMMM d, yyyy');
     };
 
-    const todayEntry = entries.find(e => e.entry_date === format(new Date(), 'yyyy-MM-dd'));
+    const getAttachmentUrl = (attachment: JournalAttachment) =>
+        supabase.storage.from('journal-media').getPublicUrl(attachment.file_path).data.publicUrl;
+
+    const renderAttachmentCard = (
+        attachment: JournalAttachment,
+        canDeleteAttachment: boolean
+    ) => {
+        const attachmentUrl = getAttachmentUrl(attachment);
+        const isVideo = attachment.file_type.startsWith('video/');
+
+        return (
+            <div key={attachment.id} className="group relative overflow-hidden rounded-xl border bg-muted/20">
+                <button
+                    type="button"
+                    className="block w-full text-left"
+                    onClick={() => setPreviewAttachment({ url: attachmentUrl, type: attachment.file_type, name: attachment.file_name })}
+                >
+                    {isVideo ? (
+                        <div className="relative aspect-video w-full overflow-hidden bg-black">
+                            <video src={attachmentUrl} className="h-full w-full object-cover opacity-80" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Film className="h-7 w-7 text-white" />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="aspect-video w-full overflow-hidden bg-black/5">
+                            <img src={attachmentUrl} alt={attachment.file_name} className="h-full w-full object-cover" />
+                        </div>
+                    )}
+                    <div className="space-y-1 px-3 py-2">
+                        <p className="truncate text-xs font-semibold">{attachment.file_name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                            {attachment.file_size ? `${(attachment.file_size / (1024 * 1024)).toFixed(2)} MB` : 'Media'}
+                        </p>
+                    </div>
+                </button>
+
+                {canDeleteAttachment && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute right-2 top-2 h-7 w-7 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+                        onClick={() => handleDeleteAttachment(attachment)}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
+    const todayEntry = entries.find((entry) => entry.entry_date === format(new Date(), 'yyyy-MM-dd'));
 
     return (
         <MainLayout>
@@ -198,7 +349,7 @@ export default function Journal() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Daily Activity Journal</h1>
-                        <p className="text-sm text-muted-foreground">Log your daily OJT activities and learnings</p>
+                        <p className="text-sm text-muted-foreground">Log your daily OJT activities, learnings, and media updates</p>
                     </div>
                     <Button onClick={openNewEntry} className="gap-2">
                         <Plus className="h-4 w-4" />
@@ -206,7 +357,6 @@ export default function Journal() {
                     </Button>
                 </div>
 
-                {/* Today's Status */}
                 <Card className={cn(
                     "border-l-4 shadow-sm",
                     todayEntry ? "border-l-hrms-success" : "border-l-hrms-warning"
@@ -222,7 +372,7 @@ export default function Journal() {
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {todayEntry
-                                        ? `${todayEntry.hours_worked || 0} hours recorded`
+                                        ? `${todayEntry.hours_worked || 0} hours recorded${todayEntry.attachments?.length ? ` • ${todayEntry.attachments.length} media files attached` : ''}`
                                         : "Don't forget to log your activities!"}
                                 </p>
                             </div>
@@ -235,7 +385,6 @@ export default function Journal() {
                     </CardContent>
                 </Card>
 
-                {/* Entries List */}
                 {isLoading ? (
                     <div className="flex items-center justify-center h-48">
                         <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -248,7 +397,7 @@ export default function Journal() {
                             </div>
                             <h3 className="text-lg font-semibold mb-1">No Journal Entries Yet</h3>
                             <p className="text-sm text-muted-foreground mb-4">
-                                Start documenting your daily OJT activities and learnings.
+                                Start documenting your daily OJT activities, learnings, and photo/video evidence.
                             </p>
                             <Button onClick={openNewEntry} className="gap-2">
                                 <Plus className="h-4 w-4" />
@@ -262,8 +411,6 @@ export default function Journal() {
                             const currentEntryDate = parseISO(entry.entry_date);
                             const prevEntry = index > 0 ? entries[index - 1] : null;
                             const prevEntryDate = prevEntry ? parseISO(prevEntry.entry_date) : null;
-
-                            // Check if this entry starts a new week (comparing to the record before it)
                             const isNewWeek = !prevEntryDate ||
                                 format(startOfWeek(currentEntryDate, { weekStartsOn: 1 }), 'yyyy-MM-dd') !==
                                 format(startOfWeek(prevEntryDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -273,6 +420,7 @@ export default function Journal() {
 
                             const isManager = viewerEmployee?.id === targetEmployee?.manager_id || isAdmin || userRole === 'hr_manager';
                             const canApprove = isManager && entry.status === 'pending';
+                            const canDeleteAttachment = isViewingOwnJournal && (entry.status === 'draft' || entry.status === 'rejected');
 
                             return (
                                 <div key={entry.id} className="space-y-3">
@@ -285,10 +433,8 @@ export default function Journal() {
                                             <div className="h-[1px] flex-1 bg-muted-foreground/20" />
                                         </div>
                                     )}
-                                    <AccordionItem
-                                        value={entry.id}
-                                        className="border-none"
-                                    >
+
+                                    <AccordionItem value={entry.id} className="border-none">
                                         <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-all overflow-hidden">
                                             <AccordionTrigger className="p-4 py-3 hover:no-underline [&[data-state=open]]:pb-2">
                                                 <div className="flex flex-1 items-center justify-between gap-3 text-left">
@@ -306,13 +452,20 @@ export default function Journal() {
                                                                 {entry.hours_worked}h
                                                             </Badge>
                                                         )}
+                                                        {entry.attachments && entry.attachments.length > 0 && (
+                                                            <Badge variant="outline" className="text-[9px] font-bold gap-1 bg-primary/5">
+                                                                <Upload className="h-3 w-3" />
+                                                                {entry.attachments.length} media
+                                                            </Badge>
+                                                        )}
                                                         {entry.activities && !entry.supervisor_notes && entry.status !== 'approved' && (
                                                             <span className="text-[10px] text-muted-foreground truncate max-w-[150px] sm:max-w-xs font-normal">
                                                                 {entry.activities.substring(0, 60)}...
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="flex gap-1 shrink-0 mr-2" onClick={(e) => e.stopPropagation()}>
+
+                                                    <div className="flex gap-1 shrink-0 mr-2" onClick={(event) => event.stopPropagation()}>
                                                         {entry.status === 'draft' && isViewingOwnJournal && (
                                                             <Button
                                                                 variant="outline"
@@ -337,6 +490,7 @@ export default function Journal() {
                                                     </div>
                                                 </div>
                                             </AccordionTrigger>
+
                                             <AccordionUIContent className="px-4 pb-4 pt-1">
                                                 <div className="space-y-3 pt-2 border-t border-muted/30">
                                                     <div className="space-y-1.5">
@@ -344,18 +498,30 @@ export default function Journal() {
                                                             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Activities</p>
                                                             <p className="text-sm text-foreground whitespace-pre-wrap">{entry.activities}</p>
                                                         </div>
+
                                                         {entry.learnings && (
                                                             <div>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Key Learnings</p>
                                                                 <p className="text-sm text-foreground whitespace-pre-wrap">{entry.learnings}</p>
                                                             </div>
                                                         )}
+
                                                         {entry.challenges && (
                                                             <div>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Challenges</p>
                                                                 <p className="text-sm text-foreground whitespace-pre-wrap">{entry.challenges}</p>
                                                             </div>
                                                         )}
+
+                                                        {entry.attachments && entry.attachments.length > 0 && (
+                                                            <div className="space-y-2">
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Photo & Video Updates</p>
+                                                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                                    {entry.attachments.map((attachment) => renderAttachmentCard(attachment, canDeleteAttachment))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
                                                         {entry.supervisor_notes && (
                                                             <div className="mt-2 p-2 rounded-lg bg-primary/5 border border-primary/10">
                                                                 <p className="text-[10px] text-primary uppercase font-bold tracking-wider">Supervisor Notes</p>
@@ -372,7 +538,7 @@ export default function Journal() {
                                                                         placeholder="Add feedback or notes here..."
                                                                         className="text-xs min-h-[80px]"
                                                                         value={supervisorNotes}
-                                                                        onChange={(e) => setSupervisorNotes(e.target.value)}
+                                                                        onChange={(event) => setSupervisorNotes(event.target.value)}
                                                                     />
                                                                 </div>
                                                                 <div className="flex gap-2">
@@ -424,14 +590,14 @@ export default function Journal() {
                 )}
             </div>
 
-            {/* Form Dialog */}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
-                        <DialogDescription>Record your daily OJT activities, learnings, and challenges.</DialogDescription>
+                        <DialogDescription>Record your daily OJT activities, learnings, challenges, and bulk photo or video uploads.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
+
+                    <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="date">Date</Label>
@@ -439,7 +605,7 @@ export default function Journal() {
                                     id="date"
                                     type="date"
                                     value={entryDate}
-                                    onChange={(e) => setEntryDate(e.target.value)}
+                                    onChange={(event) => setEntryDate(event.target.value)}
                                     max={format(new Date(), 'yyyy-MM-dd')}
                                 />
                             </div>
@@ -453,10 +619,11 @@ export default function Journal() {
                                     step="0.5"
                                     placeholder="e.g. 8"
                                     value={hoursWorked}
-                                    onChange={(e) => setHoursWorked(e.target.value)}
+                                    onChange={(event) => setHoursWorked(event.target.value)}
                                 />
                             </div>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="activities">Activities Performed *</Label>
                             <Textarea
@@ -464,9 +631,10 @@ export default function Journal() {
                                 placeholder="What did you do today? Describe your tasks and responsibilities..."
                                 rows={3}
                                 value={activities}
-                                onChange={(e) => setActivities(e.target.value)}
+                                onChange={(event) => setActivities(event.target.value)}
                             />
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="learnings">Key Learnings</Label>
                             <Textarea
@@ -474,9 +642,10 @@ export default function Journal() {
                                 placeholder="What did you learn? Any new skills or insights?"
                                 rows={2}
                                 value={learnings}
-                                onChange={(e) => setLearnings(e.target.value)}
+                                onChange={(event) => setLearnings(event.target.value)}
                             />
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="challenges">Challenges Encountered</Label>
                             <Textarea
@@ -484,21 +653,117 @@ export default function Journal() {
                                 placeholder="Any difficulties or obstacles you faced?"
                                 rows={2}
                                 value={challenges}
-                                onChange={(e) => setChallenges(e.target.value)}
+                                onChange={(event) => setChallenges(event.target.value)}
                             />
                         </div>
+
+                        <div className="space-y-3 rounded-xl border border-dashed bg-muted/20 p-4">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <Label>Photo & Video Evidence</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Upload multiple photos or videos for this specific journal entry.
+                                    </p>
+                                </div>
+                                <Button type="button" variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="h-4 w-4" />
+                                    Add Media
+                                </Button>
+                            </div>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*,video/*"
+                                multiple
+                                className="hidden"
+                                onChange={handleFilesPicked}
+                            />
+
+                            {editingEntry?.attachments && editingEntry.attachments.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Existing Attachments</p>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {editingEntry.attachments.map((attachment) => renderAttachmentCard(attachment, false))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedFilePreviews.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files Ready To Upload</p>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {selectedFilePreviews.map((item, index) => {
+                                            const isVideo = item.file.type.startsWith('video/');
+                                            return (
+                                                <div key={`${item.file.name}-${index}`} className="relative overflow-hidden rounded-xl border bg-background">
+                                                    {isVideo ? (
+                                                        <div className="relative aspect-video bg-black">
+                                                            <video src={item.previewUrl} className="h-full w-full object-cover opacity-80" />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                                <Film className="h-7 w-7 text-white" />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="aspect-video bg-black/5">
+                                                            <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
+                                                        </div>
+                                                    )}
+                                                    <div className="space-y-1 px-3 py-2">
+                                                        <p className="truncate text-xs font-semibold">{item.file.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            {(item.file.size / (1024 * 1024)).toFixed(2)} MB
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="icon"
+                                                        className="absolute right-2 top-2 h-7 w-7"
+                                                        onClick={() => removePendingFile(index)}
+                                                    >
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
+
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
                         <Button
                             onClick={handleSubmit}
-                            disabled={createEntry.isPending || updateEntry.isPending}
+                            disabled={createEntry.isPending || updateEntry.isPending || uploadAttachments.isPending}
                         >
-                            {(createEntry.isPending || updateEntry.isPending) ? 'Saving...' : editingEntry ? 'Update Entry' : 'Save Entry'}
+                            {(createEntry.isPending || updateEntry.isPending || uploadAttachments.isPending) ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : editingEntry ? 'Update Entry' : 'Save Entry'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </MainLayout >
+
+            <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
+                <DialogContent className="max-w-4xl overflow-hidden bg-black p-2">
+                    {previewAttachment && (
+                        <div className="space-y-2">
+                            <div className="px-3 py-2 text-sm text-white">{previewAttachment.name}</div>
+                            {previewAttachment.type.startsWith('video/') ? (
+                                <video src={previewAttachment.url} controls autoPlay className="max-h-[80vh] w-full rounded-lg" />
+                            ) : (
+                                <img src={previewAttachment.url} alt={previewAttachment.name} className="max-h-[80vh] w-full rounded-lg object-contain" />
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </MainLayout>
     );
 }
