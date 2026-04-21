@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  BookOpen,
+  Download,
   Edit2,
+  Film,
   Trash2,
   Phone,
   Mail,
@@ -38,6 +41,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -55,6 +59,7 @@ import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaveRequests } from '@/hooks/useLeave';
 import { useEnrollments } from '@/hooks/useTraining';
 import { useLeaveBalances } from '@/hooks/useDashboard';
+import { useJournalEntries, type JournalAttachment } from '@/hooks/useJournal';
 import { EmployeeDashboardView } from '@/components/profile/EmployeeDashboardView';
 import { AvatarUpload } from '@/components/employees/AvatarUpload';
 import { DocumentUpload } from '@/components/employees/DocumentUpload';
@@ -64,6 +69,8 @@ import { InternsList } from '@/components/supervisor/InternsList';
 import { EvaluationForm } from '@/components/evaluations/EvaluationForm';
 import { EvaluationDetail } from '@/components/evaluations/EvaluationDetail';
 import { useEvaluations, InternEvaluation } from '@/hooks/useEvaluations';
+import { supabase } from '@/integrations/supabase/client';
+import { formatJournalMediaSize } from '@/lib/journalMedia';
 import { format } from 'date-fns';
 
 const statusColors = {
@@ -104,12 +111,18 @@ export default function EmployeeDetail() {
   const [preselectedInternId, setPreselectedInternId] = useState<string | null>(null);
   const [selectedEvalView, setSelectedEvalView] = useState<InternEvaluation | null>(null);
   const [selectedEvalEdit, setSelectedEvalEdit] = useState<InternEvaluation | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<{
+    url: string;
+    type: string;
+    name: string;
+  } | null>(null);
 
   // Tabs Data
   const { data: attendanceHistory = [] } = useAttendance(id || '');
   const { data: leaveRequests = [] } = useLeaveRequests(id || '');
   const { data: leaveBalances = [] } = useLeaveBalances(id || '');
   const { data: enrollments = [] } = useEnrollments(id || '');
+  const { data: journalEntries = [] } = useJournalEntries(id || '');
   const supervisorIds = new Set(supervisors.map((supervisor) => supervisor.id));
 
   // Evaluations data (must be before early returns to satisfy React hooks rules)
@@ -174,6 +187,53 @@ export default function EmployeeDetail() {
 
   const handleDocumentUpload = (file: File) => {
     uploadDocument.mutate({ employeeId: employee.id, file });
+  };
+
+  const getAttachmentUrl = (attachment: JournalAttachment) =>
+    supabase.storage.from('journal-media').getPublicUrl(attachment.file_path).data.publicUrl;
+
+  const renderAttachmentCard = (attachment: JournalAttachment) => {
+    const attachmentUrl = getAttachmentUrl(attachment);
+    const isVideo = attachment.file_type.startsWith('video/');
+
+    return (
+      <div key={attachment.id} className="group relative overflow-hidden rounded-xl border bg-muted/20">
+        <button
+          type="button"
+          className="block w-full text-left"
+          onClick={() => setPreviewAttachment({ url: attachmentUrl, type: attachment.file_type, name: attachment.file_name })}
+        >
+          {isVideo ? (
+            <div className="relative aspect-video w-full overflow-hidden bg-black">
+              <video src={attachmentUrl} className="h-full w-full object-cover opacity-80" />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <Film className="h-7 w-7 text-white" />
+              </div>
+            </div>
+          ) : (
+            <div className="aspect-video w-full overflow-hidden bg-black/5">
+              <img src={attachmentUrl} alt={attachment.file_name} className="h-full w-full object-cover" />
+            </div>
+          )}
+          <div className="space-y-1 px-3 py-2">
+            <p className="truncate text-xs font-semibold">{attachment.file_name}</p>
+            <p className="text-[10px] text-muted-foreground">{formatJournalMediaSize(attachment.file_size)}</p>
+          </div>
+        </button>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="absolute right-2 top-2 h-7 w-7 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+          asChild
+        >
+          <a href={attachmentUrl} download={attachment.file_name} onClick={(event) => event.stopPropagation()}>
+            <Download className="h-3.5 w-3.5" />
+          </a>
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -310,6 +370,12 @@ export default function EmployeeDetail() {
                       <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       Profile
                     </TabsTrigger>
+                    {isPrincipal && (
+                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                        <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Journal
+                      </TabsTrigger>
+                    )}
                     {isAdminOrHR && (
                       <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
                         <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -429,6 +495,104 @@ export default function EmployeeDetail() {
                     </Card>
                   </div>
                 </TabsContent>
+
+                {isPrincipal && (
+                  <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
+                    <Card className="border-l-4 border-l-primary shadow-sm">
+                      <CardHeader className="pb-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <CardTitle className="text-lg font-bold">Daily Journal Log</CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              Read-only journal entries, learnings, and media evidence for {fullName}.
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="w-fit bg-primary/5 text-primary">
+                            {journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {journalEntries.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed bg-muted/20 px-6 py-12 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                              <BookOpen className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-base font-semibold">No journal entries yet</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              This employee has not submitted any daily journal logs yet.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {journalEntries.map((entry) => (
+                              <div key={entry.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+                                <div className="flex flex-col gap-3 border-b border-muted/40 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="space-y-1">
+                                    <p className="text-sm font-semibold">{format(new Date(entry.entry_date), 'EEEE, MMMM d, yyyy')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Logged on {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="bg-primary/5 text-primary">
+                                      {entry.status}
+                                    </Badge>
+                                    {entry.hours_worked !== null && (
+                                      <Badge variant="secondary">{entry.hours_worked} hrs</Badge>
+                                    )}
+                                    {entry.attachments && entry.attachments.length > 0 && (
+                                      <Badge variant="outline">
+                                        {entry.attachments.length} media
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-4 pt-4">
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Activities</p>
+                                    <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.activities}</p>
+                                  </div>
+
+                                  {entry.learnings && (
+                                    <div>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Key Learnings</p>
+                                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.learnings}</p>
+                                    </div>
+                                  )}
+
+                                  {entry.challenges && (
+                                    <div>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Challenges</p>
+                                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.challenges}</p>
+                                    </div>
+                                  )}
+
+                                  {entry.supervisor_notes && (
+                                    <div className="rounded-xl border border-primary/10 bg-primary/5 p-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Supervisor Notes</p>
+                                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.supervisor_notes}</p>
+                                    </div>
+                                  )}
+
+                                  {entry.attachments && entry.attachments.length > 0 && (
+                                    <div className="space-y-2">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Photo & Video Evidence</p>
+                                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                        {entry.attachments.map((attachment) => renderAttachmentCard(attachment))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
 
                 {/* Shared tabs: Leave & Training */}
                 <TabsContent value="leave" className="space-y-6 focus-visible:outline-none">
@@ -592,6 +756,29 @@ export default function EmployeeDetail() {
           />
         </>
       )}
+
+      <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
+        <DialogContent className="max-w-4xl overflow-hidden bg-black p-2">
+          {previewAttachment && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 px-3 pt-2 text-white">
+                <p className="truncate text-sm">{previewAttachment.name}</p>
+                <Button variant="secondary" size="sm" className="gap-2" asChild>
+                  <a href={previewAttachment.url} download={previewAttachment.name}>
+                    <Download className="h-4 w-4" />
+                    Download
+                  </a>
+                </Button>
+              </div>
+              {previewAttachment.type.startsWith('video/') ? (
+                <video src={previewAttachment.url} controls autoPlay className="max-h-[80vh] w-full rounded-lg" />
+              ) : (
+                <img src={previewAttachment.url} alt={previewAttachment.name} className="max-h-[80vh] w-full rounded-lg object-contain" />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
