@@ -153,16 +153,32 @@ export default function Journal() {
             }
 
             if (selectedFiles.length > 0) {
-                await uploadAttachments.mutateAsync({
+                const result = await uploadAttachments.mutateAsync({
                     journalId: savedEntry.id,
                     employeeId: targetEmployee.id,
                     files: selectedFiles,
                     onProgress: (progress) => setUploadProgress(progress),
                 });
-                toast({
-                    title: 'Media uploaded',
-                    description: `${selectedFiles.length} ${selectedFiles.length === 1 ? 'file was' : 'files were'} attached to this journal entry.`,
-                });
+
+                if (result.uploadedAttachments.length > 0) {
+                    toast({
+                        title: result.failedFiles.length > 0 ? 'Media uploaded with some skips' : 'Media uploaded',
+                        description: result.failedFiles.length > 0
+                            ? `${result.uploadedAttachments.length} uploaded, ${result.failedFiles.length} skipped.`
+                            : `${result.uploadedAttachments.length} ${result.uploadedAttachments.length === 1 ? 'file was' : 'files were'} attached to this journal entry.`,
+                    });
+                }
+
+                if (result.failedFiles.length > 0) {
+                    toast({
+                        title: 'Some files could not be uploaded',
+                        description: result.failedFiles
+                            .slice(0, 2)
+                            .map((failure) => `${failure.fileName}: ${failure.message}`)
+                            .join(' | '),
+                        variant: 'destructive',
+                    });
+                }
             }
 
             setIsFormOpen(false);

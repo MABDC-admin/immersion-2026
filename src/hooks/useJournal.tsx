@@ -28,6 +28,11 @@ export interface JournalAttachment {
     created_at: string;
 }
 
+export interface JournalUploadFailure {
+    fileName: string;
+    message: string;
+}
+
 export type JournalUploadStage = 'preparing' | 'compressing' | 'uploading' | 'saving' | 'done';
 
 export interface JournalUploadProgress {
@@ -155,6 +160,7 @@ export function useUploadJournalAttachments() {
             onProgress?: (progress: JournalUploadProgress) => void;
         }) => {
             const uploadedAttachments: JournalAttachment[] = [];
+            const failedFiles: JournalUploadFailure[] = [];
             const totalFiles = files.length;
 
             const reportProgress = (
@@ -186,39 +192,67 @@ export function useUploadJournalAttachments() {
             };
 
             for (const [index, file] of files.entries()) {
-                reportProgress(index, uploadedAttachments.length, file.name, 'preparing');
-                reportProgress(index, uploadedAttachments.length, file.name, 'compressing');
+                let filePath: string | null = null;
 
-                const optimizedFile = await optimizeJournalUploadFile(file);
-                const sanitizedName = optimizedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                const filePath = `${employeeId}/${journalId}/${Date.now()}_${sanitizedName}`;
+                try {
+                    reportProgress(index, uploadedAttachments.length, file.name, 'preparing');
+                    reportProgress(index, uploadedAttachments.length, file.name, 'compressing');
 
-                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'uploading');
-                const { error: uploadError } = await (supabase as any).storage
-                    .from('journal-media')
-                    .upload(filePath, optimizedFile);
+                    const optimizedFile = await optimizeJournalUploadFile(file);
+                    const sanitizedName = optimizedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const uniqueSuffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                        ? crypto.randomUUID()
+                        : `${Date.now()}_${index}`;
+                    filePath = `${employeeId}/${journalId}/${uniqueSuffix}_${sanitizedName}`;
 
-                if (uploadError) throw uploadError;
+                    reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'uploading');
+                    const { error: uploadError } = await (supabase as any).storage
+                        .from('journal-media')
+                        .upload(filePath, optimizedFile, {
+                            contentType: optimizedFile.type || undefined,
+                            upsert: false,
+                        });
 
-                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'saving');
-                const { data, error } = await (supabase as any)
-                    .from('journal_attachments')
-                    .insert([{
-                        journal_id: journalId,
-                        file_name: optimizedFile.name,
-                        file_path: filePath,
-                        file_type: optimizedFile.type,
-                        file_size: optimizedFile.size,
-                    }])
-                    .select()
-                    .single();
+                    if (uploadError) throw uploadError;
 
-                if (error) throw error;
-                uploadedAttachments.push(data as JournalAttachment);
-                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'done');
+                    reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'saving');
+                    const { data, error } = await (supabase as any)
+                        .from('journal_attachments')
+                        .insert([{
+                            journal_id: journalId,
+                            file_name: optimizedFile.name,
+                            file_path: filePath,
+                            file_type: optimizedFile.type,
+                            file_size: optimizedFile.size,
+                        }])
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+                    uploadedAttachments.push(data as JournalAttachment);
+                    reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'done');
+                } catch (error: any) {
+                    if (filePath) {
+                        await (supabase as any).storage.from('journal-media').remove([filePath]);
+                    }
+
+                    failedFiles.push({
+                        fileName: file.name,
+                        message: error?.message || 'Upload failed.',
+                    });
+                }
             }
 
-            return { journalId, employeeId, uploadedAttachments };
+            if (uploadedAttachments.length === 0 && failedFiles.length > 0) {
+                const firstFailure = failedFiles[0];
+                throw new Error(
+                    failedFiles.length === 1
+                        ? `${firstFailure.fileName}: ${firstFailure.message}`
+                        : `${failedFiles.length} files failed to upload. First error: ${firstFailure.fileName}: ${firstFailure.message}`
+                );
+            }
+
+            return { journalId, employeeId, uploadedAttachments, failedFiles };
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', variables.employeeId] });
