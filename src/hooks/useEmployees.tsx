@@ -16,6 +16,11 @@ export interface SupervisorOption {
   } | null;
 }
 
+interface UserRoleRecord {
+  user_id: string | null;
+  role: string;
+}
+
 export function isSupervisorLikeEmployee(
   employee: Pick<Employee, 'id' | 'job_title'>,
   supervisorIds: Set<string>
@@ -24,27 +29,61 @@ export function isSupervisorLikeEmployee(
   return supervisorIds.has(employee.id) || jobTitle.includes('supervisor');
 }
 
+export function isHiddenPortalAccount(
+  employee: Pick<Employee, 'email' | 'job_title' | 'user_id'>,
+  hiddenUserIds: Set<string>
+) {
+  const email = employee.email?.toLowerCase() || '';
+  const jobTitle = employee.job_title?.toLowerCase() || '';
+
+  return (
+    (!!employee.user_id && hiddenUserIds.has(employee.user_id)) ||
+    email.includes('principal') ||
+    jobTitle.includes('principal') ||
+    jobTitle.includes('oversight')
+  );
+}
+
 export function useEmployees() {
   return useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select(`
-          *,
-          location:locations(id, name, city, country),
-          department:departments(id, name)
-        `)
-        .order('last_name', { ascending: true });
+      const [{ data, error }, { data: rolesData, error: rolesError }] = await Promise.all([
+        supabase
+          .from('employees')
+          .select(`
+            *,
+            location:locations(id, name, city, country),
+            department:departments(id, name)
+          `)
+          .order('last_name', { ascending: true }),
+        supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .eq('role', 'principal'),
+      ]);
 
       if (error) {
         console.error('Error fetching employees:', error);
         throw error;
       }
+      if (rolesError) {
+        console.error('Error fetching principal roles:', rolesError);
+        throw rolesError;
+      }
+
+      const hiddenUserIds = new Set(
+        ((rolesData || []) as UserRoleRecord[])
+          .map((record) => record.user_id)
+          .filter((userId): userId is string => Boolean(userId))
+      );
+      const visibleEmployees = ((data || []) as EmployeeWithRelations[]).filter(
+        (employee) => !isHiddenPortalAccount(employee, hiddenUserIds)
+      );
 
       // Fetch managers separately to handle self-referencing
       const employeesWithManagers = await Promise.all(
-        (data || []).map(async (employee) => {
+        visibleEmployees.map(async (employee) => {
           let manager = null;
           if (employee.manager_id) {
             const { data: managerData } = await supabase
