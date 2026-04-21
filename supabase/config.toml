@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.send-onboarding-email]
 verify_jwt = false
 
+[functions.send-portal-access-email]
+verify_jwt = false
+
 [functions.sync-github-migrations]
 verify_jwt = false
 

@@ -14,13 +14,11 @@ interface EmailPayload {
   to: string;
   firstName: string;
   lastName: string;
-  startDate?: string;
-  type?: "onboarding" | "approval" | "leave_status";
-  username?: string;
-  password?: string;
-  leaveType?: string;
-  endDate?: string;
-  leaveStatus?: string;
+  username: string;
+  password: string;
+  portalRole?: string;
+  portalScope?: string;
+  supportContact?: string;
 }
 
 interface CompanySettings {
@@ -38,7 +36,11 @@ async function getCompanySettings(): Promise<CompanySettings> {
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const sb = createClient(supabaseUrl, supabaseKey);
 
-  const { data } = await sb.from("company_settings").select("name, logo_url, address, city, country, phone, email").limit(1).maybeSingle();
+  const { data } = await sb
+    .from("company_settings")
+    .select("name, logo_url, address, city, country, phone, email")
+    .limit(1)
+    .maybeSingle();
 
   return {
     name: data?.name || "HRMS",
@@ -70,18 +72,15 @@ function buildEmailTemplate(company: CompanySettings, subject: string, bodyConte
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:40px 20px;">
 <tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-  <!-- Logo Header -->
   <tr><td style="padding:24px 32px;text-align:center;background-color:#ffffff;border-radius:12px 12px 0 0;border-bottom:2px solid #e8e8ef;">
     ${logoHtml}
   </td></tr>
-  <!-- Body -->
   <tr><td style="padding:32px;background-color:#ffffff;">
     <h2 style="margin:0 0 20px;color:#1a1a2e;font-size:20px;font-weight:600;">${subject}</h2>
     <div style="color:#3d3d4e;font-size:15px;line-height:1.7;">
       ${bodyContent}
     </div>
   </td></tr>
-  <!-- Footer -->
   <tr><td style="padding:24px 32px;background-color:#fafafa;border-radius:0 0 12px 12px;border-top:1px solid #e8e8ef;text-align:center;">
     <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;">${company.name}</p>
     <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
@@ -96,26 +95,29 @@ function buildEmailTemplate(company: CompanySettings, subject: string, bodyConte
 </html>`;
 }
 
-function buildCredentialsBox(username?: string, password?: string): string {
-  if (!username || !password) return "";
+function buildCredentialsBox(username: string, password: string): string {
   const loginUrl = "https://immersion.mabdc.com/auth";
   return `
     <div style="margin:24px 0;padding:20px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
-      <h3 style="margin:0 0 14px;color:#1a1a2e;font-size:16px;font-weight:600;">🔐 Your Login Credentials</h3>
+      <h3 style="margin:0 0 14px;color:#1a1a2e;font-size:16px;font-weight:600;">Portal Login Credentials</h3>
       <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px;">
         <tr>
-          <td style="padding:6px 0;color:#6b7280;font-size:14px;width:90px;">Username:</td>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;width:96px;">Username:</td>
           <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${username}</td>
         </tr>
         <tr>
           <td style="padding:6px 0;color:#6b7280;font-size:14px;">Password:</td>
           <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${password}</td>
         </tr>
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Login URL:</td>
+          <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;"><a href="${loginUrl}">${loginUrl}</a></td>
+        </tr>
       </table>
       <div style="text-align:center;margin-bottom:12px;">
-        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Employee Portal</a>
+        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Immersion Portal</a>
       </div>
-      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">⚠️ Please change your password after your first login for security purposes.</p>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Please change your password after your first login for security purposes.</p>
     </div>
   `;
 }
@@ -126,67 +128,36 @@ serve(async (req) => {
   }
 
   try {
-    const { to, firstName, lastName, startDate, type, username, password, leaveType, endDate, leaveStatus }: EmailPayload = await req.json();
+    const {
+      to,
+      firstName,
+      lastName,
+      username,
+      password,
+      portalRole,
+      portalScope,
+      supportContact,
+    }: EmailPayload = await req.json();
+
     const company = await getCompanySettings();
-    const credentialsHtml = buildCredentialsBox(username, password);
+    const resolvedRole = portalRole || "Portal Access";
+    const resolvedScope =
+      portalScope ||
+      "Your account has been configured with the appropriate permissions for your role in the Work Immersion Program.";
+    const resolvedSupport = supportContact || "Dennis P. Sotto, Administrator";
 
-    let subject: string;
-    let bodyContent: string;
-
-    if (type === "leave_status") {
-      const statusLabel = leaveStatus === "approved" ? "Approved ✅" : "Rejected ❌";
-      const statusColor = leaveStatus === "approved" ? "#10b981" : "#ef4444";
-      subject = `Leave Request ${leaveStatus === "approved" ? "Approved" : "Rejected"}`;
-      bodyContent = `
-        <p>Dear <strong>${firstName} ${lastName}</strong>,</p>
-        <p>Your leave request has been <strong style="color:${statusColor};">${statusLabel}</strong>.</p>
-        <div style="margin:20px 0;padding:16px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
-          <table cellpadding="0" cellspacing="0" style="width:100%;">
-            <tr>
-              <td style="padding:6px 0;color:#6b7280;font-size:14px;width:110px;">Leave Type:</td>
-              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${leaveType || "N/A"}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 0;color:#6b7280;font-size:14px;">Start Date:</td>
-              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${startDate || "N/A"}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 0;color:#6b7280;font-size:14px;">End Date:</td>
-              <td style="padding:6px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${endDate || "N/A"}</td>
-            </tr>
-          </table>
-        </div>
-        <p>If you have any questions, please contact the HR department.</p>
-        <br />
-        <p>Best regards,</p>
-        <p><strong>HR Department</strong><br/>${company.name}</p>
-      `;
-    } else if (type === "approval") {
-      subject = "Confirmation of Onboarding";
-      bodyContent = `
-        <p>Dear <strong>${firstName} ${lastName}</strong>,</p>
-        <p>We are pleased to confirm your onboarding with <strong>${company.name}</strong>, effective <strong>${startDate || "[Start Date]"}</strong>.</p>
-        <p>We are delighted to welcome you to our team and look forward to the skills and experience you will bring to our organization.</p>
-        <p>We are confident that you will be a valuable addition to our growing community, and we look forward to a successful journey together.</p>
-        ${credentialsHtml}
-        <p>Should you have any questions, feel free to reach out at any time.</p>
-        <br />
-        <p>Kind regards,</p>
-        <p><strong>HR Department</strong><br/>${company.name}</p>
-      `;
-    } else {
-      subject = "Welcome to the Team!";
-      bodyContent = `
-        <p>Dear <strong>${firstName}</strong>,</p>
-        <p>We're excited to have you join us at <strong>${company.name}</strong>!</p>
-        <p>You can now log in to your employee portal to complete your onboarding checklist and get started.</p>
-        ${credentialsHtml}
-        <p>If you have any questions during your onboarding process, don't hesitate to reach out to the HR team.</p>
-        <br />
-        <p>Best regards,</p>
-        <p><strong>HR Department</strong><br/>${company.name}</p>
-      `;
-    }
+    const subject = `${resolvedRole} - ${company.name}`;
+    const bodyContent = `
+      <p>Dear <strong>${firstName} ${lastName}</strong>,</p>
+      <p>Your <strong>${resolvedRole}</strong> for the <strong>${company.name} Work Immersion Program</strong> is now ready.</p>
+      <p>You may now sign in to the <strong>Immersion Portal</strong> using the credentials below.</p>
+      ${buildCredentialsBox(username, password)}
+      <p>${resolvedScope}</p>
+      <p>If you experience any issues accessing the portal, please contact <strong>${resolvedSupport}</strong>.</p>
+      <br />
+      <p>Best regards,</p>
+      <p><strong>MABDC Work Immersion Admin</strong></p>
+    `;
 
     const fromName = company.name || "HRMS";
     const fromEmail = `${fromName} <immersion@mabdc.com>`;
@@ -194,15 +165,15 @@ serve(async (req) => {
     const emailPayload: Record<string, unknown> = {
       from: fromEmail,
       to: [to],
-      subject: `${subject} - ${company.name}`,
-      html: buildEmailTemplate(company, subject, bodyContent),
+      subject,
+      html: buildEmailTemplate(company, resolvedRole, bodyContent),
     };
 
     if (company.email) {
       emailPayload.reply_to = company.email;
     }
 
-    const { data, error } = await resend.emails.send(emailPayload as any);
+    const { data, error } = await resend.emails.send(emailPayload as never);
 
     if (error) {
       return new Response(JSON.stringify({ error }), {
