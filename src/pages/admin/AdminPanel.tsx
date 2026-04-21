@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Users, Building, UserCheck, DollarSign, Clock, BarChart3, GitBranch, Lock, Wrench } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { CompanySetupTab } from '@/components/admin/CompanySetupTab';
 import { EmployeeOversightTab } from '@/components/admin/EmployeeOversightTab';
@@ -12,6 +13,7 @@ import { ReportsTab } from '@/components/admin/ReportsTab';
 import { WorkflowTab } from '@/components/admin/WorkflowTab';
 import { SecurityTab } from '@/components/admin/SecurityTab';
 import { MaintenanceTab } from '@/components/admin/MaintenanceTab';
+import { JournalsTab } from '@/components/admin/JournalsTab';
 
 export default function AdminPanel() {
   const { isAdmin } = useAuth();
@@ -39,6 +41,7 @@ export default function AdminPanel() {
             <TabsTrigger value="workflows" className="text-xs"><GitBranch className="h-3.5 w-3.5 mr-1" />Workflows</TabsTrigger>
             <TabsTrigger value="security" className="text-xs"><Lock className="h-3.5 w-3.5 mr-1" />Security</TabsTrigger>
             <TabsTrigger value="maintenance" className="text-xs"><Wrench className="h-3.5 w-3.5 mr-1" />System</TabsTrigger>
+            <TabsTrigger value="journals" className="text-xs"><BookOpen className="h-3.5 w-3.5 mr-1" />Journals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="mt-4"><UserManagementTab /></TabsContent>
@@ -50,6 +53,7 @@ export default function AdminPanel() {
           <TabsContent value="workflows" className="mt-4"><WorkflowTab /></TabsContent>
           <TabsContent value="security" className="mt-4"><SecurityTab /></TabsContent>
           <TabsContent value="maintenance" className="mt-4"><MaintenanceTab /></TabsContent>
+          <TabsContent value="journals" className="mt-4"><JournalsTab /></TabsContent>
         </Tabs>
       </div>
     </MainLayout>
