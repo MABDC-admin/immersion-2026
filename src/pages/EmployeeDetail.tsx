@@ -475,7 +475,7 @@ export default function EmployeeDetail() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-xs text-muted-foreground uppercase font-medium">Reporting Manager</p>
+                            <p className="text-xs text-muted-foreground uppercase font-medium">Reporting Supervisor</p>
                             <p className="text-sm font-medium">
                               {employee.manager ? `${employee.manager.first_name} ${employee.manager.last_name}` : 'N/A'}
                             </p>

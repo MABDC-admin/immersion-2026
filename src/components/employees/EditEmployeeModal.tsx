@@ -348,14 +348,14 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
                   control={form.control}
                   name="manager_id"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Supervisor</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select supervisor" />
-                          </SelectTrigger>
-                        </FormControl>
+                      <FormItem>
+                       <FormLabel>Reporting Supervisor</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                             <SelectValue placeholder="Select reporting supervisor" />
+                            </SelectTrigger>
+                          </FormControl>
                         <SelectContent>
                           {supervisorOptions.map((emp) => (
                             <SelectItem key={emp.id} value={emp.id}>
