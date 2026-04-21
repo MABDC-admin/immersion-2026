@@ -418,15 +418,17 @@ function EmployeeJournalAccordion({
     <AccordionItem
       value={group.employee.id}
       className={cn(
-        'overflow-hidden rounded-[1.75rem] border bg-card/95 shadow-sm transition-all',
-        group.entries.length > 0 && 'hover:-translate-y-0.5 hover:shadow-lg',
-        pendingCount > 0 && 'border-amber-500/25'
+        'overflow-hidden rounded-[1.5rem] border bg-card/95 shadow-sm transition-all',
+        group.entries.length > 0 && 'hover:-translate-y-0.5 hover:shadow-md',
+        pendingCount > 0
+          ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-card to-card'
+          : 'border-slate-200/80 bg-gradient-to-r from-orange-500/[0.05] via-card to-card'
       )}
     >
-      <AccordionTrigger className="px-5 py-5 hover:no-underline">
-        <div className="flex min-w-0 flex-1 flex-col gap-4 text-left">
-          <div className="flex min-w-0 items-center gap-4">
-            <Avatar className="h-14 w-14 border-2 border-background shadow-sm">
+      <AccordionTrigger className="px-4 py-4 hover:no-underline">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 text-left xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="h-11 w-11 border border-white/70 shadow-sm">
             <AvatarImage src={group.employee.avatar_url || ''} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {group.employee.first_name[0]}
@@ -436,8 +438,8 @@ function EmployeeJournalAccordion({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-base font-semibold text-foreground">{employeeName}</p>
-              <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary">
+              <p className="truncate text-sm font-semibold text-foreground sm:text-base">{employeeName}</p>
+              <Badge variant="secondary" className="rounded-full bg-orange-500/10 text-orange-700">
                 {group.entries.length} {group.entries.length === 1 ? 'entry' : 'entries'}
               </Badge>
               {pendingCount > 0 && (
@@ -458,38 +460,34 @@ function EmployeeJournalAccordion({
           </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-4">
-            <div className="rounded-2xl border bg-background/70 px-3 py-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Approved</p>
-              <p className="mt-1 text-lg font-semibold">{approvedCount}</p>
-            </div>
-            <div className="rounded-2xl border bg-background/70 px-3 py-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Media</p>
-              <p className="mt-1 text-lg font-semibold">{mediaCount}</p>
-            </div>
-            <div className="rounded-2xl border bg-background/70 px-3 py-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Hours</p>
-              <p className="mt-1 text-lg font-semibold">{totalHours.toFixed(totalHours % 1 === 0 ? 0 : 1)}</p>
-            </div>
-            <div className="rounded-2xl border bg-background/70 px-3 py-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Latest status</p>
-              <p className="mt-1 text-sm font-semibold capitalize">{latestEntry?.status || 'No entry'}</p>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 xl:max-w-[42%] xl:justify-end">
+            <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700">
+              {approvedCount} approved
+            </Badge>
+            <Badge variant="outline" className="rounded-full border-sky-500/20 bg-sky-500/10 text-sky-700">
+              {mediaCount} media
+            </Badge>
+            <Badge variant="outline" className="rounded-full border-violet-500/20 bg-violet-500/10 text-violet-700">
+              {totalHours.toFixed(totalHours % 1 === 0 ? 0 : 1)} hrs
+            </Badge>
+            <Badge variant="outline" className="rounded-full border-orange-500/20 bg-orange-500/10 text-orange-700 capitalize">
+              {latestEntry?.status || 'No entry'}
+            </Badge>
           </div>
         </div>
       </AccordionTrigger>
 
-      <AccordionContent className="border-t bg-muted/20 px-5 pb-5 pt-4">
+      <AccordionContent className="border-t bg-gradient-to-b from-orange-500/[0.04] via-background to-background px-4 pb-4 pt-3">
         {group.entries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed bg-background/70 px-4 py-6 text-sm text-muted-foreground">
             No daily journal entries recorded for this intern yet.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {group.entries.map((entry) => (
               <div
                 key={entry.id}
-                className="flex flex-col gap-3 rounded-2xl border bg-background/80 px-4 py-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 rounded-2xl border border-slate-200/70 bg-background/90 px-4 py-3 md:flex-row md:items-center md:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -498,24 +496,24 @@ function EmployeeJournalAccordion({
                       {entry.status}
                     </Badge>
                     {entry.hours_worked && (
-                      <Badge variant="secondary" className="rounded-full">
+                      <Badge variant="secondary" className="rounded-full bg-violet-500/10 text-violet-700">
                         {entry.hours_worked}h
                       </Badge>
                     )}
                     {entry.attachments && entry.attachments.length > 0 && (
-                      <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary">
+                      <Badge variant="secondary" className="rounded-full bg-orange-500/10 text-orange-700">
                         {entry.attachments.length} media
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                  <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
                     {entry.activities}
                   </p>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="shrink-0 gap-2 rounded-full"
+                  className="shrink-0 gap-2 rounded-full border-orange-200 bg-orange-500/5 text-orange-700 hover:bg-orange-500/10"
                   onClick={() => onViewEntry(entry, employeeName, group.employee.avatar_url)}
                 >
                   <ArrowUpRight className="h-4 w-4" />
@@ -595,13 +593,8 @@ export default function EmployeeJournals() {
       (count, group) => count + group.entries.reduce((entryCount, entry) => entryCount + (entry.attachments?.length || 0), 0),
       0
     );
-    const activeDepartments = new Set(
-      filteredGroups.map((group) => group.employee.department?.name).filter(Boolean)
-    ).size;
-    const latestActivity = orderedGroups.find((group) => group.latestEntryDate)?.latestEntryDate || null;
-
-    return { employeeCount, entryCount, pendingCount, employeesWithEntries, mediaCount, activeDepartments, latestActivity };
-  }, [filteredGroups, orderedGroups]);
+    return { employeeCount, entryCount, pendingCount, employeesWithEntries, mediaCount };
+  }, [filteredGroups]);
 
   const filterOptions: { value: EmployeeJournalFilter; label: string; count: number }[] = [
     { value: 'all', label: 'All interns', count: groups.length },
@@ -626,104 +619,116 @@ export default function EmployeeJournals() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card className="rounded-[1.5rem] border-primary/10 bg-gradient-to-br from-primary/10 via-background to-background">
-            <CardHeader className="pb-2">
+      <div className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Card className="rounded-[1.35rem] border-orange-200/70 bg-gradient-to-br from-orange-500/15 via-background to-background shadow-sm">
+            <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Interns
               </CardDescription>
               <CardTitle className="text-2xl">{summary.employeeCount}</CardTitle>
-              <p className="text-xs text-muted-foreground">Visible after search and quick filters</p>
+              <p className="text-xs text-muted-foreground">Visible in the current review view</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.5rem]">
-            <CardHeader className="pb-2">
+          <Card className="rounded-[1.35rem] border-emerald-200/70 bg-gradient-to-br from-emerald-500/10 via-background to-background shadow-sm">
+            <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
                 Journal Entries
               </CardDescription>
               <CardTitle className="text-2xl">{summary.entryCount}</CardTitle>
-              <p className="text-xs text-muted-foreground">Daily logs currently available to review</p>
+              <p className="text-xs text-muted-foreground">Daily logs ready to open and inspect</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.5rem]">
-            <CardHeader className="pb-2">
+          <Card className="rounded-[1.35rem] border-amber-200/80 bg-gradient-to-br from-amber-500/15 via-background to-background shadow-sm">
+            <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
                 Pending Review
               </CardDescription>
               <CardTitle className="text-2xl">{summary.pendingCount}</CardTitle>
-              <p className="text-xs text-muted-foreground">Prioritized to the top of the list automatically</p>
+              <p className="text-xs text-muted-foreground">Pinned to the top so review starts faster</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.5rem]">
-            <CardHeader className="pb-2">
+          <Card className="rounded-[1.35rem] border-sky-200/80 bg-gradient-to-br from-sky-500/10 via-background to-background shadow-sm">
+            <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Interns With Entries
+                <Film className="h-4 w-4" />
+                Media Attached
               </CardDescription>
-              <CardTitle className="text-2xl">{summary.employeesWithEntries}</CardTitle>
-              <p className="text-xs text-muted-foreground">People already contributing journal updates</p>
+              <CardTitle className="text-2xl">{summary.mediaCount}</CardTitle>
+              <p className="text-xs text-muted-foreground">Photos and videos inside the filtered set</p>
             </CardHeader>
           </Card>
         </div>
 
-        <Card className="overflow-hidden rounded-[2rem] border shadow-sm">
-          <CardContent className="space-y-5 p-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="text-sm font-semibold">Browse by intern</p>
-                <p className="text-sm text-muted-foreground">
-                  Search by name, role, or department, then jump into the entries that need attention first.
-                </p>
+        <Card className="overflow-hidden rounded-[1.6rem] border-orange-100/80 shadow-sm">
+          <CardContent className="space-y-4 bg-gradient-to-b from-orange-500/[0.04] via-background to-background p-4">
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
+              <div className="flex flex-wrap items-center gap-2">
+                {filterOptions.map((option) => {
+                  const isActive = activeFilter === option.value;
+
+                  return (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        'h-9 rounded-full border px-3 text-xs sm:text-sm',
+                        isActive
+                          ? 'border-orange-300 bg-orange-500 text-white hover:bg-orange-500/90 hover:text-white'
+                          : 'border-orange-100 bg-white/80 text-slate-700 hover:border-orange-200 hover:bg-orange-50'
+                      )}
+                      onClick={() => setActiveFilter(option.value)}
+                    >
+                      {option.label}
+                      <span
+                        className={cn(
+                          'ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                          isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        )}
+                      >
+                        {option.count}
+                      </span>
+                    </Button>
+                  );
+                })}
               </div>
 
-              <div className="relative w-full xl:max-w-sm">
+              <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search intern, department, or role..."
-                  className="h-11 rounded-full border-muted bg-background pl-9"
+                  className="h-10 rounded-full border-orange-100 bg-white/90 pl-9"
                 />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.map((option) => {
-                const isActive = activeFilter === option.value;
-
-                return (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={isActive ? 'default' : 'outline'}
-                    className={cn('rounded-full px-4', !isActive && 'bg-background')}
-                    onClick={() => setActiveFilter(option.value)}
-                  >
-                    {option.label}
-                    <Badge
-                      variant={isActive ? 'secondary' : 'outline'}
-                      className={cn(
-                        'ml-2 rounded-full px-2 py-0 text-[10px]',
-                        isActive && 'border-transparent bg-white/25 text-current'
-                      )}
-                    >
-                      {option.count}
-                    </Badge>
-                  </Button>
-                );
-              })}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-orange-700">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Pending items stay on top
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 text-sky-700">
+                <Building2 className="h-3.5 w-3.5" />
+                {summary.employeesWithEntries} interns already logging
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2.5 py-1 text-violet-700">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Compact review mode
+              </span>
             </div>
 
             {isLoading ? (
-              <div className="rounded-[1.5rem] border border-dashed bg-card px-6 py-16 text-center text-muted-foreground">
+              <div className="rounded-[1.35rem] border border-dashed bg-card px-6 py-14 text-center text-muted-foreground">
                 Loading intern journals...
               </div>
             ) : orderedGroups.length === 0 ? (
-              <div className="rounded-[1.5rem] border border-dashed bg-card px-6 py-16 text-center">
+              <div className="rounded-[1.35rem] border border-dashed bg-card px-6 py-14 text-center">
                 <Users className="mx-auto h-10 w-10 text-muted-foreground/40" />
                 <p className="mt-4 text-lg font-medium">No interns match this view</p>
                 <p className="mt-1 text-sm text-muted-foreground">
