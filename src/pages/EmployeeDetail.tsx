@@ -296,7 +296,12 @@ export default function EmployeeDetail() {
 
           {/* Profile Content */}
           <div className="flex flex-col lg:flex-row gap-6 items-start">
-            <Card className="w-full lg:w-80 shrink-0 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-all duration-300">
+            <Card className={cn(
+              "w-full lg:w-80 shrink-0 shadow-sm hover:shadow-md transition-all duration-300",
+              isPrincipal
+                ? "border border-orange-200/70 bg-gradient-to-b from-orange-50 via-background to-background"
+                : "border-l-4 border-l-primary"
+            )}>
               <CardContent className="pt-8 pb-6 px-5 text-center sm:text-left lg:text-center">
                 <div className="flex flex-col items-center sm:items-start lg:items-center">
                   {canEdit ? (
@@ -315,29 +320,46 @@ export default function EmployeeDetail() {
                     </Avatar>
                   )}
                   <h1 className="text-2xl font-bold mt-4 text-foreground">{fullName}</h1>
-                  <p className="text-sm font-semibold text-primary mt-1">{employee.job_title || 'Employee'}</p>
+                  <p className={cn(
+                    "text-sm font-semibold mt-1",
+                    isPrincipal ? "text-orange-600" : "text-primary"
+                  )}>
+                    {employee.job_title || 'Employee'}
+                  </p>
                   <Badge className={cn("mt-3 px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm", statusColors[employee.status])}>
                     {statusLabels[employee.status]}
                   </Badge>
                 </div>
-                <div className="mt-8 space-y-4 pt-6 border-t border-muted/30">
+                <div className={cn(
+                  "mt-8 space-y-4 pt-6 border-t",
+                  isPrincipal ? "border-orange-100/80" : "border-muted/30"
+                )}>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
-                    <div className="p-2 rounded-lg bg-primary/5">
-                      <Mail className="h-4 w-4 text-primary" />
+                    <div className={cn(
+                      "p-2 rounded-lg",
+                      isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                    )}>
+                      <Mail className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
                     </div>
                     <span className="truncate max-w-[200px]">{employee.email}</span>
                   </div>
                   {employee.phone && (
                     <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
-                      <div className="p-2 rounded-lg bg-primary/5">
-                        <Phone className="h-4 w-4 text-primary" />
+                      <div className={cn(
+                        "p-2 rounded-lg",
+                        isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                      )}>
+                        <Phone className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
                       </div>
                       <span>{employee.phone}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
-                    <div className="p-2 rounded-lg bg-primary/5">
-                      <Building2 className="h-4 w-4 text-primary" />
+                    <div className={cn(
+                      "p-2 rounded-lg",
+                      isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                    )}>
+                      <Building2 className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
                     </div>
                     <span>{employee.department?.name || 'Unassigned'}</span>
                   </div>
@@ -377,7 +399,7 @@ export default function EmployeeDetail() {
                       Profile
                     </TabsTrigger>
                     {isPrincipal && (
-                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
+                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
                         <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         Journal
                       </TabsTrigger>
@@ -504,7 +526,7 @@ export default function EmployeeDetail() {
 
                 {isPrincipal && (
                   <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
-                    <Card className="border-l-4 border-l-primary shadow-sm">
+                    <Card className="overflow-hidden border border-orange-200/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
                       <CardHeader className="pb-3">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div>
@@ -513,16 +535,16 @@ export default function EmployeeDetail() {
                               Read-only journal entries, learnings, and media evidence for {fullName}.
                             </p>
                           </div>
-                          <Badge variant="outline" className="w-fit bg-primary/5 text-primary">
+                          <Badge variant="outline" className="w-fit border-orange-200 bg-orange-100 text-orange-700">
                             {journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}
                           </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {journalEntries.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed bg-muted/20 px-6 py-12 text-center">
-                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                              <BookOpen className="h-6 w-6 text-muted-foreground" />
+                          <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 px-6 py-12 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
+                              <BookOpen className="h-6 w-6 text-orange-600" />
                             </div>
                             <h3 className="text-base font-semibold">No journal entries yet</h3>
                             <p className="mt-1 text-sm text-muted-foreground">
@@ -535,7 +557,7 @@ export default function EmployeeDetail() {
                               <AccordionItem
                                 key={entry.id}
                                 value={entry.id}
-                                className="rounded-2xl border bg-card px-4 shadow-sm"
+                                className="rounded-2xl border border-orange-100 bg-white/90 px-4 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/40"
                               >
                                 <AccordionTrigger className="py-4 hover:no-underline">
                                   <div className="flex w-full flex-col gap-3 pr-4 text-left sm:flex-row sm:items-start sm:justify-between">
@@ -546,14 +568,14 @@ export default function EmployeeDetail() {
                                       </p>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <Badge variant="outline" className="bg-primary/5 text-primary">
+                                      <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
                                         {entry.status}
                                       </Badge>
                                       {entry.hours_worked !== null && (
-                                        <Badge variant="secondary">{entry.hours_worked} hrs</Badge>
+                                        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{entry.hours_worked} hrs</Badge>
                                       )}
                                       {entry.attachments && entry.attachments.length > 0 && (
-                                        <Badge variant="outline">
+                                        <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
                                           {entry.attachments.length} media
                                         </Badge>
                                       )}
@@ -561,36 +583,36 @@ export default function EmployeeDetail() {
                                   </div>
                                 </AccordionTrigger>
 
-                                <AccordionContent className="space-y-4 border-t border-muted/40 pb-4 pt-4">
+                                <AccordionContent className="space-y-4 border-t border-orange-100 pb-4 pt-4">
                                   <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Activities</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Activities</p>
                                     <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.activities}</p>
                                   </div>
 
                                   {entry.learnings && (
                                     <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Key Learnings</p>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Key Learnings</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.learnings}</p>
                                     </div>
                                   )}
 
                                   {entry.challenges && (
-                                    <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Challenges</p>
+                                    <div className="rounded-xl border border-rose-100 bg-rose-50/60 p-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Challenges</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.challenges}</p>
                                     </div>
                                   )}
 
                                   {entry.supervisor_notes && (
-                                    <div className="rounded-xl border border-primary/10 bg-primary/5 p-3">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Supervisor Notes</p>
+                                    <div className="rounded-xl border border-orange-200 bg-orange-100/70 p-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Supervisor Notes</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.supervisor_notes}</p>
                                     </div>
                                   )}
 
                                   {entry.attachments && entry.attachments.length > 0 && (
                                     <div className="space-y-2">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Photo & Video Evidence</p>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Photo & Video Evidence</p>
                                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                         {entry.attachments.map((attachment) => renderAttachmentCard(attachment))}
                                       </div>
