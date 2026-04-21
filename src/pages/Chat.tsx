@@ -35,7 +35,7 @@ export default function ChatPage() {
         )
         : allConversations;
 
-    const canCreateGroupChat = isAdmin || isHrManager || isSupervisor;
+    const canCreateGroupChat = isAdmin || isHrManager || isSupervisor || userRole === 'principal';
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
     const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);

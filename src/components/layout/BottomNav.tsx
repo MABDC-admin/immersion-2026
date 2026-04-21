@@ -40,6 +40,7 @@ export function BottomNav() {
             ? [
                 { label: 'Home', icon: Home, to: '/dashboard' },
                 { label: 'Interns', icon: Users, to: '/employees' },
+                { label: 'Chat', icon: MessageSquare, to: '/chat' },
                 { label: 'Profile', icon: ClipboardCheck, to: employee ? `/employees/${employee.id}` : '/dashboard' },
             ]
         : [

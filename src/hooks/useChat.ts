@@ -12,29 +12,40 @@ export function useChat(conversationId?: string) {
         return useQuery({
             queryKey: ['chat', 'conversations', employeeId],
             queryFn: async () => {
-                const { data: convs, error: convError } = await supabase
-                    .from('conversations')
+                const { data: memberships, error: membershipError } = await supabase
+                    .from('conversation_members')
                     .select(`
-                        *,
-                        members:conversation_members(
+                        last_read_at,
+                        conversation:conversations(
                             *,
-                            employee:employees(id, first_name, last_name, avatar_url)
+                            members:conversation_members(
+                                *,
+                                employee:employees(id, first_name, last_name, avatar_url)
+                            )
                         )
                     `)
-                    .order('updated_at', { ascending: false });
+                    .eq('employee_id', employeeId);
 
-                if (convError) throw convError;
+                if (membershipError) throw membershipError;
+
+                const convs = (memberships || [])
+                    .map((membership: any) => ({
+                        ...(membership.conversation || {}),
+                        my_last_read_at: membership.last_read_at,
+                    }))
+                    .filter((conversation: any) => conversation?.id)
+                    .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
                 // For each conversation, fetch unread count for current employee
                 const convsWithUnread = await Promise.all((convs || []).map(async (conv) => {
-                    const myMember = conv.members.find((m: any) => m.employee_id === employeeId);
+                    const myMember = conv.members?.find((m: any) => m.employee_id === employeeId);
                     if (!myMember) return { ...conv, unread_count: 0 };
 
                     const { count, error: countError } = await supabase
                         .from('messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('conversation_id', conv.id)
-                        .gt('created_at', myMember.last_read_at)
+                        .gt('created_at', myMember.last_read_at || conv.my_last_read_at)
                         .neq('sender_id', employeeId);
 
                     return { ...conv, unread_count: count || 0 };

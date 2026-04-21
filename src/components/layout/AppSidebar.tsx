@@ -163,17 +163,13 @@ export function AppSidebar() {
       return [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
         { title: 'Interns', icon: Users, href: '/employees' },
+        { title: 'Chat', icon: MessageSquare, href: '/chat', badge: totalUnreadCount },
         {
           title: 'My Workspace', icon: User, subItems: [
             { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/dashboard' },
           ]
         }
-      ].map((item) => {
-        if (item.title === 'Chat') {
-          return { ...item, badge: totalUnreadCount };
-        }
-        return item;
-      });
+      ];
     }
 
     // Employees / Interns see the employee-focused sidebar
