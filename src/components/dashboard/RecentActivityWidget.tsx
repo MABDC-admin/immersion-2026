@@ -19,9 +19,10 @@ export function RecentActivityWidget({ className }: RecentActivityWidgetProps) {
   const { data: activities = [], isLoading } = useActivities();
 
   return (
-    <Card className={cn('animate-fade-in', className)} style={{ animationDelay: '400ms' }}>
-      <CardHeader>
+    <Card className={cn('animate-fade-in border-orange-200/70 bg-gradient-to-br from-orange-500/[0.08] via-background to-background shadow-sm', className)} style={{ animationDelay: '400ms' }}>
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">Recent Activity</CardTitle>
+        <p className="text-sm text-muted-foreground">Latest updates across records, staffing changes, and operational edits.</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -47,7 +48,7 @@ export function RecentActivityWidget({ className }: RecentActivityWidgetProps) {
               return (
                 <div
                   key={activity.id}
-                  className="flex items-start gap-3 animate-fade-in"
+                  className="flex items-start gap-3 rounded-2xl border border-white/60 bg-white/70 px-3 py-3 animate-fade-in"
                   style={{ animationDelay: `${500 + index * 100}ms` }}
                 >
                   <div className={cn('p-2 rounded-full', config.bgColor)}>

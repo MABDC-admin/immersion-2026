@@ -30,9 +30,10 @@ export function DepartmentDistributionChart({ employees }: DepartmentDistributio
   }, [employees]);
 
   return (
-    <Card className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-      <CardHeader>
+    <Card className="animate-fade-in border-sky-200/70 bg-gradient-to-br from-sky-500/[0.08] via-background to-background shadow-sm" style={{ animationDelay: '300ms' }}>
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">Department Distribution</CardTitle>
+        <p className="text-sm text-muted-foreground">See which departments are carrying the largest share of active records.</p>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">
@@ -49,7 +50,7 @@ export function DepartmentDistributionChart({ employees }: DepartmentDistributio
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
+                  borderRadius: '14px',
                 }}
                 formatter={(value) => [`${value} employees`, 'Count']}
               />

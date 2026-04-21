@@ -18,9 +18,10 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
   const { data: events = [], isLoading } = useEvents();
 
   return (
-    <Card className={cn('animate-fade-in', className)} style={{ animationDelay: '500ms' }}>
-      <CardHeader>
+    <Card className={cn('animate-fade-in border-violet-200/70 bg-gradient-to-br from-violet-500/[0.08] via-background to-background shadow-sm', className)} style={{ animationDelay: '500ms' }}>
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">Upcoming Events</CardTitle>
+        <p className="text-sm text-muted-foreground">Upcoming dates and milestones that deserve attention.</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -43,7 +44,7 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
               return (
                 <div
                   key={event.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
+                  className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 p-3 transition-colors hover:bg-white/90 animate-fade-in"
                   style={{ animationDelay: `${600 + index * 100}ms` }}
                 >
                   <div className={cn('p-2 rounded-full', config.bgColor)}>

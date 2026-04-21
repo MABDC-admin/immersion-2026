@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
@@ -85,13 +86,19 @@ export default function Dashboard() {
     () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
     [visibleEmployees]
   );
+  const adminRoleLabel =
+    userRole === 'admin' ? 'Administrator' :
+      userRole === 'supervisor' ? 'Supervisor' :
+        userRole === 'manager' ? 'Manager' :
+          userRole === 'hr_manager' ? 'HR Manager' :
+            'Payroll Officer';
 
   return (
     <MainLayout>
       <div className="space-y-8">
         {isPrincipal ? (
           <>
-            <Card className="border-l-4 border-l-primary shadow-sm">
+            <Card className="overflow-hidden border-orange-200/80 bg-gradient-to-r from-orange-500/12 via-background to-background shadow-sm">
               <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Principal Portal</h1>
@@ -99,14 +106,14 @@ export default function Dashboard() {
                     Simple, read-only oversight of intern records. Supervisor profiles stay hidden in this portal.
                   </p>
                 </div>
-                <Badge variant="outline" className="w-fit bg-primary/5 text-primary">
+                <Badge variant="outline" className="w-fit border-orange-200 bg-orange-500/10 text-orange-700">
                   Read-only intern oversight
                 </Badge>
               </CardContent>
             </Card>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="shadow-sm">
+              <Card className="border-orange-200/70 bg-gradient-to-br from-orange-500/12 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -121,7 +128,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm">
+              <Card className="border-emerald-200/70 bg-gradient-to-br from-emerald-500/10 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -136,7 +143,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm">
+              <Card className="border-amber-200/80 bg-gradient-to-br from-amber-500/14 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -153,8 +160,8 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-              <Card>
-                <CardHeader>
+              <Card className="border-orange-200/70 bg-gradient-to-br from-orange-500/[0.06] via-background to-background shadow-sm">
+                <CardHeader className="pb-2">
                   <CardTitle>Recent Hires</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -162,7 +169,7 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">No recent hires available yet.</p>
                   ) : (
                     principalRecentHires.map((recentHire) => (
-                      <div key={recentHire.id} className="rounded-2xl border bg-background px-4 py-3">
+                      <div key={recentHire.id} className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">
@@ -186,22 +193,22 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
+              <Card className="border-violet-200/70 bg-gradient-to-br from-violet-500/[0.06] via-background to-background shadow-sm">
+                <CardHeader className="pb-2">
                   <CardTitle>Quick Access</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-between" onClick={() => navigate('/employees')}>
+                  <Button variant="outline" className="w-full justify-between border-orange-200 bg-orange-500/5 hover:bg-orange-500/10" onClick={() => navigate('/employees')}>
                     Intern Directory
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
-                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-orange-100 bg-orange-500/5 px-4 py-3 text-sm text-muted-foreground">
                     Supervisor records are hidden by design in the principal portal.
                   </div>
-                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-sky-100 bg-sky-500/5 px-4 py-3 text-sm text-muted-foreground">
                     Journal entries are read-only and appear inside each employee profile.
                   </div>
-                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
                     Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span>
                   </div>
                 </CardContent>
@@ -212,34 +219,42 @@ export default function Dashboard() {
           /* ========== ADMIN / HR DASHBOARD ========== */
           <>
             {/* Welcome Header */}
-            <Card className="border-l-4 border-l-primary shadow-sm">
-              <CardContent className="px-6 py-5 flex items-center justify-between">
+            <Card className="overflow-hidden border-orange-200/80 bg-gradient-to-r from-orange-500/14 via-background to-background shadow-sm">
+              <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">
                     Welcome back, {employee?.first_name || user?.email?.split('@')[0] || 'Admin'}
                   </h1>
                   <p className="text-muted-foreground mt-1">Organizational Overview</p>
                 </div>
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  {userRole === 'admin' ? 'Administrator' :
-                    userRole === 'supervisor' ? 'Supervisor' :
-                      userRole === 'manager' ? 'Manager' :
-                        userRole === 'hr_manager' ? 'HR Manager' :
-                          'Payroll Officer'}
+                <Badge variant="outline" className="w-fit border-orange-200 bg-white/80 px-3 py-1 text-sm text-orange-700">
+                  {adminRoleLabel}
                 </Badge>
               </CardContent>
             </Card>
 
             {/* Quick Navigation */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {adminQuickNav.map((item) => (
+              {adminQuickNav.map((item, index) => (
                 <Button
                   key={item.label}
                   variant="outline"
-                  className="h-auto flex-col gap-2 py-4 hover:scale-105 transition-transform"
+                  className={cn(
+                    'h-auto flex-col gap-2 border-white/70 py-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md',
+                    index === 0 && 'bg-gradient-to-br from-orange-500/12 to-background hover:bg-orange-500/10',
+                    index === 1 && 'bg-gradient-to-br from-sky-500/10 to-background hover:bg-sky-500/10',
+                    index === 2 && 'bg-gradient-to-br from-emerald-500/10 to-background hover:bg-emerald-500/10',
+                    index === 3 && 'bg-gradient-to-br from-violet-500/10 to-background hover:bg-violet-500/10'
+                  )}
                   onClick={() => navigate(item.href)}
                 >
-                  <item.icon className="h-5 w-5 text-primary" />
+                  <item.icon className={cn(
+                    'h-5 w-5',
+                    index === 0 && 'text-orange-600',
+                    index === 1 && 'text-sky-600',
+                    index === 2 && 'text-emerald-600',
+                    index === 3 && 'text-violet-600'
+                  )} />
                   <span className="text-xs font-medium">{item.label}</span>
                 </Button>
               ))}

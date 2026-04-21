@@ -36,9 +36,10 @@ export function EmployeeStatusChart({ employees }: EmployeeStatusChartProps) {
   }, [employees]);
 
   return (
-    <Card className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-      <CardHeader>
+    <Card className="animate-fade-in border-emerald-200/70 bg-gradient-to-br from-emerald-500/[0.08] via-background to-background shadow-sm" style={{ animationDelay: '200ms' }}>
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">Employee Status</CardTitle>
+        <p className="text-sm text-muted-foreground">A quick snapshot of how the current workforce is distributed by status.</p>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">
@@ -63,7 +64,7 @@ export function EmployeeStatusChart({ employees }: EmployeeStatusChartProps) {
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
+                  borderRadius: '14px',
                 }}
               />
               <Legend
