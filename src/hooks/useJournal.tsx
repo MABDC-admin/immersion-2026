@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Employee } from '@/types/employee';
+import { optimizeJournalUploadFile } from '@/lib/journalMedia';
 
 export interface JournalEntry {
     id: string;
@@ -25,6 +26,17 @@ export interface JournalAttachment {
     file_type: string;
     file_size: number | null;
     created_at: string;
+}
+
+export type JournalUploadStage = 'preparing' | 'compressing' | 'uploading' | 'saving' | 'done';
+
+export interface JournalUploadProgress {
+    total: number;
+    completed: number;
+    currentFileIndex: number;
+    currentFileName: string;
+    stage: JournalUploadStage;
+    percent: number;
 }
 
 interface EmployeeRoleRecord {
@@ -135,37 +147,75 @@ export function useUploadJournalAttachments() {
             journalId,
             employeeId,
             files,
+            onProgress,
         }: {
             journalId: string;
             employeeId: string;
             files: File[];
+            onProgress?: (progress: JournalUploadProgress) => void;
         }) => {
             const uploadedAttachments: JournalAttachment[] = [];
+            const totalFiles = files.length;
 
-            for (const file of files) {
-                const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const reportProgress = (
+                index: number,
+                completed: number,
+                fileName: string,
+                stage: JournalUploadStage
+            ) => {
+                const stageOffsets: Record<JournalUploadStage, number> = {
+                    preparing: 0.1,
+                    compressing: 0.3,
+                    uploading: 0.65,
+                    saving: 0.9,
+                    done: 1,
+                };
+
+                const progressRatio = totalFiles === 0
+                    ? 1
+                    : (index + stageOffsets[stage]) / totalFiles;
+
+                onProgress?.({
+                    total: totalFiles,
+                    completed,
+                    currentFileIndex: totalFiles === 0 ? 0 : Math.min(index + 1, totalFiles),
+                    currentFileName: fileName,
+                    stage,
+                    percent: Math.min(100, Math.max(0, Math.round(progressRatio * 100))),
+                });
+            };
+
+            for (const [index, file] of files.entries()) {
+                reportProgress(index, uploadedAttachments.length, file.name, 'preparing');
+                reportProgress(index, uploadedAttachments.length, file.name, 'compressing');
+
+                const optimizedFile = await optimizeJournalUploadFile(file);
+                const sanitizedName = optimizedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
                 const filePath = `${employeeId}/${journalId}/${Date.now()}_${sanitizedName}`;
 
+                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'uploading');
                 const { error: uploadError } = await (supabase as any).storage
                     .from('journal-media')
-                    .upload(filePath, file);
+                    .upload(filePath, optimizedFile);
 
                 if (uploadError) throw uploadError;
 
+                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'saving');
                 const { data, error } = await (supabase as any)
                     .from('journal_attachments')
                     .insert([{
                         journal_id: journalId,
-                        file_name: file.name,
+                        file_name: optimizedFile.name,
                         file_path: filePath,
-                        file_type: file.type,
-                        file_size: file.size,
+                        file_type: optimizedFile.type,
+                        file_size: optimizedFile.size,
                     }])
                     .select()
                     .single();
 
                 if (error) throw error;
                 uploadedAttachments.push(data as JournalAttachment);
+                reportProgress(index, uploadedAttachments.length, optimizedFile.name, 'done');
             }
 
             return { journalId, employeeId, uploadedAttachments };

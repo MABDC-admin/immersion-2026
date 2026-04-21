@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
   BookOpen,
   CalendarDays,
   Clock3,
+  Download,
   FileText,
   Film,
   Lightbulb,
@@ -13,9 +14,7 @@ import {
   Search,
   Sparkles,
   Trash2,
-  Upload,
   Users,
-  X,
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +25,7 @@ import {
   type EmployeeJournalGroup,
   type JournalAttachment,
   type JournalEntry,
+  type JournalUploadProgress,
 } from '@/hooks/useJournal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { JournalMediaUploader } from '@/components/journal/JournalMediaUploader';
+import { useToast } from '@/hooks/use-toast';
+import { formatJournalMediaSize } from '@/lib/journalMedia';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,11 +47,6 @@ const statusStyles: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
   draft: 'bg-muted text-muted-foreground border-border',
 };
-
-interface PendingPreviewItem {
-  file: File;
-  previewUrl: string;
-}
 
 function JournalEntryModal({
   open,
@@ -67,36 +65,25 @@ function JournalEntryModal({
 }) {
   const uploadAttachments = useUploadJournalAttachments();
   const deleteAttachment = useDeleteJournalAttachment();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-
-  const pendingPreviews = useMemo<PendingPreviewItem[]>(
-    () => selectedFiles.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
-    [selectedFiles]
-  );
-
-  useEffect(() => {
-    return () => {
-      pendingPreviews.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-    };
-  }, [pendingPreviews]);
+  const [uploadProgress, setUploadProgress] = useState<JournalUploadProgress | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<{
+    url: string;
+    type: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     setSelectedFiles([]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setUploadProgress(null);
+    setPreviewAttachment(null);
   }, [selectedEntry?.id, open]);
 
   if (!selectedEntry) return null;
 
   const getAttachmentUrl = (filePath: string) =>
     supabase.storage.from('journal-media').getPublicUrl(filePath).data.publicUrl;
-
-  const handleFilesPicked = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const allowedFiles = files.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
-    setSelectedFiles((current) => [...current, ...allowedFiles]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const removePendingFile = (indexToRemove: number) => {
     setSelectedFiles((current) => current.filter((_, index) => index !== indexToRemove));
@@ -105,35 +92,60 @@ function JournalEntryModal({
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
 
-    const result = await uploadAttachments.mutateAsync({
-      journalId: selectedEntry.id,
-      employeeId: selectedEntry.employee_id,
-      files: selectedFiles,
-    });
+    try {
+      const result = await uploadAttachments.mutateAsync({
+        journalId: selectedEntry.id,
+        employeeId: selectedEntry.employee_id,
+        files: selectedFiles,
+        onProgress: (progress) => setUploadProgress(progress),
+      });
 
-    onEntryChange({
-      ...selectedEntry,
-      attachments: [...(selectedEntry.attachments || []), ...result.uploadedAttachments],
-    });
-    setSelectedFiles([]);
+      onEntryChange({
+        ...selectedEntry,
+        attachments: [...(selectedEntry.attachments || []), ...result.uploadedAttachments],
+      });
+      setSelectedFiles([]);
+      setUploadProgress(null);
+      toast({
+        title: 'Media uploaded',
+        description: `${result.uploadedAttachments.length} ${result.uploadedAttachments.length === 1 ? 'file was' : 'files were'} added to this journal entry.`,
+      });
+    } catch (error) {
+      setUploadProgress(null);
+      toast({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Something went wrong while uploading media.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDeleteAttachment = async (attachment: JournalAttachment) => {
-    await deleteAttachment.mutateAsync({
-      attachmentId: attachment.id,
-      filePath: attachment.file_path,
-      employeeId: selectedEntry.employee_id,
-    });
+    try {
+      await deleteAttachment.mutateAsync({
+        attachmentId: attachment.id,
+        filePath: attachment.file_path,
+        employeeId: selectedEntry.employee_id,
+      });
 
-    onEntryChange({
-      ...selectedEntry,
-      attachments: (selectedEntry.attachments || []).filter((item) => item.id !== attachment.id),
-    });
+      onEntryChange({
+        ...selectedEntry,
+        attachments: (selectedEntry.attachments || []).filter((item) => item.id !== attachment.id),
+      });
+      toast({ title: 'Attachment removed' });
+    } catch (error) {
+      toast({
+        title: 'Unable to remove attachment',
+        description: error instanceof Error ? error.message : 'Something went wrong while deleting the file.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
         <div className="bg-gradient-to-br from-primary/10 via-background to-background px-6 py-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -228,18 +240,16 @@ function JournalEntryModal({
           )}
 
           <section className="space-y-3 rounded-xl border border-dashed bg-muted/20 p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold">Admin Media Upload</p>
-                <p className="text-xs text-muted-foreground">
-                  Add multiple photos or videos directly to this employee&apos;s journal entry.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-4 w-4" />
-                  Choose Files
-                </Button>
+            <JournalMediaUploader
+              title="Admin Media Upload"
+              description="Drop photos or videos onto this journal entry and upload them without leaving the review modal."
+              selectedFiles={selectedFiles}
+              onAddFiles={(files) => setSelectedFiles((current) => [...current, ...files])}
+              onRemoveFile={removePendingFile}
+              progress={uploadProgress}
+              isUploading={uploadAttachments.isPending}
+              browseLabel="Choose Files"
+              actions={(
                 <Button
                   type="button"
                   size="sm"
@@ -247,60 +257,11 @@ function JournalEntryModal({
                   disabled={selectedFiles.length === 0 || uploadAttachments.isPending}
                   onClick={handleUpload}
                 >
-                  {uploadAttachments.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploadAttachments.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Upload Now
                 </Button>
-              </div>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={handleFilesPicked}
+              )}
             />
-
-            {pendingPreviews.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {pendingPreviews.map((item, index) => {
-                  const isVideo = item.file.type.startsWith('video/');
-
-                  return (
-                    <div key={`${item.file.name}-${index}`} className="relative overflow-hidden rounded-xl border bg-background">
-                      {isVideo ? (
-                        <div className="relative aspect-video bg-black">
-                          <video src={item.previewUrl} className="h-full w-full object-cover opacity-80" />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <Film className="h-7 w-7 text-white" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-black/5">
-                          <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
-                        </div>
-                      )}
-                      <div className="px-3 py-2">
-                        <p className="truncate text-xs font-semibold">{item.file.name}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {(item.file.size / (1024 * 1024)).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="icon"
-                        className="absolute right-2 top-2 h-7 w-7"
-                        onClick={() => removePendingFile(index)}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </section>
 
           {selectedEntry.attachments && selectedEntry.attachments.length > 0 && (
@@ -319,7 +280,15 @@ function JournalEntryModal({
                       key={attachment.id}
                       className="group relative overflow-hidden rounded-xl border bg-muted/20 transition-colors hover:bg-muted/40"
                     >
-                      <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block">
+                      <button
+                        type="button"
+                        className="block w-full text-left"
+                        onClick={() => setPreviewAttachment({
+                          url: attachmentUrl,
+                          type: attachment.file_type,
+                          name: attachment.file_name,
+                        })}
+                      >
                         {isVideo ? (
                           <div className="relative aspect-video bg-black">
                             <video src={attachmentUrl} className="h-full w-full object-cover opacity-80" />
@@ -335,19 +304,36 @@ function JournalEntryModal({
                         <div className="px-3 py-2">
                           <p className="truncate text-xs font-semibold">{attachment.file_name}</p>
                           <p className="text-[10px] text-muted-foreground">
-                            {attachment.file_size ? `${(attachment.file_size / (1024 * 1024)).toFixed(2)} MB` : 'Media'}
+                            {formatJournalMediaSize(attachment.file_size)}
                           </p>
                         </div>
-                      </a>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="icon"
-                        className="absolute right-2 top-2 h-7 w-7 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
-                        onClick={() => handleDeleteAttachment(attachment)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
+                      <div className="absolute right-2 top-2 flex gap-2 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7"
+                          asChild
+                        >
+                          <a
+                            href={attachmentUrl}
+                            download={attachment.file_name}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </a>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleDeleteAttachment(attachment)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -355,8 +341,40 @@ function JournalEntryModal({
             </section>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!previewAttachment} onOpenChange={(nextOpen) => !nextOpen && setPreviewAttachment(null)}>
+        <DialogContent className="max-w-5xl overflow-hidden bg-black p-2">
+          {previewAttachment && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 px-3 pt-2 text-white">
+                <p className="truncate text-sm">{previewAttachment.name}</p>
+                <Button variant="secondary" size="sm" className="gap-2" asChild>
+                  <a href={previewAttachment.url} download={previewAttachment.name}>
+                    <Download className="h-4 w-4" />
+                    Download
+                  </a>
+                </Button>
+              </div>
+              {previewAttachment.type.startsWith('video/') ? (
+                <video
+                  src={previewAttachment.url}
+                  controls
+                  autoPlay
+                  className="max-h-[80vh] w-full rounded-lg"
+                />
+              ) : (
+                <img
+                  src={previewAttachment.url}
+                  alt={previewAttachment.name}
+                  className="max-h-[80vh] w-full rounded-lg object-contain"
+                />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

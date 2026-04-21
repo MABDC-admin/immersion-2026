@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,15 +22,14 @@ import {
     CheckCircle2,
     Clock,
     Calendar,
+    Download,
     Edit2,
-    FileImage,
     Film,
     Loader2,
     Plus,
     Send,
     Trash2,
     Upload,
-    X,
     XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,16 +44,14 @@ import {
     useUploadJournalAttachments,
     type JournalAttachment,
     type JournalEntry,
+    type JournalUploadProgress,
 } from '@/hooks/useJournal';
 import { format, isToday, isYesterday, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-
-interface AttachmentPreviewItem {
-    file: File;
-    previewUrl: string;
-}
+import { JournalMediaUploader } from '@/components/journal/JournalMediaUploader';
+import { formatJournalMediaSize } from '@/lib/journalMedia';
 
 export default function Journal() {
     const { internId } = useParams<{ internId: string }>();
@@ -84,24 +81,12 @@ export default function Journal() {
     const [hoursWorked, setHoursWorked] = useState('');
     const [supervisorNotes, setSupervisorNotes] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [uploadProgress, setUploadProgress] = useState<JournalUploadProgress | null>(null);
     const [previewAttachment, setPreviewAttachment] = useState<{
         url: string;
         type: string;
         name: string;
     } | null>(null);
-
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const selectedFilePreviews = useMemo<AttachmentPreviewItem[]>(
-        () => selectedFiles.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
-        [selectedFiles]
-    );
-
-    useEffect(() => {
-        return () => {
-            selectedFilePreviews.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-        };
-    }, [selectedFilePreviews]);
 
     const resetForm = () => {
         setEntryDate(format(new Date(), 'yyyy-MM-dd'));
@@ -111,6 +96,7 @@ export default function Journal() {
         setHoursWorked('');
         setSupervisorNotes('');
         setSelectedFiles([]);
+        setUploadProgress(null);
         setEditingEntry(null);
     };
 
@@ -127,29 +113,8 @@ export default function Journal() {
         setChallenges(entry.challenges || '');
         setHoursWorked(entry.hours_worked?.toString() || '');
         setSelectedFiles([]);
+        setUploadProgress(null);
         setIsFormOpen(true);
-    };
-
-    const handleFilesPicked = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(event.target.files || []);
-        if (files.length === 0) return;
-
-        const allowedFiles = files.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
-        const rejectedCount = files.length - allowedFiles.length;
-
-        if (rejectedCount > 0) {
-            toast({
-                title: 'Some files were skipped',
-                description: 'Only image and video files can be attached to a journal entry.',
-                variant: 'destructive',
-            });
-        }
-
-        setSelectedFiles((current) => [...current, ...allowedFiles]);
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
     };
 
     const removePendingFile = (indexToRemove: number) => {
@@ -192,6 +157,7 @@ export default function Journal() {
                     journalId: savedEntry.id,
                     employeeId: targetEmployee.id,
                     files: selectedFiles,
+                    onProgress: (progress) => setUploadProgress(progress),
                 });
                 toast({
                     title: 'Media uploaded',
@@ -202,6 +168,7 @@ export default function Journal() {
             setIsFormOpen(false);
             resetForm();
         } catch (err: any) {
+            setUploadProgress(null);
             toast({ title: 'Error saving entry', description: err.message, variant: 'destructive' });
         }
     };
@@ -321,20 +288,55 @@ export default function Journal() {
                     <div className="space-y-1 px-3 py-2">
                         <p className="truncate text-xs font-semibold">{attachment.file_name}</p>
                         <p className="text-[10px] text-muted-foreground">
-                            {attachment.file_size ? `${(attachment.file_size / (1024 * 1024)).toFixed(2)} MB` : 'Media'}
+                            {formatJournalMediaSize(attachment.file_size)}
                         </p>
                     </div>
                 </button>
 
                 {canDeleteAttachment && (
+                    <div className="absolute right-2 top-2 flex gap-2 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="h-7 w-7"
+                            asChild
+                        >
+                            <a
+                                href={attachmentUrl}
+                                download={attachment.file_name}
+                                onClick={(event) => event.stopPropagation()}
+                            >
+                                <Download className="h-3.5 w-3.5" />
+                            </a>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleDeleteAttachment(attachment)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                )}
+
+                {!canDeleteAttachment && (
                     <Button
                         type="button"
                         variant="secondary"
                         size="icon"
                         className="absolute right-2 top-2 h-7 w-7 opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
-                        onClick={() => handleDeleteAttachment(attachment)}
+                        asChild
                     >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <a
+                            href={attachmentUrl}
+                            download={attachment.file_name}
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <Download className="h-3.5 w-3.5" />
+                        </a>
                     </Button>
                 )}
             </div>
@@ -590,7 +592,15 @@ export default function Journal() {
                 )}
             </div>
 
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <Dialog
+                open={isFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open);
+                    if (!open) {
+                        resetForm();
+                    }
+                }}
+            >
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
@@ -657,27 +667,16 @@ export default function Journal() {
                             />
                         </div>
 
-                        <div className="space-y-3 rounded-xl border border-dashed bg-muted/20 p-4">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <Label>Photo & Video Evidence</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Upload multiple photos or videos for this specific journal entry.
-                                    </p>
-                                </div>
-                                <Button type="button" variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="h-4 w-4" />
-                                    Add Media
-                                </Button>
-                            </div>
-
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*,video/*"
-                                multiple
-                                className="hidden"
-                                onChange={handleFilesPicked}
+                        <div className="space-y-3">
+                            <JournalMediaUploader
+                                title="Photo & Video Evidence"
+                                description="Drop multiple photos or videos here, then save the journal entry once everything looks right."
+                                selectedFiles={selectedFiles}
+                                onAddFiles={(files) => setSelectedFiles((current) => [...current, ...files])}
+                                onRemoveFile={removePendingFile}
+                                progress={uploadProgress}
+                                isUploading={uploadAttachments.isPending}
+                                browseLabel="Add Media"
                             />
 
                             {editingEntry?.attachments && editingEntry.attachments.length > 0 && (
@@ -688,53 +687,19 @@ export default function Journal() {
                                     </div>
                                 </div>
                             )}
-
-                            {selectedFilePreviews.length > 0 && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files Ready To Upload</p>
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        {selectedFilePreviews.map((item, index) => {
-                                            const isVideo = item.file.type.startsWith('video/');
-                                            return (
-                                                <div key={`${item.file.name}-${index}`} className="relative overflow-hidden rounded-xl border bg-background">
-                                                    {isVideo ? (
-                                                        <div className="relative aspect-video bg-black">
-                                                            <video src={item.previewUrl} className="h-full w-full object-cover opacity-80" />
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                                                <Film className="h-7 w-7 text-white" />
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="aspect-video bg-black/5">
-                                                            <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover" />
-                                                        </div>
-                                                    )}
-                                                    <div className="space-y-1 px-3 py-2">
-                                                        <p className="truncate text-xs font-semibold">{item.file.name}</p>
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            {(item.file.size / (1024 * 1024)).toFixed(2)} MB
-                                                        </p>
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        size="icon"
-                                                        className="absolute right-2 top-2 h-7 w-7"
-                                                        onClick={() => removePendingFile(index)}
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsFormOpen(false);
+                                resetForm();
+                            }}
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             onClick={handleSubmit}
                             disabled={createEntry.isPending || updateEntry.isPending || uploadAttachments.isPending}
@@ -753,8 +718,16 @@ export default function Journal() {
             <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
                 <DialogContent className="max-w-4xl overflow-hidden bg-black p-2">
                     {previewAttachment && (
-                        <div className="space-y-2">
-                            <div className="px-3 py-2 text-sm text-white">{previewAttachment.name}</div>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3 px-3 pt-2 text-white">
+                                <p className="truncate text-sm">{previewAttachment.name}</p>
+                                <Button variant="secondary" size="sm" className="gap-2" asChild>
+                                    <a href={previewAttachment.url} download={previewAttachment.name}>
+                                        <Download className="h-4 w-4" />
+                                        Download
+                                    </a>
+                                </Button>
+                            </div>
                             {previewAttachment.type.startsWith('video/') ? (
                                 <video src={previewAttachment.url} controls autoPlay className="max-h-[80vh] w-full rounded-lg" />
                             ) : (
