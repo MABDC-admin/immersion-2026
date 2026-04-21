@@ -627,66 +627,6 @@ export default function EmployeeJournals() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-[2rem] border bg-gradient-to-br from-primary/[0.14] via-background to-amber-500/10 px-6 py-7 shadow-sm">
-          <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.6),transparent_60%)] lg:block" />
-          <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-2xl space-y-4">
-              <Badge variant="outline" className="w-fit rounded-full border-primary/20 bg-background/70 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-primary">
-                Journal Review Hub
-              </Badge>
-              <div className="space-y-3">
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Intern Journals</h1>
-                <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Review employee activity logs, spot missing updates, and keep photo and video evidence flowing from one polished workspace.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <div className="rounded-2xl border bg-background/75 px-4 py-3 shadow-sm">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Latest activity</p>
-                  <p className="mt-1 font-semibold">
-                    {summary.latestActivity ? format(parseISO(summary.latestActivity), 'MMM d, yyyy') : 'Waiting for first entry'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border bg-background/75 px-4 py-3 shadow-sm">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Departments active</p>
-                  <p className="mt-1 font-semibold">{summary.activeDepartments || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
-              <Card className="rounded-[1.5rem] border-white/50 bg-white/75 shadow-lg shadow-primary/5 backdrop-blur">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Review queue</p>
-                      <p className="mt-2 text-3xl font-semibold">{summary.pendingCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-600">
-                      <TrendingUp className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Entries currently waiting for admin or HR review.</p>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[1.5rem] border-white/50 bg-white/75 shadow-lg shadow-primary/5 backdrop-blur">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Media footprint</p>
-                      <p className="mt-2 text-3xl font-semibold">{summary.mediaCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Photos and videos attached across the current filtered view.</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-[1.5rem] border-primary/10 bg-gradient-to-br from-primary/10 via-background to-background">
             <CardHeader className="pb-2">
