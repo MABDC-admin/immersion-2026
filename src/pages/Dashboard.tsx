@@ -286,6 +286,20 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="border-sky-500/15 bg-sky-50/60 shadow-sm">
+              <CardContent className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-sky-900">Supervisor records are hidden in this portal</p>
+                  <p className="text-sm text-sky-900/75">
+                    Principals can oversee employee records only. Supervisor profiles and supervisor-only modules stay excluded by design.
+                  </p>
+                </div>
+                <Button variant="outline" className="border-sky-200 bg-white text-sky-900 hover:bg-sky-100" onClick={() => navigate('/employees')}>
+                  View Employee Directory
+                </Button>
+              </CardContent>
+            </Card>
           </>
         ) : isAdminOrHR ? (
           /* ========== ADMIN / HR DASHBOARD ========== */

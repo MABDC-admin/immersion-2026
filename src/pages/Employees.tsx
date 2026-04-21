@@ -95,6 +95,15 @@ export default function Employees() {
   return (
     <MainLayout onAddNew={canCreateEmployee ? handleAddNew : undefined}>
       <div className="space-y-6">
+        {isPrincipal && (
+          <div className="rounded-2xl border border-sky-500/15 bg-sky-50/70 px-5 py-4">
+            <p className="text-sm font-semibold text-sky-900">Supervisor records are hidden in the principal portal.</p>
+            <p className="mt-1 text-sm text-sky-900/75">
+              This directory is intentionally limited to employee oversight only.
+            </p>
+          </div>
+        )}
+
         <EmployeeFilters
           searchQuery={searchQuery}
           onSearchChange={(value) => {
