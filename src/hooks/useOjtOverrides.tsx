@@ -89,6 +89,15 @@ export function useAllInternsOjt() {
             if (ae) throw ae;
 
             // Fetch all overrides
+            // Fetch approved journal hours
+            const { data: journals, error: je } = await (supabase as any)
+                .from('intern_journals')
+                .select('employee_id, hours_worked, status')
+                .in('employee_id', internIds)
+                .eq('status', 'approved');
+            if (je) throw je;
+
+            // Fetch all overrides
             const { data: overrides, error: oe } = await (supabase as any)
                 .from('intern_ojt_overrides')
                 .select('*')
@@ -105,8 +114,16 @@ export function useAllInternsOjt() {
                 }
                 const baseHours = Math.round((baseMinutes / 60) * 10) / 10;
 
+                // Add approved journal hours
+                const internJournals = (journals || []).filter((j: any) => j.employee_id === intern.id);
+                let journalHours = 0;
+                for (const j of internJournals) {
+                    journalHours += Number(j.hours_worked || 0);
+                }
+                const totalBaseHours = Math.round((baseHours + journalHours) * 10) / 10;
+
                 const internOverrides = (overrides || []).filter((o: any) => o.intern_id === intern.id);
-                let adjustedHours = baseHours;
+                let adjustedHours = totalBaseHours;
                 let effectiveProgress: number | null = null;
                 let completionStatus = 'in_progress';
 
@@ -128,7 +145,7 @@ export function useAllInternsOjt() {
 
                 return {
                     ...intern,
-                    baseHours,
+                    baseHours: totalBaseHours,
                     adjustedHours,
                     effectiveProgress: Math.round(effectiveProgress * 10) / 10,
                     completionStatus,
