@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const location = useLocation();
   const { user, isLoading, userRole, isAdmin, isHrManager } = useAuth();
 
   if (isLoading) {
@@ -29,6 +30,18 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     }
     if (requiredRole === 'hr_manager' && !isAdmin && !isHrManager) {
       return <Navigate to="/" replace />;
+    }
+  }
+
+  if (userRole === 'principal') {
+    const principalAllowed =
+      location.pathname === '/' ||
+      location.pathname === '/dashboard' ||
+      location.pathname === '/employees' ||
+      location.pathname.startsWith('/employees/');
+
+    if (!principalAllowed) {
+      return <Navigate to="/dashboard" replace />;
     }
   }
 

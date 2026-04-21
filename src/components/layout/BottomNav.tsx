@@ -6,6 +6,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCurrentEmployee } from '@/hooks/useEmployees';
 
 interface BottomNavItem {
     label: string;
@@ -16,11 +17,13 @@ interface BottomNavItem {
 export function BottomNav() {
     const isMobile = useIsMobile();
     const location = useLocation();
-    const { isAdmin, userRole } = useAuth();
+    const { user, isAdmin, userRole } = useAuth();
+    const { data: employee } = useCurrentEmployee(user?.id || '');
 
     if (!isMobile) return null;
 
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+    const isPrincipal = userRole === 'principal';
 
     // Keep the shared mobile nav focused and compact.
     const items: BottomNavItem[] = isAdminOrHR
@@ -31,6 +34,12 @@ export function BottomNav() {
             { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
         ]
+        : isPrincipal
+            ? [
+                { label: 'Home', icon: Home, to: '/dashboard' },
+                { label: 'Employees', icon: Users, to: '/employees' },
+                { label: 'Profile', icon: ClipboardCheck, to: employee ? `/employees/${employee.id}` : '/dashboard' },
+            ]
         : [
             { label: 'Home', icon: Home, to: '/dashboard' },
             { label: 'Tasks', icon: ListChecks, to: '/my-tasks' },

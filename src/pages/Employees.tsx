@@ -6,7 +6,7 @@ import { EmployeeGrid } from '@/components/employees/EmployeeGrid';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { CreateEmployeeModal } from '@/components/employees/CreateEmployeeModal';
 import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
-import { useEmployees, useDeleteEmployee, useCurrentEmployee } from '@/hooks/useEmployees';
+import { useEmployees, useDeleteEmployee, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,7 +19,11 @@ export default function Employees() {
   const { data: employees = [], isLoading, error } = useEmployees();
   const { user, isAdmin, userRole } = useAuth();
   const { data: viewerEmployee } = useCurrentEmployee(user?.id || '');
+  const { data: supervisors = [] } = useSupervisorOptions();
   const isSupervisor = userRole === 'supervisor';
+  const isPrincipal = userRole === 'principal';
+  const canCreateEmployee = isAdmin || userRole === 'hr_manager';
+  const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -37,7 +41,11 @@ export default function Employees() {
 
     // For supervisors, only show assigned interns (manager_id = viewerEmployee.id)
     if (isSupervisor && viewerEmployee) {
-      result = result.filter(emp => emp.manager_id === viewerEmployee.id);
+      result = result.filter((emp) => emp.manager_id === viewerEmployee.id);
+    }
+
+    if (isPrincipal) {
+      result = result.filter((emp) => !supervisorIds.has(emp.id));
     }
 
     return result.filter((employee) => {
@@ -55,7 +63,7 @@ export default function Employees() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [employees, searchQuery, statusFilter, isSupervisor, viewerEmployee]);
+  }, [employees, searchQuery, statusFilter, isPrincipal, isSupervisor, supervisorIds, viewerEmployee]);
 
   // Pagination
   const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE);
@@ -65,7 +73,9 @@ export default function Employees() {
   );
 
   const handleAddNew = () => {
-    setIsCreateModalOpen(true);
+    if (canCreateEmployee) {
+      setIsCreateModalOpen(true);
+    }
   };
 
   const handleEmployeeClick = (employee: EmployeeWithRelations) => {
@@ -83,7 +93,7 @@ export default function Employees() {
   }
 
   return (
-    <MainLayout onAddNew={handleAddNew}>
+    <MainLayout onAddNew={canCreateEmployee ? handleAddNew : undefined}>
       <div className="space-y-6">
         <EmployeeFilters
           searchQuery={searchQuery}
@@ -130,6 +140,7 @@ export default function Employees() {
         ) : (
           <EmployeeTable
             employees={paginatedEmployees}
+            readOnly={isPrincipal}
             onEdit={(emp) => {
               setEditingEmployee(emp);
               setIsEditModalOpen(true);
@@ -202,16 +213,20 @@ export default function Employees() {
         )}
       </div>
 
-      <CreateEmployeeModal
-        open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
-      />
+      {canCreateEmployee && (
+        <CreateEmployeeModal
+          open={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+        />
+      )}
 
-      <EditEmployeeModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        employee={editingEmployee}
-      />
+      {canCreateEmployee && (
+        <EditEmployeeModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          employee={editingEmployee}
+        />
+      )}
     </MainLayout>
   );
 }

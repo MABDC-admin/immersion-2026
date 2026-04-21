@@ -137,6 +137,7 @@ export function AppSidebar() {
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const isPrincipal = userRole === 'principal';
   const isSupervisor = userRole === 'supervisor';
 
   const { useTotalUnreadCount } = useChat();
@@ -183,6 +184,18 @@ export function AppSidebar() {
       ];
 
       return [...supervisorSpecificItems, ...personalTools];
+    }
+
+    if (isPrincipal) {
+      return [
+        { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+        { title: 'Employees', icon: Users, href: '/employees' },
+        {
+          title: 'My Workspace', icon: User, subItems: [
+            { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/dashboard' },
+          ]
+        }
+      ];
     }
 
     // Employees / Interns see the employee-focused sidebar

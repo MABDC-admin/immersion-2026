@@ -19,7 +19,7 @@ import {
 import { toast } from 'sonner';
 import { Shield, Crown } from 'lucide-react';
 
-type AppRole = 'admin' | 'hr_manager' | 'employee';
+type AppRole = 'admin' | 'hr_manager' | 'principal' | 'employee';
 
 export function MakeAdminCard() {
   const { user, userRole } = useAuth();
@@ -82,6 +82,7 @@ export function MakeAdminCard() {
             <SelectContent className="bg-popover">
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="hr_manager">HR Manager</SelectItem>
+              <SelectItem value="principal">Principal</SelectItem>
               <SelectItem value="employee">Employee</SelectItem>
             </SelectContent>
           </Select>

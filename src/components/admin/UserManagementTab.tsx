@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 const ROLES = [
   { value: 'admin', label: 'Admin' },
   { value: 'hr_manager', label: 'HR Manager' },
+  { value: 'principal', label: 'Principal' },
   { value: 'supervisor', label: 'Supervisor' },
   { value: 'manager', label: 'Manager' },
   { value: 'payroll_officer', label: 'Payroll Officer' },
@@ -22,6 +23,7 @@ const ROLES = [
 const roleColors: Record<string, string> = {
   admin: 'bg-destructive/10 text-destructive border-destructive/20',
   hr_manager: 'bg-primary/10 text-primary border-primary/20',
+  principal: 'bg-sky-500/10 text-sky-700 border-sky-500/20',
   supervisor: 'bg-hrms-success/10 text-hrms-success border-hrms-success/20',
   manager: 'bg-accent text-accent-foreground border-accent',
   payroll_officer: 'bg-secondary text-secondary-foreground border-secondary',

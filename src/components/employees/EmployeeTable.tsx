@@ -42,6 +42,7 @@ import type { EmployeeWithRelations } from '@/types/employee';
 
 interface EmployeeTableProps {
     employees: EmployeeWithRelations[];
+    readOnly?: boolean;
     onEdit: (employee: EmployeeWithRelations) => void;
     onDelete: (id: string) => void;
     onView: (id: string) => void;
@@ -61,7 +62,7 @@ const statusLabels = {
     terminated: 'Terminated',
 };
 
-export const EmployeeTable = ({ employees, onEdit, onDelete, onView }: EmployeeTableProps) => {
+export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, onView }: EmployeeTableProps) => {
     return (
         <div className="rounded-md border bg-card">
             <Table>
@@ -140,38 +141,42 @@ export const EmployeeTable = ({ employees, onEdit, onDelete, onView }: EmployeeT
                                                 <ExternalLink className="h-4 w-4" />
                                                 View Details
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onEdit(employee)} className="gap-2 text-primary focus:text-primary">
-                                                <Edit2 className="h-4 w-4" />
-                                                Edit record
-                                            </DropdownMenuItem>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem
-                                                        onSelect={(e) => e.preventDefault()}
-                                                        className="gap-2 text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                        Delete
+                                            {!readOnly && (
+                                                <>
+                                                    <DropdownMenuItem onClick={() => onEdit(employee)} className="gap-2 text-primary focus:text-primary">
+                                                        <Edit2 className="h-4 w-4" />
+                                                        Edit record
                                                     </DropdownMenuItem>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent className="bg-card border-border">
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Delete Employee Account</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Are you sure you want to delete {fullName}'s record? This action cannot be undone and will remove all associated data.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => onDelete(employee.id)}
-                                                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium"
-                                                        >
-                                                            Delete Account
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem
+                                                                onSelect={(e) => e.preventDefault()}
+                                                                className="gap-2 text-destructive focus:text-destructive"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="bg-card border-border">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete Employee Account</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to delete {fullName}'s record? This action cannot be undone and will remove all associated data.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => onDelete(employee.id)}
+                                                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium"
+                                                                >
+                                                                    Delete Account
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

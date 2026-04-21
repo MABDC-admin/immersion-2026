@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import { Shield } from 'lucide-react';
 
-type AppRole = 'admin' | 'hr_manager' | 'employee';
+type AppRole = 'admin' | 'hr_manager' | 'principal' | 'employee';
 
 export function AdminAssignRole() {
   const { isAdmin, user } = useAuth();
@@ -110,6 +110,7 @@ export function AdminAssignRole() {
               <SelectContent className="bg-popover">
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="hr_manager">HR Manager</SelectItem>
+                <SelectItem value="principal">Principal</SelectItem>
                 <SelectItem value="employee">Employee</SelectItem>
               </SelectContent>
             </Select>

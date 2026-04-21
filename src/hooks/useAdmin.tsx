@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const ROLE_PRIORITY = ['admin', 'hr_manager', 'supervisor', 'manager', 'payroll_officer', 'employee'] as const;
+const ROLE_PRIORITY = ['admin', 'hr_manager', 'principal', 'supervisor', 'manager', 'payroll_officer', 'employee'] as const;
 
 function resolvePrimaryRole(roles: string[]) {
   return ROLE_PRIORITY.find((role) => roles.includes(role)) || 'employee';

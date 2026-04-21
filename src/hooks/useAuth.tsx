@@ -2,8 +2,8 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'hr_manager' | 'employee' | 'manager' | 'payroll_officer' | 'supervisor';
-const ROLE_PRIORITY: AppRole[] = ['admin', 'hr_manager', 'supervisor', 'manager', 'payroll_officer', 'employee'];
+type AppRole = 'admin' | 'hr_manager' | 'principal' | 'employee' | 'manager' | 'payroll_officer' | 'supervisor';
+const ROLE_PRIORITY: AppRole[] = ['admin', 'hr_manager', 'principal', 'supervisor', 'manager', 'payroll_officer', 'employee'];
 
 function resolvePrimaryRole(roles: string[]) {
   return ROLE_PRIORITY.find((role) => roles.includes(role)) ?? null;
@@ -19,6 +19,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isHrManager: boolean;
+  isPrincipal: boolean;
   isManager: boolean;
   isSupervisor: boolean;
   canManageEmployees: boolean;
@@ -121,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = userRole === 'admin';
   const isHrManager = userRole === 'hr_manager';
+  const isPrincipal = userRole === 'principal';
   const isManager = userRole === 'manager';
   const isSupervisor = userRole === 'supervisor';
   const canManageEmployees = isAdmin || isHrManager;
@@ -137,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         isAdmin,
         isHrManager,
+        isPrincipal,
         isManager,
         isSupervisor,
         canManageEmployees,

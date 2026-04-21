@@ -1566,14 +1566,15 @@ export type Database = {
       }
       is_admin_or_hr: { Args: { _user_id: string }; Returns: boolean }
     }
-    Enums: {
-      app_role:
-        | "admin"
-        | "hr_manager"
-        | "employee"
-        | "payroll_officer"
-        | "manager"
-        | "supervisor"
+      Enums: {
+        app_role:
+          | "admin"
+          | "hr_manager"
+          | "principal"
+          | "employee"
+          | "payroll_officer"
+          | "manager"
+          | "supervisor"
       conversation_type: "direct" | "group" | "hr_support"
       employee_status: "active" | "inactive" | "on_leave" | "terminated"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
@@ -1707,6 +1708,7 @@ export const Constants = {
       app_role: [
         "admin",
         "hr_manager",
+        "principal",
         "employee",
         "payroll_officer",
         "manager",

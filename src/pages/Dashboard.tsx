@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Users, UserPlus, Calendar, TrendingUp, Shield, Briefcase, UserCheck } from 'lucide-react';
-import { useEmployees, useCurrentEmployee } from '@/hooks/useEmployees';
+import { useEmployees, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { AnimatedStatCard } from '@/components/dashboard/AnimatedStatCard';
 import { EmployeeStatusChart } from '@/components/dashboard/EmployeeStatusChart';
@@ -19,29 +19,35 @@ import { useState } from 'react';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
-  const { user, isAdmin, userRole, isSupervisor } = useAuth();
+  const { user, isAdmin, userRole, isSupervisor, isPrincipal } = useAuth();
   const { data: employee } = useCurrentEmployee(user?.id || '');
+  const { data: supervisors = [] } = useSupervisorOptions();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
+  const visibleEmployees = useMemo(
+    () => (isPrincipal ? employees.filter((currentEmployee) => !supervisorIds.has(currentEmployee.id)) : employees),
+    [employees, isPrincipal, supervisorIds]
+  );
 
   const stats = useMemo(() => {
-    const activeEmployees = employees.filter((e) => e.status === 'active').length;
-    const onLeaveEmployees = employees.filter((e) => e.status === 'on_leave').length;
+    const activeEmployees = visibleEmployees.filter((e) => e.status === 'active').length;
+    const onLeaveEmployees = visibleEmployees.filter((e) => e.status === 'on_leave').length;
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newHires = employees.filter(
+    const newHires = visibleEmployees.filter(
       (e) => new Date(e.hire_date) >= thirtyDaysAgo
     ).length;
 
     return [
-      { title: 'Total Employees', value: employees.length, icon: Users, color: 'text-primary', bgColor: 'bg-primary/10' },
+      { title: 'Total Employees', value: visibleEmployees.length, icon: Users, color: 'text-primary', bgColor: 'bg-primary/10' },
       { title: 'Active Employees', value: activeEmployees, icon: TrendingUp, color: 'text-hrms-success', bgColor: 'bg-hrms-success/10', trend: { value: 5, isPositive: true } },
       { title: 'New Hires (30 days)', value: newHires, icon: UserPlus, color: 'text-primary', bgColor: 'bg-primary/10' },
       { title: 'On Leave', value: onLeaveEmployees, icon: Calendar, color: 'text-hrms-warning', bgColor: 'bg-hrms-warning/10' },
     ];
-  }, [employees]);
+  }, [visibleEmployees]);
 
   const adminQuickNav = [
     { label: 'Admin Panel', icon: Shield, href: '/admin' },
@@ -49,12 +55,15 @@ export default function Dashboard() {
     { label: 'Recruitment', icon: Briefcase, href: '/recruitment/jobs' },
     { label: 'Onboarding', icon: UserCheck, href: '/onboarding/new-hires' },
   ];
+  const principalQuickNav = [
+    { label: 'Employees', icon: Users, href: '/employees' },
+  ];
 
   return (
     <MainLayout>
       <div className="space-y-8">
-        {isAdminOrHR ? (
-          /* ========== ADMIN / HR DASHBOARD ========== */
+        {isAdminOrHR || isPrincipal ? (
+          /* ========== ADMIN / HR / PRINCIPAL DASHBOARD ========== */
           <>
             {/* Welcome Header */}
             <Card className="border-l-4 border-l-primary shadow-sm">
@@ -63,10 +72,13 @@ export default function Dashboard() {
                   <h1 className="text-2xl font-bold text-foreground">
                     Welcome back, {employee?.first_name || user?.email?.split('@')[0] || 'Admin'}
                   </h1>
-                  <p className="text-muted-foreground mt-1">Organizational Overview</p>
+                  <p className="text-muted-foreground mt-1">
+                    {isPrincipal ? 'Principal Oversight' : 'Organizational Overview'}
+                  </p>
                 </div>
                 <Badge variant="secondary" className="text-sm px-3 py-1">
                   {userRole === 'admin' ? 'Administrator' :
+                    userRole === 'principal' ? 'Principal' :
                     userRole === 'supervisor' ? 'Supervisor' :
                       userRole === 'manager' ? 'Manager' :
                         userRole === 'hr_manager' ? 'HR Manager' :
@@ -76,8 +88,8 @@ export default function Dashboard() {
             </Card>
 
             {/* Quick Navigation */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {adminQuickNav.map((item) => (
+            <div className={isPrincipal ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'grid grid-cols-2 sm:grid-cols-4 gap-4'}>
+              {(isPrincipal ? principalQuickNav : adminQuickNav).map((item) => (
                 <Button
                   key={item.label}
                   variant="outline"
@@ -99,15 +111,17 @@ export default function Dashboard() {
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <EmployeeStatusChart employees={employees} />
-              <DepartmentDistributionChart employees={employees} />
+              <EmployeeStatusChart employees={visibleEmployees} />
+              <DepartmentDistributionChart employees={visibleEmployees} />
             </div>
 
             {/* Activity & Events */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <RecentActivityWidget className="lg:col-span-2" />
-              <UpcomingEventsWidget />
-            </div>
+            {!isPrincipal && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <RecentActivityWidget className="lg:col-span-2" />
+                <UpcomingEventsWidget />
+              </div>
+            )}
           </>
         ) : isSupervisor ? (
           /* ========== SUPERVISOR DASHBOARD ========== */

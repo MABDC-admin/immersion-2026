@@ -47,7 +47,8 @@ import {
   useEmployeeDocuments,
   useUploadDocument,
   useDeleteDocument,
-  useDownloadDocument
+  useDownloadDocument,
+  useSupervisorOptions
 } from '@/hooks/useEmployees';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaveRequests } from '@/hooks/useLeave';
@@ -84,9 +85,11 @@ export default function EmployeeDetail() {
   const { user, isAdmin, userRole } = useAuth();
   const isOwnProfile = user?.id === id;
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const isPrincipal = userRole === 'principal';
   const canEdit = isAdminOrHR || isOwnProfile;
 
   const { data: employee, isLoading, error } = useEmployee(id || '');
+  const { data: supervisors = [] } = useSupervisorOptions();
   const deleteEmployee = useDeleteEmployee();
   const uploadAvatar = useUploadAvatar();
   const { data: documents = [] } = useEmployeeDocuments(id || '');
@@ -106,6 +109,7 @@ export default function EmployeeDetail() {
   const { data: leaveRequests = [] } = useLeaveRequests(id || '');
   const { data: leaveBalances = [] } = useLeaveBalances(id || '');
   const { data: enrollments = [] } = useEnrollments(id || '');
+  const supervisorIds = new Set(supervisors.map((supervisor) => supervisor.id));
 
   // Evaluations data (must be before early returns to satisfy React hooks rules)
   const isSupervisorProfile = employee?.job_title?.toLowerCase().includes('supervisor') ?? false;
@@ -130,6 +134,10 @@ export default function EmployeeDetail() {
         </div>
       </MainLayout>
     );
+  }
+
+  if (isPrincipal && supervisorIds.has(employee.id)) {
+    return <Navigate to="/employees" replace />;
   }
 
   const fullName = `${employee.first_name} ${employee.last_name}`;
