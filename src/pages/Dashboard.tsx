@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import {
   ArrowRight,
   Building2,
+  Briefcase,
   Calendar,
   Eye,
   Shield,
