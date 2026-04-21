@@ -35,10 +35,21 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
+  const isOversightPortal = isPrincipal || isSupervisor;
   const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
   const visibleEmployees = useMemo(
-    () => (isPrincipal ? employees.filter((currentEmployee) => !isSupervisorLikeEmployee(currentEmployee, supervisorIds)) : employees),
-    [employees, isPrincipal, supervisorIds]
+    () => {
+      if (isSupervisor && employee) {
+        return employees.filter((currentEmployee) => currentEmployee.manager_id === employee.id);
+      }
+
+      if (isPrincipal) {
+        return employees.filter((currentEmployee) => !isSupervisorLikeEmployee(currentEmployee, supervisorIds));
+      }
+
+      return employees;
+    },
+    [employee, employees, isPrincipal, isSupervisor, supervisorIds]
   );
   const hiddenSupervisorCount = useMemo(
     () => employees.filter((currentEmployee) => isSupervisorLikeEmployee(currentEmployee, supervisorIds)).length,
@@ -86,6 +97,11 @@ export default function Dashboard() {
     () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
     [visibleEmployees]
   );
+  const oversightLabel = isSupervisor ? 'Supervisor Portal' : 'Principal Portal';
+  const oversightBadge = isSupervisor ? 'Assigned intern oversight' : 'Read-only intern oversight';
+  const oversightDescription = isSupervisor
+    ? 'Focused oversight for your assigned interns using the same compact portal experience.'
+    : 'Simple, read-only oversight of intern records. Supervisor profiles stay hidden in this portal.';
   const adminRoleLabel =
     userRole === 'admin' ? 'Administrator' :
       userRole === 'supervisor' ? 'Supervisor' :
@@ -96,18 +112,18 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="space-y-8">
-        {isPrincipal ? (
+        {isOversightPortal ? (
           <>
             <Card className="overflow-hidden border-orange-200/80 bg-gradient-to-r from-orange-500/12 via-background to-background shadow-sm">
               <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Principal Portal</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{oversightLabel}</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Simple, read-only oversight of intern records. Supervisor profiles stay hidden in this portal.
+                    {oversightDescription}
                   </p>
                 </div>
                 <Badge variant="outline" className="w-fit border-orange-200 bg-orange-500/10 text-orange-700">
-                  Read-only intern oversight
+                  {oversightBadge}
                 </Badge>
               </CardContent>
             </Card>
@@ -203,13 +219,17 @@ export default function Dashboard() {
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
                   <div className="rounded-xl border border-orange-100 bg-orange-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    Supervisor records are hidden by design in the principal portal.
+                    {isSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
                   </div>
                   <div className="rounded-xl border border-sky-100 bg-sky-500/5 px-4 py-3 text-sm text-muted-foreground">
                     Journal entries are read-only and appear inside each employee profile.
                   </div>
                   <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span>
+                    {isSupervisor ? (
+                      <>Assigned interns: <span className="font-semibold text-foreground">{visibleEmployees.length}</span></>
+                    ) : (
+                      <>Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span></>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -24,6 +24,8 @@ export function BottomNav() {
 
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
     const isPrincipal = userRole === 'principal';
+    const isSupervisor = userRole === 'supervisor';
+    const isOversightPortal = isPrincipal || isSupervisor;
 
     // Keep the shared mobile nav focused and compact.
     const items: BottomNavItem[] = isAdminOrHR
@@ -34,7 +36,7 @@ export function BottomNav() {
             { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
         ]
-        : isPrincipal
+        : isOversightPortal
             ? [
                 { label: 'Home', icon: Home, to: '/dashboard' },
                 { label: 'Interns', icon: Users, to: '/employees' },

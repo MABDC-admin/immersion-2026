@@ -139,6 +139,7 @@ export function AppSidebar() {
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
   const isPrincipal = userRole === 'principal';
   const isSupervisor = userRole === 'supervisor';
+  const isOversightPortal = isPrincipal || isSupervisor;
 
   const { useTotalUnreadCount } = useChat();
   const totalUnreadCount = useTotalUnreadCount(employee?.id || '');
@@ -158,35 +159,7 @@ export function AppSidebar() {
       });
     }
 
-    if (isSupervisor) {
-      // Chat is now second item
-      const supervisorSpecificItems = [
-        { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-        { title: 'Chat', icon: MessageSquare, href: '/chat', badge: totalUnreadCount },
-        { title: 'Interns', icon: Users, href: '/employees' },
-        { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
-        { title: 'Daily Journal', icon: BookOpen, href: '/supervisor/journals' },
-        { title: 'Attendance', icon: Clock, href: '/supervisor/attendance' },
-        { title: 'Tasks', icon: ListChecks, href: '/supervisor/tasks' },
-      ];
-
-      // Personal Tools for Supervisor
-      const personalTools = [
-        {
-          title: 'My Workspace', icon: User, subItems: [
-            { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/profile' },
-            { title: 'My Journal', href: '/journal' },
-            { title: 'My Attendance', href: '/attendance' },
-            { title: 'My Documents', href: '/my-documents' },
-            { title: 'Leave Requests', href: '/leave/requests' },
-          ]
-        }
-      ];
-
-      return [...supervisorSpecificItems, ...personalTools];
-    }
-
-    if (isPrincipal) {
+    if (isOversightPortal) {
       return [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
         { title: 'Interns', icon: Users, href: '/employees' },
@@ -195,7 +168,12 @@ export function AppSidebar() {
             { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/dashboard' },
           ]
         }
-      ];
+      ].map((item) => {
+        if (item.title === 'Chat') {
+          return { ...item, badge: totalUnreadCount };
+        }
+        return item;
+      });
     }
 
     // Employees / Interns see the employee-focused sidebar

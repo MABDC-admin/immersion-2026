@@ -54,6 +54,7 @@ import {
   isSupervisorLikeEmployee,
   useEmployee,
   useDeleteEmployee,
+  useCurrentEmployee,
   useUploadAvatar,
   useEmployeeDocuments,
   useUploadDocument,
@@ -100,9 +101,12 @@ export default function EmployeeDetail() {
   const isOwnProfile = user?.id === id;
   const isAdminOrHR = isAdmin || userRole === 'hr_manager';
   const isPrincipal = userRole === 'principal';
+  const isSupervisor = userRole === 'supervisor';
+  const isOversightPortal = isPrincipal || isSupervisor;
   const canEdit = isAdminOrHR || isOwnProfile;
 
   const { data: employee, isLoading, error } = useEmployee(id || '');
+  const { data: viewerEmployee } = useCurrentEmployee(user?.id || '');
   const { data: supervisors = [] } = useSupervisorOptions();
   const deleteEmployee = useDeleteEmployee();
   const uploadAvatar = useUploadAvatar();
@@ -157,6 +161,15 @@ export default function EmployeeDetail() {
   }
 
   if (isPrincipal && isSupervisorLikeEmployee(employee, supervisorIds)) {
+    return <Navigate to="/employees" replace />;
+  }
+
+  if (
+    isSupervisor &&
+    viewerEmployee &&
+    employee.id !== viewerEmployee.id &&
+    employee.manager_id !== viewerEmployee.id
+  ) {
     return <Navigate to="/employees" replace />;
   }
 
@@ -398,7 +411,7 @@ export default function EmployeeDetail() {
                       <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       Profile
                     </TabsTrigger>
-                    {isPrincipal && (
+                    {isOversightPortal && (
                       <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
                         <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         Journal
@@ -524,7 +537,7 @@ export default function EmployeeDetail() {
                   </div>
                 </TabsContent>
 
-                {isPrincipal && (
+                {isOversightPortal && (
                   <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
                     <Card className="overflow-hidden border border-orange-200/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
                       <CardHeader className="pb-3">

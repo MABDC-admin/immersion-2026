@@ -22,6 +22,7 @@ export default function Employees() {
   const { data: supervisors = [] } = useSupervisorOptions();
   const isSupervisor = userRole === 'supervisor';
   const isPrincipal = userRole === 'principal';
+  const isOversightPortal = isPrincipal || isSupervisor;
   const canCreateEmployee = isAdmin || userRole === 'hr_manager';
   const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
 
@@ -95,11 +96,15 @@ export default function Employees() {
   return (
     <MainLayout onAddNew={canCreateEmployee ? handleAddNew : undefined}>
       <div className="space-y-6">
-        {isPrincipal && (
+        {isOversightPortal && (
           <div className="rounded-2xl border border-sky-500/15 bg-sky-50/70 px-5 py-4">
-            <p className="text-sm font-semibold text-sky-900">Supervisor records are hidden in the principal portal.</p>
+            <p className="text-sm font-semibold text-sky-900">
+              {isSupervisor ? 'Only assigned interns appear in the supervisor portal.' : 'Supervisor records are hidden in the principal portal.'}
+            </p>
             <p className="mt-1 text-sm text-sky-900/75">
-              This directory is intentionally limited to intern oversight only.
+              {isSupervisor
+                ? 'This directory is intentionally limited to interns assigned to you.'
+                : 'This directory is intentionally limited to intern oversight only.'}
             </p>
           </div>
         )}
@@ -149,7 +154,7 @@ export default function Employees() {
         ) : (
           <EmployeeTable
             employees={paginatedEmployees}
-            readOnly={isPrincipal}
+            readOnly={isOversightPortal}
             onEdit={(emp) => {
               setEditingEmployee(emp);
               setIsEditModalOpen(true);
