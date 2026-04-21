@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SlidersHorizontal, Search, Plus, Bell, LogOut, Clock, Calendar } from 'lucide-react';
+import { Plus, Bell, LogOut, Clock, Calendar, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -25,8 +24,8 @@ export function TopHeader({ onAddNew }: TopHeaderProps) {
   const navigate = useNavigate();
   const { user, signOut, userRole, canManageEmployees } = useAuth();
   const { data: employee } = useCurrentEmployee(user?.id || '');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const isPrincipal = userRole === 'principal';
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -44,6 +43,17 @@ export function TopHeader({ onAddNew }: TopHeaderProps) {
     <header className="h-16 border-b bg-card flex items-center justify-between px-4 gap-4">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        {isPrincipal && (
+          <div className="hidden lg:flex items-center gap-3 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sky-900 shadow-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+              <Shield className="h-4 w-4" />
+            </div>
+            <div className="leading-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">Principal Portal</p>
+              <p className="mt-1 text-xs text-sky-900/80">Read-only employee oversight</p>
+            </div>
+          </div>
+        )}
         <div className="hidden md:flex items-center gap-4 px-3 py-1.5 bg-muted/30 rounded-full border border-muted/50">
           <div className="flex items-center gap-2 text-primary">
             <Calendar className="h-4 w-4" />
