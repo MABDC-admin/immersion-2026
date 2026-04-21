@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import {
   Briefcase,
   Calendar,
+  Shield,
   TrendingUp,
   UserCheck,
   UserPlus,
