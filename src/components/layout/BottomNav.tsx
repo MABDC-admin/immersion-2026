@@ -22,11 +22,12 @@ export function BottomNav() {
 
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
 
-    // 4 items only — no Home or Profile (those are in sidebar/header already)
+    // Keep the shared mobile nav focused and compact.
     const items: BottomNavItem[] = isAdminOrHR
         ? [
             { label: 'Employees', icon: Users, to: '/employees' },
             { label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' },
+            { label: 'Journal', icon: BookOpen, to: '/admin/employee-journals' },
             { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
         ]
@@ -47,7 +48,7 @@ export function BottomNav() {
             className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pt-2 bg-background/95 backdrop-blur-xl border-t shadow-[0_-2px_10px_rgba(0,0,0,0.08)]"
             style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)', willChange: 'transform' }}
         >
-            <div className="flex items-center justify-around max-w-sm mx-auto">
+            <div className="flex items-center justify-around max-w-md mx-auto">
                 {items.map((item) => {
                     const active = checkActive(item.to);
                     return (
@@ -55,7 +56,7 @@ export function BottomNav() {
                             key={item.label}
                             to={item.to}
                             className={cn(
-                                "flex flex-col items-center gap-1 py-1.5 px-4 rounded-xl transition-all duration-200",
+                                "flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5 px-2 rounded-xl transition-all duration-200",
                                 active
                                     ? "text-primary"
                                     : "text-muted-foreground active:scale-95"
@@ -67,7 +68,7 @@ export function BottomNav() {
                             )}>
                                 <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_rgba(59,130,246,0.4)]")} />
                             </div>
-                            <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+                            <span className="text-[10px] font-semibold leading-none text-center">{item.label}</span>
                         </Link>
                     );
                 })}
