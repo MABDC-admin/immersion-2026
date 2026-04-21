@@ -2,13 +2,8 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
-  ArrowRight,
-  Building2,
   Briefcase,
   Calendar,
-  Eye,
-  Shield,
-  Sparkles,
   TrendingUp,
   UserCheck,
   UserPlus,
@@ -78,11 +73,15 @@ export default function Dashboard() {
     () =>
       [...visibleEmployees]
         .sort((a, b) => new Date(b.hire_date).getTime() - new Date(a.hire_date).getTime())
-        .slice(0, 5),
+        .slice(0, 6),
     [visibleEmployees]
   );
-  const principalDepartmentCount = useMemo(
-    () => new Set(visibleEmployees.map((currentEmployee) => currentEmployee.department?.name).filter(Boolean)).size,
+  const principalActiveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'active').length,
+    [visibleEmployees]
+  );
+  const principalOnLeaveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
     [visibleEmployees]
   );
 
@@ -91,168 +90,68 @@ export default function Dashboard() {
       <div className="space-y-8">
         {isPrincipal ? (
           <>
-            <Card className="overflow-hidden border-none bg-gradient-to-br from-sky-600 via-sky-700 to-slate-900 text-white shadow-xl">
-              <CardContent className="relative px-6 py-8 sm:px-8">
-                <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full bg-cyan-300/10 blur-3xl" />
-                <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="max-w-2xl space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-100">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Principal Portal
-                    </div>
-                    <div className="space-y-2">
-                      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                        Executive visibility across employee records
-                      </h1>
-                      <p className="max-w-xl text-sm leading-6 text-sky-50/85 sm:text-base">
-                        Review employee coverage, hiring movement, and department distribution in one read-only workspace designed for principal oversight.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-sky-100/80">Visible employees</p>
-                        <p className="mt-1 text-2xl font-semibold">{visibleEmployees.length}</p>
-                      </div>
-                      <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-sky-100/80">Supervisors excluded</p>
-                        <p className="mt-1 text-2xl font-semibold">{hiddenSupervisorCount}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 lg:w-[360px]">
-                    <Button
-                      variant="secondary"
-                      className="h-auto justify-between rounded-2xl border-0 bg-white/95 px-5 py-4 text-left text-slate-900 shadow-lg hover:bg-white"
-                      onClick={() => navigate('/employees')}
-                    >
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Open</p>
-                        <p className="mt-1 text-sm font-semibold">Employee Directory</p>
-                      </div>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                    <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100/80">Access mode</p>
-                      <p className="mt-1 text-sm font-semibold">Read-only oversight</p>
-                    </div>
-                  </div>
+            <Card className="border-l-4 border-l-primary shadow-sm">
+              <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Principal Portal</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Simple, read-only oversight of employee records. Supervisor profiles stay hidden in this portal.
+                  </p>
                 </div>
+                <Badge variant="outline" className="w-fit bg-primary/5 text-primary">
+                  Read-only employee oversight
+                </Badge>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Card className="rounded-[1.5rem] border-sky-500/15 bg-gradient-to-br from-sky-500/10 via-background to-background shadow-sm">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Card className="shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Employees</p>
                       <p className="mt-2 text-3xl font-semibold">{visibleEmployees.length}</p>
                     </div>
-                    <div className="rounded-2xl bg-sky-500/10 p-3 text-sky-600">
+                    <div className="rounded-2xl bg-primary/10 p-3 text-primary">
                       <Users className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Visible to principals across the organization.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Visible employee records only.</p>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-[1.5rem] shadow-sm">
+              <Card className="shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Active today</p>
-                      <p className="mt-2 text-3xl font-semibold">
-                        {visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'active').length}
-                      </p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Active</p>
+                      <p className="mt-2 text-3xl font-semibold">{principalActiveCount}</p>
                     </div>
                     <div className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-600">
                       <TrendingUp className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Current active employee records only.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Currently active employee records.</p>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-[1.5rem] shadow-sm">
+              <Card className="shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Departments</p>
-                      <p className="mt-2 text-3xl font-semibold">{principalDepartmentCount}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">On Leave</p>
+                      <p className="mt-2 text-3xl font-semibold">{principalOnLeaveCount}</p>
                     </div>
                     <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-600">
-                      <Building2 className="h-5 w-5" />
+                      <Calendar className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Active departments represented in the visible employee list.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-[1.5rem] shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hidden by design</p>
-                      <p className="mt-2 text-3xl font-semibold">{hiddenSupervisorCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-600">
-                      <Shield className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Supervisor records excluded from the principal portal.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Employees currently marked on leave.</p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <Card className="xl:col-span-2">
-                <CardHeader>
-                  <CardTitle>Employee Status Snapshot</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EmployeeStatusChart employees={visibleEmployees} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Oversight Scope</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-2xl border bg-muted/30 px-4 py-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <Eye className="h-4 w-4 text-primary" />
-                      What principals can do
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      View employee records, department spread, and hiring movement without editing data or accessing supervisor-only modules.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border bg-muted/30 px-4 py-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <Shield className="h-4 w-4 text-violet-600" />
-                      Guardrails
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      Chat, admin tools, journals, and supervisor profiles are intentionally blocked from this portal.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <Card className="xl:col-span-2">
-                <CardHeader>
-                  <CardTitle>Department Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DepartmentDistributionChart employees={visibleEmployees} />
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_0.7fr]">
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Hires</CardTitle>
@@ -285,21 +184,28 @@ export default function Dashboard() {
                   )}
                 </CardContent>
               </Card>
-            </div>
 
-            <Card className="border-sky-500/15 bg-sky-50/60 shadow-sm">
-              <CardContent className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-sky-900">Supervisor records are hidden in this portal</p>
-                  <p className="text-sm text-sky-900/75">
-                    Principals can oversee employee records only. Supervisor profiles and supervisor-only modules stay excluded by design.
-                  </p>
-                </div>
-                <Button variant="outline" className="border-sky-200 bg-white text-sky-900 hover:bg-sky-100" onClick={() => navigate('/employees')}>
-                  View Employee Directory
-                </Button>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Access</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" className="w-full justify-between" onClick={() => navigate('/employees')}>
+                    Employee Directory
+                    <Users className="h-4 w-4 text-primary" />
+                  </Button>
+                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    Supervisor records are hidden by design in the principal portal.
+                  </div>
+                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    Journal entries are read-only and appear inside each employee profile.
+                  </div>
+                  <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : isAdminOrHR ? (
           /* ========== ADMIN / HR DASHBOARD ========== */
