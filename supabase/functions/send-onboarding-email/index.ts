@@ -15,12 +15,15 @@ interface EmailPayload {
   firstName: string;
   lastName: string;
   startDate?: string;
-  type?: "onboarding" | "approval" | "leave_status";
+  type?: "onboarding" | "approval" | "leave_status" | "portal_access";
   username?: string;
   password?: string;
   leaveType?: string;
   endDate?: string;
   leaveStatus?: string;
+  portalRole?: string;
+  portalScope?: string;
+  supportContact?: string;
 }
 
 interface CompanySettings {
@@ -113,7 +116,7 @@ function buildCredentialsBox(username?: string, password?: string): string {
         </tr>
       </table>
       <div style="text-align:center;margin-bottom:12px;">
-        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Employee Portal</a>
+        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Work Immersion Portal</a>
       </div>
       <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">⚠️ Please change your password after your first login for security purposes.</p>
     </div>
@@ -126,7 +129,21 @@ serve(async (req) => {
   }
 
   try {
-    const { to, firstName, lastName, startDate, type, username, password, leaveType, endDate, leaveStatus }: EmailPayload = await req.json();
+    const {
+      to,
+      firstName,
+      lastName,
+      startDate,
+      type,
+      username,
+      password,
+      leaveType,
+      endDate,
+      leaveStatus,
+      portalRole,
+      portalScope,
+      supportContact,
+    }: EmailPayload = await req.json();
     const company = await getCompanySettings();
     const credentialsHtml = buildCredentialsBox(username, password);
 
@@ -173,6 +190,20 @@ serve(async (req) => {
         <br />
         <p>Kind regards,</p>
         <p><strong>HR Department</strong><br/>${company.name}</p>
+      `;
+    } else if (type === "portal_access") {
+      const resolvedRole = portalRole || "Portal";
+      subject = `${resolvedRole} Access Details`;
+      bodyContent = `
+        <p>Dear <strong>${firstName} ${lastName}</strong>,</p>
+        <p>Your <strong>${resolvedRole}</strong> access for the <strong>${company.name} Work Immersion Program</strong> is now ready.</p>
+        <p>This email is for portal access only and does not require any onboarding checklist.</p>
+        ${credentialsHtml}
+        <p>${portalScope || "Your account has been configured with the appropriate permissions for your role in the immersion system."}</p>
+        <p>If you experience any issues accessing the portal, please contact <strong>${supportContact || "Dennis P. Sotto, Administrator"}</strong>.</p>
+        <br />
+        <p>Best regards,</p>
+        <p><strong>MABDC Work Immersion Admin</strong></p>
       `;
     } else {
       subject = "Welcome to the Team!";
