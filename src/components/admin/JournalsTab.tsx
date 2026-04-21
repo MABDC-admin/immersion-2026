@@ -9,7 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Plus, Edit2, Trash2, CheckCircle2, XCircle, Clock, Search, Download, Eye } from 'lucide-react';
+import { Loader2, Plus, Edit2, Trash2, CheckCircle2, XCircle, Clock, Search, Download, Eye, CalendarDays, Timer, BookOpen, Lightbulb, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -366,26 +369,136 @@ export function JournalsTab() {
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Journal Entry Details</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
           {viewEntry && (
-            <div className="space-y-4 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">{viewEntry.employee?.first_name} {viewEntry.employee?.last_name}</span>
-                <Badge variant="outline" className={`gap-1 ${statusColors[viewEntry.status] || ''}`}>
-                  {viewEntry.status.toUpperCase()}
-                </Badge>
+            <div className="animate-fade-in">
+              {/* Hero Header */}
+              <div className={`relative px-6 pt-6 pb-5 ${
+                viewEntry.status === 'approved' ? 'bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent' :
+                viewEntry.status === 'rejected' ? 'bg-gradient-to-br from-destructive/10 via-red-500/5 to-transparent' :
+                viewEntry.status === 'pending' ? 'bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent' :
+                'bg-gradient-to-br from-muted/50 via-muted/20 to-transparent'
+              }`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-background shadow-md">
+                      <AvatarImage src={viewEntry.employee?.avatar_url || ''} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {viewEntry.employee?.first_name?.[0]}{viewEntry.employee?.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-lg leading-tight">
+                        {viewEntry.employee?.first_name} {viewEntry.employee?.last_name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">Daily Journal Entry</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={`gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider ${statusColors[viewEntry.status] || ''}`}>
+                    {statusIcons[viewEntry.status]}
+                    {viewEntry.status}
+                  </Badge>
+                </div>
+
+                {/* Meta Cards */}
+                <div className="grid grid-cols-2 gap-3 mt-5">
+                  <div className="flex items-center gap-2.5 rounded-lg border bg-background/80 backdrop-blur-sm px-3.5 py-2.5 shadow-sm">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date</p>
+                      <p className="text-sm font-semibold">{format(parseISO(viewEntry.entry_date), 'MMMM d, yyyy')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 rounded-lg border bg-background/80 backdrop-blur-sm px-3.5 py-2.5 shadow-sm">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                      <Timer className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Hours Worked</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold">{viewEntry.hours_worked ?? '—'}{viewEntry.hours_worked ? 'h' : ''}</p>
+                        {viewEntry.hours_worked && (
+                          <Progress value={Math.min((viewEntry.hours_worked / 8) * 100, 100)} className="h-1.5 w-16" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-muted-foreground">Date</Label><p>{format(parseISO(viewEntry.entry_date), 'MMMM d, yyyy')}</p></div>
-                <div><Label className="text-muted-foreground">Hours</Label><p>{viewEntry.hours_worked ?? '-'}</p></div>
+
+              <Separator />
+
+              {/* Content Sections */}
+              <div className="px-6 py-5 space-y-5 max-h-[50vh] overflow-y-auto">
+                {/* Activities */}
+                <div className="group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10">
+                      <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground">Activities</h4>
+                  </div>
+                  <div className="ml-8 rounded-lg bg-muted/40 border border-transparent group-hover:border-border transition-colors px-4 py-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{viewEntry.activities}</p>
+                  </div>
+                </div>
+
+                {/* Learnings */}
+                {viewEntry.learnings && (
+                  <div className="group">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10">
+                        <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Learnings</h4>
+                    </div>
+                    <div className="ml-8 rounded-lg bg-muted/40 border border-transparent group-hover:border-border transition-colors px-4 py-3">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{viewEntry.learnings}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Challenges */}
+                {viewEntry.challenges && (
+                  <div className="group">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/10">
+                        <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Challenges</h4>
+                    </div>
+                    <div className="ml-8 rounded-lg bg-muted/40 border border-transparent group-hover:border-border transition-colors px-4 py-3">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{viewEntry.challenges}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Supervisor Notes */}
+                {viewEntry.supervisor_notes && (
+                  <div className="group">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-purple-500/10">
+                        <MessageSquare className="h-3.5 w-3.5 text-purple-600" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Supervisor Notes</h4>
+                    </div>
+                    <div className="ml-8 rounded-lg bg-purple-500/5 border border-purple-500/10 px-4 py-3">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90 italic">{viewEntry.supervisor_notes}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div><Label className="text-muted-foreground">Activities</Label><p className="whitespace-pre-wrap">{viewEntry.activities}</p></div>
-              {viewEntry.learnings && <div><Label className="text-muted-foreground">Learnings</Label><p className="whitespace-pre-wrap">{viewEntry.learnings}</p></div>}
-              {viewEntry.challenges && <div><Label className="text-muted-foreground">Challenges</Label><p className="whitespace-pre-wrap">{viewEntry.challenges}</p></div>}
-              {viewEntry.supervisor_notes && <div><Label className="text-muted-foreground">Supervisor Notes</Label><p className="whitespace-pre-wrap">{viewEntry.supervisor_notes}</p></div>}
+
+              {/* Footer */}
+              <Separator />
+              <div className="px-6 py-3 flex items-center justify-between bg-muted/20">
+                <p className="text-[11px] text-muted-foreground">
+                  Created {format(parseISO(viewEntry.created_at), 'MMM d, yyyy · h:mm a')}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setIsViewOpen(false)}>Close</Button>
+              </div>
             </div>
           )}
         </DialogContent>
