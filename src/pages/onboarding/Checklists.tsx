@@ -329,7 +329,7 @@ export default function Checklists() {
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                            <Label>Employee *</Label>
+                            <Label>Intern *</Label>
                             <Select value={newEmployeeId} onValueChange={setNewEmployeeId}>
                                 <SelectTrigger><SelectValue placeholder="Select employee..." /></SelectTrigger>
                                 <SelectContent>

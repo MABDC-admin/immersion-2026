@@ -149,8 +149,8 @@ export default function EmployeeDetail() {
     return (
       <MainLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
-          <p className="text-destructive">Employee not found</p>
-          <Button onClick={() => navigate('/employees')}>Back to Employees</Button>
+          <p className="text-destructive">Intern not found</p>
+          <Button onClick={() => navigate('/employees')}>Back to Interns</Button>
         </div>
       </MainLayout>
     );
@@ -324,7 +324,7 @@ export default function EmployeeDetail() {
                     "text-sm font-semibold mt-1",
                     isPrincipal ? "text-orange-600" : "text-primary"
                   )}>
-                    {employee.job_title || 'Employee'}
+                    {employee.job_title || 'Intern'}
                   </p>
                   <Badge className={cn("mt-3 px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm", statusColors[employee.status])}>
                     {statusLabels[employee.status]}
@@ -548,7 +548,7 @@ export default function EmployeeDetail() {
                             </div>
                             <h3 className="text-base font-semibold">No journal entries yet</h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              This employee has not submitted any daily journal logs yet.
+                              This intern has not submitted any daily journal logs yet.
                             </p>
                           </div>
                         ) : (

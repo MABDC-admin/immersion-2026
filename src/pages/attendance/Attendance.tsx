@@ -112,7 +112,7 @@ export default function Attendance() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    {isAdminOrHR && <TableHead>Employee</TableHead>}
+                                    {isAdminOrHR && <TableHead>Intern</TableHead>}
                                     <TableHead>Date</TableHead>
                                     <TableHead>Clock In</TableHead>
                                     <TableHead>Clock Out</TableHead>

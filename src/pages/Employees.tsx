@@ -86,7 +86,7 @@ export default function Employees() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-96">
-          <p className="text-destructive">Error loading employees. Please try again.</p>
+              <p className="text-destructive">Error loading interns. Please try again.</p>
         </div>
       </MainLayout>
     );
@@ -99,7 +99,7 @@ export default function Employees() {
           <div className="rounded-2xl border border-sky-500/15 bg-sky-50/70 px-5 py-4">
             <p className="text-sm font-semibold text-sky-900">Supervisor records are hidden in the principal portal.</p>
             <p className="mt-1 text-sm text-sky-900/75">
-              This directory is intentionally limited to employee oversight only.
+              This directory is intentionally limited to intern oversight only.
             </p>
           </div>
         )}
@@ -133,11 +133,11 @@ export default function Employees() {
           </div>
         ) : filteredEmployees.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-96 text-center">
-            <p className="text-muted-foreground mb-2">No employees found</p>
+            <p className="text-muted-foreground mb-2">No interns found</p>
             <p className="text-sm text-muted-foreground">
               {searchQuery
                 ? 'Try adjusting your search or filters'
-                : 'Add your first employee to get started'}
+                : 'Add your first intern to get started'}
             </p>
           </div>
         ) : viewMode === 'grid' ? (

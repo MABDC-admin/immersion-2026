@@ -131,7 +131,7 @@ export function CreateLeaveModal({ open, onOpenChange, employeeId }: CreateLeave
                                 name="employee_id"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Employee *</FormLabel>
+                                        <FormLabel>Intern *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>

@@ -43,7 +43,7 @@ function LeaveTable({ requests, isAdminOrHR, onStatusUpdate, isPending }: {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {isAdminOrHR && <TableHead>Employee</TableHead>}
+                        {isAdminOrHR && <TableHead>Intern</TableHead>}
                         <TableHead>Type</TableHead>
                         <TableHead>Duration</TableHead>
                         <TableHead>Reason</TableHead>

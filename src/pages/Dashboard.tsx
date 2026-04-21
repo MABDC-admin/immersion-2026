@@ -54,8 +54,8 @@ export default function Dashboard() {
     ).length;
 
     return [
-      { title: 'Total Employees', value: visibleEmployees.length, icon: Users, color: 'text-primary', bgColor: 'bg-primary/10' },
-      { title: 'Active Employees', value: activeEmployees, icon: TrendingUp, color: 'text-hrms-success', bgColor: 'bg-hrms-success/10', trend: { value: 5, isPositive: true } },
+      { title: 'Total Interns', value: visibleEmployees.length, icon: Users, color: 'text-primary', bgColor: 'bg-primary/10' },
+      { title: 'Active Interns', value: activeEmployees, icon: TrendingUp, color: 'text-hrms-success', bgColor: 'bg-hrms-success/10', trend: { value: 5, isPositive: true } },
       { title: 'New Hires (30 days)', value: newHires, icon: UserPlus, color: 'text-primary', bgColor: 'bg-primary/10' },
       { title: 'On Leave', value: onLeaveEmployees, icon: Calendar, color: 'text-hrms-warning', bgColor: 'bg-hrms-warning/10' },
     ];
@@ -63,12 +63,12 @@ export default function Dashboard() {
 
   const adminQuickNav = [
     { label: 'Admin Panel', icon: Shield, href: '/admin' },
-    { label: 'Employees', icon: Users, href: '/employees' },
+    { label: 'Interns', icon: Users, href: '/employees' },
     { label: 'Recruitment', icon: Briefcase, href: '/recruitment/jobs' },
     { label: 'Onboarding', icon: UserCheck, href: '/onboarding/new-hires' },
   ];
   const principalQuickNav = [
-    { label: 'Employees', icon: Users, href: '/employees' },
+    { label: 'Interns', icon: Users, href: '/employees' },
   ];
   const principalRecentHires = useMemo(
     () =>
@@ -96,11 +96,11 @@ export default function Dashboard() {
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Principal Portal</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Simple, read-only oversight of employee records. Supervisor profiles stay hidden in this portal.
+                    Simple, read-only oversight of intern records. Supervisor profiles stay hidden in this portal.
                   </p>
                 </div>
                 <Badge variant="outline" className="w-fit bg-primary/5 text-primary">
-                  Read-only employee oversight
+                  Read-only intern oversight
                 </Badge>
               </CardContent>
             </Card>
@@ -110,14 +110,14 @@ export default function Dashboard() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Employees</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Interns</p>
                       <p className="mt-2 text-3xl font-semibold">{visibleEmployees.length}</p>
                     </div>
                     <div className="rounded-2xl bg-primary/10 p-3 text-primary">
                       <Users className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Visible employee records only.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Visible intern records only.</p>
                 </CardContent>
               </Card>
 
@@ -132,7 +132,7 @@ export default function Dashboard() {
                       <TrendingUp className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Currently active employee records.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Currently active intern records.</p>
                 </CardContent>
               </Card>
 
@@ -147,7 +147,7 @@ export default function Dashboard() {
                       <Calendar className="h-5 w-5" />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Employees currently marked on leave.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">Interns currently marked on leave.</p>
                 </CardContent>
               </Card>
             </div>
@@ -192,7 +192,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button variant="outline" className="w-full justify-between" onClick={() => navigate('/employees')}>
-                    Employee Directory
+                    Intern Directory
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
                   <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">

@@ -45,7 +45,7 @@ export default function Timesheets() {
                             <SelectValue placeholder="Filter by employee" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Employees</SelectItem>
+                            <SelectItem value="all">All Interns</SelectItem>
                             {employees.map(e => (
                                 <SelectItem key={e.id} value={e.id}>{e.first_name} {e.last_name}</SelectItem>
                             ))}
@@ -75,7 +75,7 @@ export default function Timesheets() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Intern</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Clock In</TableHead>
                                     <TableHead>Clock Out</TableHead>

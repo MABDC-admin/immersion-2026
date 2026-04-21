@@ -34,7 +34,7 @@ export default function AdminPanel() {
           <TabsList className="flex flex-wrap h-auto gap-1">
             <TabsTrigger value="users" className="text-xs"><Users className="h-3.5 w-3.5 mr-1" />Users</TabsTrigger>
             <TabsTrigger value="company" className="text-xs"><Building className="h-3.5 w-3.5 mr-1" />Company</TabsTrigger>
-            <TabsTrigger value="employees" className="text-xs"><UserCheck className="h-3.5 w-3.5 mr-1" />Employees</TabsTrigger>
+            <TabsTrigger value="employees" className="text-xs"><UserCheck className="h-3.5 w-3.5 mr-1" />Interns</TabsTrigger>
             <TabsTrigger value="payroll" className="text-xs"><DollarSign className="h-3.5 w-3.5 mr-1" />Payroll</TabsTrigger>
             <TabsTrigger value="attendance" className="text-xs"><Clock className="h-3.5 w-3.5 mr-1" />Attendance</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs"><BarChart3 className="h-3.5 w-3.5 mr-1" />Reports</TabsTrigger>

@@ -209,7 +209,7 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Employee</DialogTitle>
+          <DialogTitle>Edit Intern</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -366,7 +366,7 @@ export function EditEmployeeModal({ open, onOpenChange, employee }: EditEmployee
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        This controls which supervisor portal can access this employee.
+                        This controls which supervisor portal can access this intern.
                       </p>
                       <FormMessage />
                     </FormItem>

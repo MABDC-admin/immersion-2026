@@ -39,7 +39,7 @@ export default function OnboardingDocuments() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Intern</TableHead>
                                     {requiredDocuments.map(doc => (
                                         <TableHead key={doc} className="text-center text-xs">{doc}</TableHead>
                                     ))}

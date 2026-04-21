@@ -28,7 +28,7 @@ export function BottomNav() {
     // Keep the shared mobile nav focused and compact.
     const items: BottomNavItem[] = isAdminOrHR
         ? [
-            { label: 'Employees', icon: Users, to: '/employees' },
+            { label: 'Interns', icon: Users, to: '/employees' },
             { label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' },
             { label: 'Journal', icon: BookOpen, to: '/admin/employee-journals' },
             { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
@@ -37,7 +37,7 @@ export function BottomNav() {
         : isPrincipal
             ? [
                 { label: 'Home', icon: Home, to: '/dashboard' },
-                { label: 'Employees', icon: Users, to: '/employees' },
+                { label: 'Interns', icon: Users, to: '/employees' },
                 { label: 'Profile', icon: ClipboardCheck, to: employee ? `/employees/${employee.id}` : '/dashboard' },
             ]
         : [

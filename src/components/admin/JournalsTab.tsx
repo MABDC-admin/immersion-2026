@@ -284,7 +284,7 @@ export function JournalsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
+                  <TableHead>Intern</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Activities</TableHead>
                   <TableHead>Hours</TableHead>
@@ -513,7 +513,7 @@ export function JournalsTab() {
           <div className="space-y-4">
             {!editingEntry && (
               <div>
-                <Label>Employee *</Label>
+                <Label>Intern *</Label>
                 <Select value={formEmployeeId} onValueChange={setFormEmployeeId}>
                   <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
                   <SelectContent>

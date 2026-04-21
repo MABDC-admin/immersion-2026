@@ -32,7 +32,7 @@ interface NavItem {
 // Full nav for Admin / HR
 const navItems: NavItem[] = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', employeeVisible: true },
-  { title: 'Employee', icon: Users, href: '/employees' },
+  { title: 'Interns', icon: Users, href: '/employees' },
   {
     title: 'Leave', icon: Calendar, employeeVisible: true, subItems: [
       { title: 'Leave Requests', href: '/leave/requests' },
@@ -76,7 +76,7 @@ const navItems: NavItem[] = [
   },
   { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
   { title: 'Work Immersion', icon: Target, href: '/admin/ojt' },
-  { title: 'Employee Journals', icon: BookOpen, href: '/admin/employee-journals' },
+  { title: 'Intern Journals', icon: BookOpen, href: '/admin/employee-journals' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
   { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
   { title: 'Admin', icon: Shield, href: '/admin', adminOnly: true },
@@ -114,7 +114,7 @@ export function AppSidebar() {
   const { data: employee } = useCurrentEmployee(user?.id || '');
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const [openItems, setOpenItems] = useState<string[]>(['Employee']);
+  const [openItems, setOpenItems] = useState<string[]>(['Interns']);
 
   const toggleItem = (title: string) => {
     setOpenItems((prev) =>
@@ -189,7 +189,7 @@ export function AppSidebar() {
     if (isPrincipal) {
       return [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-        { title: 'Employees', icon: Users, href: '/employees' },
+        { title: 'Interns', icon: Users, href: '/employees' },
         {
           title: 'My Workspace', icon: User, subItems: [
             { title: 'My Profile', href: employee ? `/employees/${employee.id}` : '/dashboard' },

@@ -151,7 +151,7 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Employee</DialogTitle>
+          <DialogTitle>Add New Intern</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -308,7 +308,7 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Assigned employees will appear only in this supervisor&apos;s portal.
+                        Assigned interns will appear only in this supervisor&apos;s portal.
                       </p>
                       <FormMessage />
                     </FormItem>
@@ -476,7 +476,7 @@ export function CreateEmployeeModal({ open, onOpenChange }: CreateEmployeeModalP
                 Cancel
               </Button>
               <Button type="submit" disabled={createEmployee.isPending}>
-                {createEmployee.isPending ? 'Creating...' : 'Create Employee'}
+                {createEmployee.isPending ? 'Creating...' : 'Create Intern'}
               </Button>
             </div>
           </form>

@@ -447,7 +447,7 @@ function EmployeeJournalAccordion({
               )}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span>{group.employee.job_title || 'Employee'}</span>
+              <span>{group.employee.job_title || 'Intern'}</span>
               <span>{group.employee.department?.name || 'No department'}</span>
               <span>
                 {group.latestEntryDate
@@ -482,7 +482,7 @@ function EmployeeJournalAccordion({
       <AccordionContent className="border-t bg-muted/20 px-5 pb-5 pt-4">
         {group.entries.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
-            No daily journal entries recorded for this employee yet.
+            No daily journal entries recorded for this intern yet.
           </div>
         ) : (
           <div className="space-y-3">
@@ -604,7 +604,7 @@ export default function EmployeeJournals() {
   }, [filteredGroups, orderedGroups]);
 
   const filterOptions: { value: EmployeeJournalFilter; label: string; count: number }[] = [
-    { value: 'all', label: 'All employees', count: groups.length },
+    { value: 'all', label: 'All interns', count: groups.length },
     {
       value: 'pending',
       label: 'Needs review',
@@ -635,7 +635,7 @@ export default function EmployeeJournals() {
                 Journal Review Hub
               </Badge>
               <div className="space-y-3">
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Employee Journals</h1>
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Intern Journals</h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
                   Review employee activity logs, spot missing updates, and keep photo and video evidence flowing from one polished workspace.
                 </p>
@@ -692,7 +692,7 @@ export default function EmployeeJournals() {
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Employees
+                Interns
               </CardDescription>
               <CardTitle className="text-2xl">{summary.employeeCount}</CardTitle>
               <p className="text-xs text-muted-foreground">Visible after search and quick filters</p>
@@ -722,7 +722,7 @@ export default function EmployeeJournals() {
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                Employees With Entries
+                Interns With Entries
               </CardDescription>
               <CardTitle className="text-2xl">{summary.employeesWithEntries}</CardTitle>
               <p className="text-xs text-muted-foreground">People already contributing journal updates</p>
@@ -734,7 +734,7 @@ export default function EmployeeJournals() {
           <CardContent className="space-y-5 p-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-sm font-semibold">Browse by employee</p>
+                <p className="text-sm font-semibold">Browse by intern</p>
                 <p className="text-sm text-muted-foreground">
                   Search by name, role, or department, then jump into the entries that need attention first.
                 </p>
@@ -745,7 +745,7 @@ export default function EmployeeJournals() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search employee, department, or role..."
+                  placeholder="Search intern, department, or role..."
                   className="h-11 rounded-full border-muted bg-background pl-9"
                 />
               </div>
@@ -780,14 +780,14 @@ export default function EmployeeJournals() {
 
             {isLoading ? (
               <div className="rounded-[1.5rem] border border-dashed bg-card px-6 py-16 text-center text-muted-foreground">
-                Loading employee journals...
+                Loading intern journals...
               </div>
             ) : orderedGroups.length === 0 ? (
               <div className="rounded-[1.5rem] border border-dashed bg-card px-6 py-16 text-center">
                 <Users className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <p className="mt-4 text-lg font-medium">No employees match this view</p>
+                <p className="mt-4 text-lg font-medium">No interns match this view</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Try a different search, or wait for employees to start logging journals.
+                  Try a different search, or wait for interns to start logging journals.
                 </p>
               </div>
             ) : (

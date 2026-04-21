@@ -28,7 +28,7 @@ export function ReportsTab() {
               <div className="p-2 rounded-lg bg-primary/10"><Users className="h-5 w-5 text-primary" /></div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{employees.length}</p>
-                <p className="text-sm text-muted-foreground">Total Employees</p>
+                <p className="text-sm text-muted-foreground">Total Interns</p>
               </div>
             </div>
           </CardContent>

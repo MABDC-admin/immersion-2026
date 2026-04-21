@@ -68,7 +68,7 @@ export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, o
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[300px]">Employee</TableHead>
+                        <TableHead className="w-[300px]">Intern</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
@@ -93,7 +93,7 @@ export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, o
                                         </Avatar>
                                         <div className="flex flex-col">
                                             <span className="font-medium text-foreground">{fullName}</span>
-                                            <span className="text-xs text-muted-foreground">{employee.job_title || 'Employee'}</span>
+                                            <span className="text-xs text-muted-foreground">{employee.job_title || 'Intern'}</span>
                                         </div>
                                     </div>
                                 </TableCell>
@@ -159,7 +159,7 @@ export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, o
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent className="bg-card border-border">
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>Delete Employee Account</AlertDialogTitle>
+                                                                <AlertDialogTitle>Delete Intern Account</AlertDialogTitle>
                                                                 <AlertDialogDescription>
                                                                     Are you sure you want to delete {fullName}'s record? This action cannot be undone and will remove all associated data.
                                                                 </AlertDialogDescription>

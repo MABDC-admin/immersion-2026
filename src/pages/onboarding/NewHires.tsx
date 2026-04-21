@@ -44,7 +44,7 @@ export default function NewHires() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Intern</TableHead>
                                     <TableHead>Job Title</TableHead>
                                     <TableHead>Hire Date</TableHead>
                                     <TableHead>Days Since Hire</TableHead>

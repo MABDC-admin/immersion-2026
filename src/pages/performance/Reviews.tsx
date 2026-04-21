@@ -64,7 +64,7 @@ export default function PerformanceReviews() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Intern</TableHead>
                                     <TableHead>Review Date</TableHead>
                                     <TableHead>Reviewer</TableHead>
                                     <TableHead>Rating</TableHead>
