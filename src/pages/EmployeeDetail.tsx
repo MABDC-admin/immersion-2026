@@ -31,6 +31,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -524,32 +530,38 @@ export default function EmployeeDetail() {
                             </p>
                           </div>
                         ) : (
-                          <div className="space-y-4">
+                          <Accordion type="single" collapsible className="space-y-4">
                             {journalEntries.map((entry) => (
-                              <div key={entry.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-                                <div className="flex flex-col gap-3 border-b border-muted/40 pb-4 sm:flex-row sm:items-start sm:justify-between">
-                                  <div className="space-y-1">
-                                    <p className="text-sm font-semibold">{format(new Date(entry.entry_date), 'EEEE, MMMM d, yyyy')}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Logged on {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline" className="bg-primary/5 text-primary">
-                                      {entry.status}
-                                    </Badge>
-                                    {entry.hours_worked !== null && (
-                                      <Badge variant="secondary">{entry.hours_worked} hrs</Badge>
-                                    )}
-                                    {entry.attachments && entry.attachments.length > 0 && (
-                                      <Badge variant="outline">
-                                        {entry.attachments.length} media
+                              <AccordionItem
+                                key={entry.id}
+                                value={entry.id}
+                                className="rounded-2xl border bg-card px-4 shadow-sm"
+                              >
+                                <AccordionTrigger className="py-4 hover:no-underline">
+                                  <div className="flex w-full flex-col gap-3 pr-4 text-left sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-semibold">{format(new Date(entry.entry_date), 'EEEE, MMMM d, yyyy')}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Logged on {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Badge variant="outline" className="bg-primary/5 text-primary">
+                                        {entry.status}
                                       </Badge>
-                                    )}
+                                      {entry.hours_worked !== null && (
+                                        <Badge variant="secondary">{entry.hours_worked} hrs</Badge>
+                                      )}
+                                      {entry.attachments && entry.attachments.length > 0 && (
+                                        <Badge variant="outline">
+                                          {entry.attachments.length} media
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
+                                </AccordionTrigger>
 
-                                <div className="space-y-4 pt-4">
+                                <AccordionContent className="space-y-4 border-t border-muted/40 pb-4 pt-4">
                                   <div>
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Activities</p>
                                     <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.activities}</p>
@@ -584,10 +596,10 @@ export default function EmployeeDetail() {
                                       </div>
                                     </div>
                                   )}
-                                </div>
-                              </div>
+                                </AccordionContent>
+                              </AccordionItem>
                             ))}
-                          </div>
+                          </Accordion>
                         )}
                       </CardContent>
                     </Card>
