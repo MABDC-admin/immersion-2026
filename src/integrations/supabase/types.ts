@@ -1007,6 +1007,44 @@ export type Database = {
           },
         ]
       }
+      journal_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          journal_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          journal_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          journal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_attachments_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "intern_journals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_balances: {
         Row: {
           created_at: string
@@ -1566,15 +1604,15 @@ export type Database = {
       }
       is_admin_or_hr: { Args: { _user_id: string }; Returns: boolean }
     }
-      Enums: {
-        app_role:
-          | "admin"
-          | "hr_manager"
-          | "principal"
-          | "employee"
-          | "payroll_officer"
-          | "manager"
-          | "supervisor"
+    Enums: {
+      app_role:
+        | "admin"
+        | "hr_manager"
+        | "employee"
+        | "payroll_officer"
+        | "manager"
+        | "supervisor"
+        | "principal"
       conversation_type: "direct" | "group" | "hr_support"
       employee_status: "active" | "inactive" | "on_leave" | "terminated"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
@@ -1708,11 +1746,11 @@ export const Constants = {
       app_role: [
         "admin",
         "hr_manager",
-        "principal",
         "employee",
         "payroll_officer",
         "manager",
         "supervisor",
+        "principal",
       ],
       conversation_type: ["direct", "group", "hr_support"],
       employee_status: ["active", "inactive", "on_leave", "terminated"],
