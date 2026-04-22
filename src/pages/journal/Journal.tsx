@@ -495,7 +495,7 @@ export default function Journal() {
                                                                 SUBMIT
                                                             </Button>
                                                         )}
-                                                        {(entry.status === 'draft' || entry.status === 'rejected') && isViewingOwnJournal && (
+                                                        {isViewingOwnJournal && (
                                                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditEntry(entry)}>
                                                                 <Edit2 className="h-3.5 w-3.5" />
                                                             </Button>
