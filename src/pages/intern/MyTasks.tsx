@@ -184,14 +184,14 @@ export default function MyTasks() {
                                                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
                                                     )}
                                                 </div>
-                                                <div className="flex gap-2 shrink-0">
+                                                <div className="flex w-full gap-2 shrink-0 sm:w-auto">
                                                     {task.status === 'pending' && (
-                                                        <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => handleStartTask(task)}>
+                                                        <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs sm:flex-none" onClick={() => handleStartTask(task)}>
                                                             Start
                                                         </Button>
                                                     )}
                                                     {['pending', 'in_progress'].includes(task.status) && (
-                                                        <Button size="sm" className="text-xs gap-1" onClick={() => openSubmit(task)}>
+                                                        <Button size="sm" className="flex-1 gap-1 text-xs sm:flex-none" onClick={() => openSubmit(task)}>
                                                             <Send className="h-3 w-3" />
                                                             Submit
                                                         </Button>
@@ -200,7 +200,7 @@ export default function MyTasks() {
                                             </div>
 
                                             {/* Progress + Meta */}
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex justify-between text-[9px] mb-0.5">
                                                         <span className="text-muted-foreground">Progress</span>
@@ -240,12 +240,12 @@ export default function MyTasks() {
 
             {/* Submit Dialog */}
             <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-                <DialogContent className="sm:max-w-lg w-[95vw]">
+                <DialogContent className="w-[95vw] max-h-[90vh] overflow-hidden sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Submit Task</DialogTitle>
                     </DialogHeader>
                     {selectedTask && (
-                        <div className="space-y-4 py-2">
+                        <div className="space-y-4 overflow-y-auto py-2 pr-1">
                             <div className="p-3 rounded-lg bg-muted/30 border">
                                 <p className="font-bold text-sm">{selectedTask.title}</p>
                                 {selectedTask.description && <p className="text-xs text-muted-foreground mt-1">{selectedTask.description}</p>}
@@ -288,8 +288,8 @@ export default function MyTasks() {
                         </div>
                     )}
                     <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button variant="outline" onClick={() => setSelectedTask(null)}>Cancel</Button>
-                        <Button onClick={handleSubmit} disabled={updateTask.isPending || uploadFile.isPending}>
+                        <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedTask(null)}>Cancel</Button>
+                        <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={updateTask.isPending || uploadFile.isPending}>
                             {(updateTask.isPending || uploadFile.isPending) ? 'Submitting...' : 'Submit Task'}
                         </Button>
                     </DialogFooter>

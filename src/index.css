@@ -113,3 +113,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  /* Hide externally injected Lovable footer badges/widgets. */
+  a[href*="lovable.dev"],
+  iframe[src*="lovable.dev"],
+  [data-lovable],
+  [data-lovable-badge],
+  [class*="lovable-badge"],
+  [id*="lovable-badge"] {
+    display: none !important;
+  }
+}

@@ -267,14 +267,14 @@ export default function TaskDashboard() {
                         <h1 className="text-xl md:text-2xl font-bold">Task Dashboard</h1>
                         <p className="text-sm text-muted-foreground">Create and manage intern tasks</p>
                     </div>
-                    <Button onClick={openNewTask} className="gap-2">
+                    <Button onClick={openNewTask} className="w-full gap-2 sm:w-auto">
                         <Plus className="h-4 w-4" />
                         New Task
                     </Button>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6 md:gap-3">
                     {[
                         { label: 'Total', value: stats.total, icon: ListChecks, color: 'text-primary', bg: 'bg-primary/10' },
                         { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted' },
@@ -306,7 +306,7 @@ export default function TaskDashboard() {
                             <ListChecks className="h-8 w-8 text-muted-foreground mb-3" />
                             <h3 className="text-lg font-semibold mb-1">No Tasks Yet</h3>
                             <p className="text-sm text-muted-foreground mb-4">Create tasks for your interns to track their progress.</p>
-                            <Button onClick={openNewTask} className="gap-2"><Plus className="h-4 w-4" />Create First Task</Button>
+                            <Button onClick={openNewTask} className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Create First Task</Button>
                         </CardContent>
                     </Card>
                 ) : (
@@ -314,7 +314,7 @@ export default function TaskDashboard() {
                         {tasksByIntern.map(({ intern, tasks: internTasks }) => (
                             <Card key={intern?.email || 'unknown'} className="shadow-sm">
                                 <CardHeader className="pb-3">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                         <Avatar className="h-8 w-8">
                                             <AvatarImage src={intern?.avatar_url || ''} />
                                             <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -336,7 +336,7 @@ export default function TaskDashboard() {
                                     {internTasks.map(task => (
                                         <div
                                             key={task.id}
-                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border bg-card hover:shadow-sm transition-all gap-2 cursor-pointer"
+                                            className="flex flex-col justify-between gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-sm md:flex-row md:items-center"
                                             onClick={() => openDetail(task)}
                                         >
                                             <div className="flex-1 min-w-0 space-y-1">
@@ -355,19 +355,19 @@ export default function TaskDashboard() {
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 shrink-0">
-                                                <div className="w-20">
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end shrink-0 sm:min-w-[176px]">
+                                                <div className="w-full sm:w-20">
                                                     <div className="flex justify-between text-[9px] mb-0.5">
                                                         <span className="text-muted-foreground">Progress</span>
                                                         <span className="font-bold">{task.progress}%</span>
                                                     </div>
                                                     <Progress value={task.progress} className="h-1.5" />
                                                 </div>
-                                                <div className="flex gap-1">
-                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); openEditTask(task); }}>
+                                                <div className="flex gap-2 sm:gap-1">
+                                                    <Button variant="ghost" size="sm" className="h-9 flex-1 px-0 sm:h-7 sm:w-7 sm:flex-none sm:p-0" onClick={(e) => { e.stopPropagation(); openEditTask(task); }}>
                                                         <Edit2 className="h-3 w-3" />
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }}>
+                                                    <Button variant="ghost" size="sm" className="h-9 flex-1 px-0 text-destructive sm:h-7 sm:w-7 sm:flex-none sm:p-0" onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }}>
                                                         <Trash2 className="h-3 w-3" />
                                                     </Button>
                                                 </div>
@@ -383,7 +383,7 @@ export default function TaskDashboard() {
 
             {/* Create/Edit Task Dialog */}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="sm:max-w-lg w-[95vw]">
+                <DialogContent className="w-[95vw] max-h-[90vh] overflow-hidden sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{editingTask ? 'Edit Task' : 'New Task'}</DialogTitle>
                         <DialogDescription>
@@ -392,7 +392,7 @@ export default function TaskDashboard() {
                                 : 'Assign the same task to one or more interns with a deadline and priority.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
+                    <div className="space-y-4 overflow-y-auto py-2 pr-1">
                         <div className="space-y-2">
                             <Label>{editingTask ? 'Assigned Intern *' : 'Assign To *'}</Label>
                             <Popover>
@@ -406,7 +406,7 @@ export default function TaskDashboard() {
                                         <Users className="h-4 w-4 text-muted-foreground" />
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-[320px] p-0" align="start">
+                                <PopoverContent className="w-[min(20rem,calc(100vw-2rem))] p-0 sm:w-[320px]" align="start">
                                     <div className="border-b px-4 py-3">
                                         <p className="text-sm font-semibold">
                                             {editingTask ? 'Choose assigned intern' : 'Choose interns'}
@@ -464,7 +464,7 @@ export default function TaskDashboard() {
                             <Label>Description</Label>
                             <Textarea placeholder="Detailed task description..." rows={3} value={taskDesc} onChange={e => setTaskDesc(e.target.value)} />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Due Date</Label>
                                 <Input type="date" value={taskDueDate} onChange={e => setTaskDueDate(e.target.value)} />
@@ -484,8 +484,8 @@ export default function TaskDashboard() {
                         </div>
                     </div>
                     <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSubmitTask} disabled={createTask.isPending || updateTask.isPending}>
+                        <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                        <Button className="w-full sm:w-auto" onClick={handleSubmitTask} disabled={createTask.isPending || updateTask.isPending}>
                             {editingTask ? 'Update Task' : 'Create Task'}
                         </Button>
                     </DialogFooter>
@@ -494,18 +494,18 @@ export default function TaskDashboard() {
 
             {/* Task Detail / Feedback Dialog */}
             <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                <DialogContent className="sm:max-w-lg w-[95vw]">
+                <DialogContent className="w-[95vw] max-h-[90vh] overflow-hidden sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Task Details</DialogTitle>
                     </DialogHeader>
                     {viewingTask && (
-                        <div className="space-y-4 py-2">
+                        <div className="space-y-4 overflow-y-auto py-2 pr-1">
                             <div>
                                 <h4 className="font-bold">{viewingTask.title}</h4>
                                 {viewingTask.description && <p className="text-sm text-muted-foreground mt-1">{viewingTask.description}</p>}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                                 <div>
                                     <p className="text-[10px] text-muted-foreground uppercase font-bold">Status</p>
                                     <Badge className={cn("text-[9px]", statusColors[viewingTask.status])}>{viewingTask.status}</Badge>
@@ -525,11 +525,11 @@ export default function TaskDashboard() {
                                             {signedUrl ? (
                                                 <div className="rounded-lg overflow-hidden border bg-black/5">
                                                     {viewingTask.submission_file_path.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
-                                                        <video src={signedUrl} controls className="w-full max-h-[300px]" />
+                                                        <video src={signedUrl} controls className="w-full max-h-[40vh] sm:max-h-[300px]" />
                                                     ) : viewingTask.submission_file_path.toLowerCase().endsWith('.pdf') ? (
-                                                        <iframe src={signedUrl} className="w-full h-[400px]" title="PDF Preview" />
+                                                        <iframe src={signedUrl} className="h-[50vh] w-full sm:h-[400px]" title="PDF Preview" />
                                                     ) : viewingTask.submission_file_path.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
-                                                        <img src={signedUrl} alt="Submission" className="w-full object-contain max-h-[400px]" />
+                                                        <img src={signedUrl} alt="Submission" className="w-full object-contain max-h-[50vh] sm:max-h-[400px]" />
                                                     ) : (
                                                         <div className="p-8 text-center">
                                                             <p className="text-xs text-muted-foreground mb-3">Preview not available for this file type.</p>
@@ -551,7 +551,7 @@ export default function TaskDashboard() {
 
                             <div className="border-t pt-3 space-y-3">
                                 <p className="text-xs font-bold">Update Progress</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     <div className="space-y-2">
                                         <Label className="text-xs">Progress %</Label>
                                         <Input type="number" min="0" max="100" value={newProgress} onChange={e => setNewProgress(e.target.value)} />
@@ -578,8 +578,8 @@ export default function TaskDashboard() {
                         </div>
                     )}
                     <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Close</Button>
-                        <Button onClick={handleUpdateProgress} disabled={updateTask.isPending}>
+                        <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsDetailOpen(false)}>Close</Button>
+                        <Button className="w-full sm:w-auto" onClick={handleUpdateProgress} disabled={updateTask.isPending}>
                             {updateTask.isPending ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </DialogFooter>
