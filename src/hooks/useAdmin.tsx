@@ -64,6 +64,36 @@ export function useUpdateUserRole() {
   });
 }
 
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, first_name, last_name }: { userId: string; first_name: string; last_name: string }) => {
+      const { error } = await supabase.from('profiles').update({ first_name, last_name }).eq('user_id', userId);
+      if (error) throw error;
+      // Also update matched employee record
+      await supabase.from('employees').update({ first_name, last_name }).eq('user_id', userId);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-profiles'] }); qc.invalidateQueries({ queryKey: ['employees'] }); toast.success('User updated'); },
+    onError: (e: any) => toast.error(e.message || 'Failed to update user'),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Delete user_roles
+      await supabase.from('user_roles').delete().eq('user_id', userId);
+      // Delete profile
+      await supabase.from('profiles').delete().eq('user_id', userId);
+      // Unlink employee record (don't delete, just unlink)
+      await supabase.from('employees').update({ user_id: null } as any).eq('user_id', userId);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-profiles'] }); toast.success('User removed'); },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete user'),
+  });
+}
+
 // ── Departments ──
 
 export function useCreateDepartment() {
