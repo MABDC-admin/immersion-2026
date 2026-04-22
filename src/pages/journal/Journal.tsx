@@ -438,7 +438,7 @@ export default function Journal() {
 
                             const isManager = viewerEmployee?.id === targetEmployee?.manager_id || isAdmin || userRole === 'hr_manager';
                             const canApprove = isManager && entry.status === 'pending';
-                            const canDeleteAttachment = isViewingOwnJournal && (entry.status === 'draft' || entry.status === 'rejected');
+                            const canDeleteAttachment = isViewingOwnJournal;
 
                             return (
                                 <div key={entry.id} className="space-y-3">
@@ -495,7 +495,7 @@ export default function Journal() {
                                                                 SUBMIT
                                                             </Button>
                                                         )}
-                                                        {(entry.status === 'draft' || entry.status === 'rejected') && isViewingOwnJournal && (
+                                                        {isViewingOwnJournal && (
                                                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditEntry(entry)}>
                                                                 <Edit2 className="h-3.5 w-3.5" />
                                                             </Button>

@@ -119,10 +119,10 @@ export function useAdminEmployeeJournalGroups() {
 
             if (entriesError) throw entriesError;
 
-            const entries = ((entriesData || []) as JournalEntry[]).map((entry) => ({
+            const entries = ((entriesData || []) as any[]).map((entry) => ({
                 ...entry,
-                attachments: (entry.attachments || []).sort((a, b) => a.created_at.localeCompare(b.created_at)),
-            }));
+                attachments: (entry.attachments || []).sort((a: any, b: any) => a.created_at.localeCompare(b.created_at)),
+            })) as JournalEntry[];
             const entriesByEmployee = new Map<string, JournalEntry[]>();
 
             entries.forEach((entry) => {
