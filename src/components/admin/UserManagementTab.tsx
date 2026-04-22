@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { useAllProfiles, useUpdateUserRole } from '@/hooks/useAdmin';
+import { useAllProfiles, useUpdateUserRole, useUpdateProfile, useDeleteUser } from '@/hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, KeyRound, UserX, UserCheck } from 'lucide-react';
+import { Loader2, KeyRound, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
@@ -33,11 +37,42 @@ const roleColors: Record<string, string> = {
 export function UserManagementTab() {
   const { data: profiles = [], isLoading } = useAllProfiles();
   const updateRole = useUpdateUserRole();
+  const updateProfile = useUpdateProfile();
+  const deleteUser = useDeleteUser();
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
   const handleRoleChange = (userId: string, role: string) => {
     updateRole.mutate({ userId, role });
   };
+
+  const openEdit = (profile: any) => {
+    setEditUser(profile);
+    setEditFirstName(profile.first_name || '');
+    setEditLastName(profile.last_name || '');
+  };
+
+  const handleSaveEdit = () => {
+    if (!editUser) return;
+    updateProfile.mutate({ userId: editUser.user_id, first_name: editFirstName, last_name: editLastName });
+    setEditUser(null);
+  };
+
+  const handleDelete = () => {
+    if (!deleteUserId) return;
+    deleteUser.mutate(deleteUserId);
+    setDeleteUserId(null);
+  };
+
+  const filteredProfiles = profiles.filter(p => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (p.first_name || '').toLowerCase().includes(q) || (p.last_name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
+  });
 
   const handlePasswordReset = async (profile: any) => {
     const email = profile.email;
@@ -72,7 +107,13 @@ export function UserManagementTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User & Role Management</CardTitle>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardTitle>User & Role Management</CardTitle>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search users..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8" />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -85,7 +126,7 @@ export function UserManagementTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {profiles.map((profile) => (
+            {filteredProfiles.map((profile) => (
               <TableRow key={profile.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -116,15 +157,17 @@ export function UserManagementTab() {
                   </Select>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="Send password reset"
-                    disabled={resettingId === profile.user_id}
-                    onClick={() => handlePasswordReset(profile)}
-                  >
-                    <KeyRound className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" title="Edit user" onClick={() => openEdit(profile)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Send password reset" disabled={resettingId === profile.user_id} onClick={() => handlePasswordReset(profile)}>
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Delete user" className="text-destructive hover:text-destructive" onClick={() => setDeleteUserId(profile.user_id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -132,5 +175,41 @@ export function UserManagementTab() {
         </Table>
       </CardContent>
     </Card>
+
+    <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit User</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>First Name</Label>
+            <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Last Name</Label>
+            <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
+          <Button onClick={handleSaveEdit} disabled={updateProfile.isPending}>
+            {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <AlertDialog open={!!deleteUserId} onOpenChange={(open) => !open && setDeleteUserId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete User</AlertDialogTitle>
+          <AlertDialogDescription>This will remove the user's role and profile. Their employee record will be unlinked but preserved. This action cannot be undone.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
