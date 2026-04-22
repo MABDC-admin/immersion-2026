@@ -61,6 +61,25 @@ export interface EmployeeJournalGroup {
     latestEntryDate: string | null;
 }
 
+function toNullableJournalText(value?: string) {
+    if (value === undefined) return undefined;
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+function toJournalMutationError(error: any, entryDate?: string) {
+    if (error?.code === '23505') {
+        return new Error(
+            entryDate
+                ? `A journal entry for ${entryDate} already exists. Open that day and update it instead.`
+                : 'A journal entry for this date already exists.'
+        );
+    }
+
+    return error;
+}
+
 export function useJournalEntries(employeeId: string) {
     return useQuery({
         queryKey: ['journal-entries', employeeId],
@@ -304,16 +323,27 @@ export function useCreateJournalEntry() {
             challenges?: string;
             hours_worked?: number;
         }) => {
+            const payload = {
+                employee_id: entry.employee_id,
+                entry_date: entry.entry_date,
+                activities: entry.activities.trim(),
+                learnings: toNullableJournalText(entry.learnings) ?? null,
+                challenges: toNullableJournalText(entry.challenges) ?? null,
+                hours_worked: entry.hours_worked ?? null,
+            };
             const { data, error } = await (supabase as any)
                 .from('intern_journals')
-                .insert([entry])
+                .insert([payload])
                 .select()
                 .single();
-            if (error) throw error;
+            if (error) throw toJournalMutationError(error, entry.entry_date);
             return data;
         },
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employee_id] });
+            queryClient.invalidateQueries({ queryKey: ['admin-employee-journal-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-journals'] });
+            queryClient.invalidateQueries({ queryKey: ['pending-journal-approvals'] });
         },
     });
 }
@@ -328,6 +358,7 @@ export function useUpdateJournalEntry() {
         }: {
             id: string;
             employeeId: string;
+            entry_date?: string;
             activities?: string;
             learnings?: string;
             challenges?: string;
@@ -335,17 +366,30 @@ export function useUpdateJournalEntry() {
             status?: 'draft' | 'pending' | 'approved' | 'rejected';
             supervisor_notes?: string;
         }) => {
+            const payload = {
+                ...updates,
+                activities: updates.activities?.trim(),
+                learnings: toNullableJournalText(updates.learnings),
+                challenges: toNullableJournalText(updates.challenges),
+                supervisor_notes: toNullableJournalText(updates.supervisor_notes),
+                hours_worked: Object.prototype.hasOwnProperty.call(updates, 'hours_worked')
+                    ? updates.hours_worked ?? null
+                    : undefined,
+            };
             const { data, error } = await (supabase as any)
                 .from('intern_journals')
-                .update(updates)
+                .update(payload)
                 .eq('id', id)
                 .select()
                 .single();
-            if (error) throw error;
+            if (error) throw toJournalMutationError(error, updates.entry_date);
             return data;
         },
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employeeId] });
+            queryClient.invalidateQueries({ queryKey: ['admin-employee-journal-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-journals'] });
+            queryClient.invalidateQueries({ queryKey: ['pending-journal-approvals'] });
         },
     });
 }
@@ -362,6 +406,9 @@ export function useDeleteJournalEntry() {
         },
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employeeId] });
+            queryClient.invalidateQueries({ queryKey: ['admin-employee-journal-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-journals'] });
+            queryClient.invalidateQueries({ queryKey: ['pending-journal-approvals'] });
         },
     });
 }
@@ -390,6 +437,8 @@ export function useApproveJournalEntry() {
         },
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['journal-entries', vars.employeeId] });
+            queryClient.invalidateQueries({ queryKey: ['admin-employee-journal-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-journals'] });
             queryClient.invalidateQueries({ queryKey: ['pending-journal-approvals'] });
         },
     });

@@ -60,6 +60,7 @@ export default function Journal() {
 
     const targetEmployeeId = internId || viewerEmployee?.id || '';
     const isViewingOwnJournal = !internId || internId === viewerEmployee?.id;
+    const canManageJournalEntries = isViewingOwnJournal || isAdmin || userRole === 'hr_manager';
 
     const { data: targetEmployee } = useEmployee(targetEmployeeId);
     const { data: entries = [], isLoading } = useJournalEntries(targetEmployeeId);
@@ -134,6 +135,7 @@ export default function Journal() {
                 savedEntry = await updateEntry.mutateAsync({
                     id: editingEntry.id,
                     employeeId: targetEmployee.id,
+                    entry_date: entryDate,
                     activities: activities.trim(),
                     learnings: learnings.trim() || undefined,
                     challenges: challenges.trim() || undefined,
@@ -369,10 +371,12 @@ export default function Journal() {
                         <h1 className="text-2xl font-bold text-foreground">Daily Activity Journal</h1>
                         <p className="text-sm text-muted-foreground">Log your daily OJT activities, learnings, and media updates</p>
                     </div>
-                    <Button onClick={openNewEntry} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        New Entry
-                    </Button>
+                    {canManageJournalEntries && (
+                        <Button onClick={openNewEntry} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            New Entry
+                        </Button>
+                    )}
                 </div>
 
                 <Card className={cn(
@@ -395,7 +399,7 @@ export default function Journal() {
                                 </p>
                             </div>
                         </div>
-                        {!todayEntry && (
+                        {!todayEntry && canManageJournalEntries && (
                             <Button size="sm" variant="outline" onClick={openNewEntry} className="text-xs">
                                 Log Now
                             </Button>
@@ -417,10 +421,12 @@ export default function Journal() {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Start documenting your daily OJT activities, learnings, and photo/video evidence.
                             </p>
-                            <Button onClick={openNewEntry} className="gap-2">
-                                <Plus className="h-4 w-4" />
-                                Create First Entry
-                            </Button>
+                            {canManageJournalEntries && (
+                                <Button onClick={openNewEntry} className="gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Create First Entry
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ) : (
@@ -438,7 +444,7 @@ export default function Journal() {
 
                             const isManager = viewerEmployee?.id === targetEmployee?.manager_id || isAdmin || userRole === 'hr_manager';
                             const canApprove = isManager && entry.status === 'pending';
-                            const canDeleteAttachment = isViewingOwnJournal;
+                            const canDeleteAttachment = canManageJournalEntries;
 
                             return (
                                 <div key={entry.id} className="space-y-3">
@@ -495,12 +501,12 @@ export default function Journal() {
                                                                 SUBMIT
                                                             </Button>
                                                         )}
-                                                        {isViewingOwnJournal && (
+                                                        {canManageJournalEntries && (
                                                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditEntry(entry)}>
                                                                 <Edit2 className="h-3.5 w-3.5" />
                                                             </Button>
                                                         )}
-                                                        {entry.status === 'draft' && isViewingOwnJournal && (
+                                                        {entry.status === 'draft' && canManageJournalEntries && (
                                                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(entry)}>
                                                                 <Trash2 className="h-3.5 w-3.5" />
                                                             </Button>
