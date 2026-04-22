@@ -7,17 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
     Plus, ListChecks, Clock, CheckCircle, AlertTriangle,
-    Trash2, MessageSquare, Eye, Edit2,
+    Trash2, MessageSquare, Eye, Edit2, Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
@@ -85,7 +91,7 @@ export default function TaskDashboard() {
     // Form state
     const [taskTitle, setTaskTitle] = useState('');
     const [taskDesc, setTaskDesc] = useState('');
-    const [taskInternId, setTaskInternId] = useState('');
+    const [taskInternIds, setTaskInternIds] = useState<string[]>([]);
     const [taskDueDate, setTaskDueDate] = useState('');
     const [taskPriority, setTaskPriority] = useState('medium');
 
@@ -96,7 +102,7 @@ export default function TaskDashboard() {
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
     const resetForm = () => {
-        setTaskTitle(''); setTaskDesc(''); setTaskInternId(''); setTaskDueDate(''); setTaskPriority('medium');
+        setTaskTitle(''); setTaskDesc(''); setTaskInternIds([]); setTaskDueDate(''); setTaskPriority('medium');
         setEditingTask(null);
     };
 
@@ -106,7 +112,7 @@ export default function TaskDashboard() {
         setEditingTask(task);
         setTaskTitle(task.title);
         setTaskDesc(task.description || '');
-        setTaskInternId(task.intern_id);
+        setTaskInternIds([task.intern_id]);
         setTaskDueDate(task.due_date || '');
         setTaskPriority(task.priority);
         setIsFormOpen(true);
@@ -129,8 +135,8 @@ export default function TaskDashboard() {
     };
 
     const handleSubmitTask = async () => {
-        if (!taskTitle.trim() || !taskInternId) {
-            toast({ title: 'Please fill in title and select an intern', variant: 'destructive' });
+        if (!taskTitle.trim() || taskInternIds.length === 0) {
+            toast({ title: 'Please fill in title and select at least one intern', variant: 'destructive' });
             return;
         }
 
@@ -146,7 +152,7 @@ export default function TaskDashboard() {
                     id: editingTask.id,
                     title: taskTitle.trim(),
                     description: taskDesc.trim() || null,
-                    intern_id: taskInternId,
+                    intern_id: taskInternIds[0],
                     due_date: taskDueDate || null,
                     priority: taskPriority,
                 });
@@ -154,13 +160,18 @@ export default function TaskDashboard() {
             } else {
                 await createTask.mutateAsync({
                     supervisor_id: supervisorId,
-                    intern_id: taskInternId,
+                    intern_ids: taskInternIds,
                     title: taskTitle.trim(),
                     description: taskDesc.trim() || undefined,
                     due_date: taskDueDate || undefined,
                     priority: taskPriority,
                 });
-                toast({ title: 'Task created' });
+                toast({
+                    title: taskInternIds.length === 1 ? 'Task created' : 'Tasks created',
+                    description: taskInternIds.length === 1
+                        ? 'The task was assigned successfully.'
+                        : `The same task was assigned to ${taskInternIds.length} interns.`,
+                });
             }
             setIsFormOpen(false);
             resetForm();
@@ -192,6 +203,36 @@ export default function TaskDashboard() {
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, variant: 'destructive' });
         }
+    };
+
+    const selectedInterns = useMemo(
+        () => myInterns.filter((intern) => taskInternIds.includes(intern.id)),
+        [myInterns, taskInternIds]
+    );
+
+    const selectionLabel = editingTask
+        ? selectedInterns[0]
+            ? `${selectedInterns[0].first_name} ${selectedInterns[0].last_name}`
+            : 'Select intern...'
+        : taskInternIds.length === 0
+            ? 'Select interns...'
+            : taskInternIds.length === 1
+                ? `${selectedInterns[0]?.first_name ?? ''} ${selectedInterns[0]?.last_name ?? ''}`.trim()
+                : `${taskInternIds.length} interns selected`;
+
+    const toggleInternSelection = (internId: string, checked: boolean) => {
+        if (editingTask) {
+            setTaskInternIds(checked ? [internId] : []);
+            return;
+        }
+
+        setTaskInternIds((current) => {
+            if (checked) {
+                return current.includes(internId) ? current : [...current, internId];
+            }
+
+            return current.filter((id) => id !== internId);
+        });
     };
 
     // Stats
@@ -345,19 +386,75 @@ export default function TaskDashboard() {
                 <DialogContent className="sm:max-w-lg w-[95vw]">
                     <DialogHeader>
                         <DialogTitle>{editingTask ? 'Edit Task' : 'New Task'}</DialogTitle>
-                        <DialogDescription>Assign a task to an intern with a deadline and priority.</DialogDescription>
+                        <DialogDescription>
+                            {editingTask
+                                ? 'Update the task details for this assigned intern.'
+                                : 'Assign the same task to one or more interns with a deadline and priority.'}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                            <Label>Assign To *</Label>
-                            <Select value={taskInternId} onValueChange={setTaskInternId}>
-                                <SelectTrigger><SelectValue placeholder="Select intern..." /></SelectTrigger>
-                                <SelectContent>
-                                    {myInterns.map(i => (
-                                        <SelectItem key={i.id} value={i.id}>{i.first_name} {i.last_name}</SelectItem>
+                            <Label>{editingTask ? 'Assigned Intern *' : 'Assign To *'}</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        <span className="truncate">{selectionLabel}</span>
+                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[320px] p-0" align="start">
+                                    <div className="border-b px-4 py-3">
+                                        <p className="text-sm font-semibold">
+                                            {editingTask ? 'Choose assigned intern' : 'Choose interns'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {editingTask
+                                                ? 'Editing keeps this task assigned to a single intern.'
+                                                : 'Each selected intern will get their own copy of this task.'}
+                                        </p>
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto p-2">
+                                        {myInterns.length === 0 ? (
+                                            <p className="px-2 py-4 text-sm text-muted-foreground">No interns available.</p>
+                                        ) : (
+                                            myInterns.map((intern) => {
+                                                const isChecked = taskInternIds.includes(intern.id);
+
+                                                return (
+                                                    <label
+                                                        key={intern.id}
+                                                        className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50"
+                                                    >
+                                                        <Checkbox
+                                                            checked={isChecked}
+                                                            onCheckedChange={(checked) => toggleInternSelection(intern.id, checked === true)}
+                                                        />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-medium">
+                                                                {intern.first_name} {intern.last_name}
+                                                            </p>
+                                                            <p className="truncate text-xs text-muted-foreground">{intern.email}</p>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            {!editingTask && selectedInterns.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedInterns.map((intern) => (
+                                        <Badge key={intern.id} variant="secondary" className="gap-1">
+                                            {intern.first_name} {intern.last_name}
+                                        </Badge>
                                     ))}
-                                </SelectContent>
-                            </Select>
+                                </div>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label>Task Title *</Label>

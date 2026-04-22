@@ -66,23 +66,51 @@ export function useCreateTask() {
     return useMutation({
         mutationFn: async (task: {
             supervisor_id: string;
-            intern_id: string;
+            intern_id?: string;
+            intern_ids?: string[];
             title: string;
             description?: string;
             due_date?: string;
             priority?: string;
         }) => {
+            const internIds = task.intern_ids && task.intern_ids.length > 0
+                ? task.intern_ids
+                : task.intern_id
+                    ? [task.intern_id]
+                    : [];
+
+            if (internIds.length === 0) {
+                throw new Error('Select at least one intern.');
+            }
+
+            const payload = internIds.map((internId) => ({
+                supervisor_id: task.supervisor_id,
+                intern_id: internId,
+                title: task.title,
+                description: task.description ?? null,
+                due_date: task.due_date ?? null,
+                priority: task.priority ?? 'medium',
+            }));
+
             const { data, error } = await supabase
                 .from('intern_tasks')
-                .insert([task] as any)
+                .insert(payload as any)
                 .select()
-                .single();
+                .order('created_at', { ascending: false });
             if (error) throw error;
             return data;
         },
         onSuccess: (_, vars) => {
             qc.invalidateQueries({ queryKey: ['supervisor-tasks', vars.supervisor_id] });
-            qc.invalidateQueries({ queryKey: ['intern-tasks', vars.intern_id] });
+            const internIds = vars.intern_ids && vars.intern_ids.length > 0
+                ? vars.intern_ids
+                : vars.intern_id
+                    ? [vars.intern_id]
+                    : [];
+
+            internIds.forEach((internId) => {
+                qc.invalidateQueries({ queryKey: ['intern-tasks', internId] });
+            });
         },
     });
 }
