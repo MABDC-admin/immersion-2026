@@ -438,7 +438,7 @@ export default function Journal() {
 
                             const isManager = viewerEmployee?.id === targetEmployee?.manager_id || isAdmin || userRole === 'hr_manager';
                             const canApprove = isManager && entry.status === 'pending';
-                            const canDeleteAttachment = isViewingOwnJournal && (entry.status === 'draft' || entry.status === 'rejected');
+                            const canDeleteAttachment = isViewingOwnJournal;
 
                             return (
                                 <div key={entry.id} className="space-y-3">
