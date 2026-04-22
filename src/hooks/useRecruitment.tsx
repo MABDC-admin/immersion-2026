@@ -196,3 +196,31 @@ export function useRejectCandidate() {
         },
     });
 }
+
+export function useUpdateCandidate() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...input }: { id: string; first_name?: string; last_name?: string; email?: string; status?: string }) => {
+            const { error } = await supabase.from('candidates').update(input).eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            toast.success('Candidate updated');
+        },
+    });
+}
+
+export function useDeleteCandidate() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase.from('candidates').delete().eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            toast.success('Candidate deleted');
+        },
+    });
+}
