@@ -140,9 +140,9 @@ export default function TaskDashboard() {
             return;
         }
 
-        const supervisorId = employee?.id || user?.id;
+        const supervisorId = employee?.id;
         if (!supervisorId) {
-            toast({ title: 'Error: Could not identify supervisor ID', variant: 'destructive' });
+            toast({ title: 'Error: Could not find your employee record. Please contact admin.', variant: 'destructive' });
             return;
         }
 
