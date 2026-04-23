@@ -52,7 +52,7 @@ const statusColors: Record<string, string> = {
 export default function TaskDashboard() {
     const { user, isAdmin, userRole } = useAuth();
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
-    const { data: employee } = useCurrentEmployee(user?.id || '');
+    const { data: employee, isLoading: isEmployeeLoading } = useCurrentEmployee(user?.id || '');
     const { data: tasks = [], isLoading } = useSupervisorTasks(employee?.id || '', isAdminOrHR);
     const createTask = useCreateTask();
     const updateTask = useUpdateTask();
@@ -140,7 +140,16 @@ export default function TaskDashboard() {
             return;
         }
 
-        const supervisorId = employee?.id;
+        // For admins without an employee record, look up by user_id at submit time
+        let supervisorId = employee?.id;
+        if (!supervisorId && user?.id) {
+            const { data: empLookup } = await supabase
+                .from('employees')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle();
+            supervisorId = empLookup?.id;
+        }
         if (!supervisorId) {
             toast({ title: 'Error: Could not find your employee record. Please contact admin.', variant: 'destructive' });
             return;
