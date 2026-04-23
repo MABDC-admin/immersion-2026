@@ -49,6 +49,21 @@ const statusColors: Record<string, string> = {
     overdue: 'bg-destructive/10 text-destructive',
 };
 
+function getTaskMutationErrorMessage(error: unknown) {
+    const message = error instanceof Error ? error.message : 'Something went wrong while saving the task.';
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes('row-level security') || normalized.includes('permission denied')) {
+        return 'Your login can reach this page, but the database does not currently recognize it as an admin, HR manager, or linked supervisor. Confirm the correct role is assigned in user_roles.';
+    }
+
+    if (normalized.includes('foreign key')) {
+        return 'The selected task assignment points to an employee record that is missing or no longer valid.';
+    }
+
+    return message;
+}
+
 export default function TaskDashboard() {
     const { user, isAdmin, userRole } = useAuth();
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
@@ -235,7 +250,11 @@ export default function TaskDashboard() {
             setIsFormOpen(false);
             resetForm();
         } catch (err: any) {
-            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            toast({
+                title: editingTask ? 'Unable to update task' : 'Unable to create task',
+                description: getTaskMutationErrorMessage(err),
+                variant: 'destructive',
+            });
         }
     };
 
@@ -251,7 +270,11 @@ export default function TaskDashboard() {
             toast({ title: 'Task updated' });
             setIsDetailOpen(false);
         } catch (err: any) {
-            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            toast({
+                title: 'Unable to update task',
+                description: getTaskMutationErrorMessage(err),
+                variant: 'destructive',
+            });
         }
     };
 
@@ -260,7 +283,11 @@ export default function TaskDashboard() {
             await deleteTask.mutateAsync(id);
             toast({ title: 'Task deleted' });
         } catch (err: any) {
-            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            toast({
+                title: 'Unable to delete task',
+                description: getTaskMutationErrorMessage(err),
+                variant: 'destructive',
+            });
         }
     };
 

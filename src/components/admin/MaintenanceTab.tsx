@@ -41,7 +41,14 @@ export function MaintenanceTab() {
       toast.success(data?.message || 'Sync complete');
       queryClient.invalidateQueries({ queryKey: ['applied-migrations'] });
     } catch (err: any) {
-      toast.error(`Sync failed: ${err.message}`);
+      const message = err?.message || 'Unknown error';
+      if (message.toLowerCase().includes('forbidden')) {
+        toast.error('Sync failed: only admins can run GitHub migration sync.');
+      } else if (message.toLowerCase().includes('unauthorized')) {
+        toast.error('Sync failed: please sign in again and retry.');
+      } else {
+        toast.error(`Sync failed: ${message}`);
+      }
     } finally {
       setIsSyncing(false);
     }

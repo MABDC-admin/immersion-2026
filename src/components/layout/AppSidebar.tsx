@@ -163,6 +163,8 @@ export function AppSidebar() {
       return [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
         { title: 'Interns', icon: Users, href: '/employees' },
+        { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
+        { title: 'Intern Journals', icon: BookOpen, href: '/supervisor/journals' },
         { title: 'Chat', icon: MessageSquare, href: '/chat', badge: totalUnreadCount },
         {
           title: 'My Workspace', icon: User, subItems: [

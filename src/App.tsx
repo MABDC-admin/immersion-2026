@@ -119,8 +119,22 @@ const App = () => (
             {/* Admin OJT + Supervisor Tasks + Intern Tasks */}
             <Route path="/admin/ojt" element={<ProtectedRoute><OjtManagement /></ProtectedRoute>} />
             <Route path="/admin/employee-journals" element={<ProtectedRoute><EmployeeJournals /></ProtectedRoute>} />
-            <Route path="/supervisor/tasks" element={<ProtectedRoute><TaskDashboard /></ProtectedRoute>} />
-            <Route path="/supervisor/journals" element={<ProtectedRoute><SupervisorJournalsView /></ProtectedRoute>} />
+            <Route
+              path="/supervisor/tasks"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'hr_manager', 'supervisor']}>
+                  <TaskDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/supervisor/journals"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'hr_manager', 'supervisor']}>
+                  <SupervisorJournalsView />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
