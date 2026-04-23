@@ -908,6 +908,8 @@ export type Database = {
           submission_notes: string | null
           supervisor_feedback: string | null
           supervisor_id: string
+          task_attachment_name: string | null
+          task_attachment_path: string | null
           title: string
           updated_at: string
         }
@@ -925,6 +927,8 @@ export type Database = {
           submission_notes?: string | null
           supervisor_feedback?: string | null
           supervisor_id: string
+          task_attachment_name?: string | null
+          task_attachment_path?: string | null
           title: string
           updated_at?: string
         }
@@ -942,6 +946,8 @@ export type Database = {
           submission_notes?: string | null
           supervisor_feedback?: string | null
           supervisor_id?: string
+          task_attachment_name?: string | null
+          task_attachment_path?: string | null
           title?: string
           updated_at?: string
         }

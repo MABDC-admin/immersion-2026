@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,18 @@ import {
 } from '@/components/ui/select';
 import {
     Plus, ListChecks, Clock, CheckCircle, AlertTriangle,
-    Trash2, MessageSquare, Eye, Edit2, Users,
+    Trash2, Eye, Edit2, Users, Upload, FileText,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
-import { useSupervisorTasks, useCreateTask, useUpdateTask, useDeleteTask, InternTask } from '@/hooks/useTasks';
+import {
+    useSupervisorTasks,
+    useCreateTask,
+    useUpdateTask,
+    useDeleteTask,
+    useUploadTaskAttachment,
+    InternTask,
+} from '@/hooks/useTasks';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, isPast, parseISO } from 'date-fns';
@@ -64,6 +71,12 @@ function getTaskMutationErrorMessage(error: unknown) {
     return message;
 }
 
+function getTaskAttachmentLabel(task: Pick<InternTask, 'task_attachment_name' | 'task_attachment_path'>) {
+    if (task.task_attachment_name) return task.task_attachment_name;
+    if (!task.task_attachment_path) return '';
+    return task.task_attachment_path.split('/').pop() || 'Attached PDF';
+}
+
 export default function TaskDashboard() {
     const { user, isAdmin, userRole } = useAuth();
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
@@ -73,6 +86,7 @@ export default function TaskDashboard() {
     const createTask = useCreateTask();
     const updateTask = useUpdateTask();
     const deleteTask = useDeleteTask();
+    const uploadTaskAttachment = useUploadTaskAttachment();
     const { toast } = useToast();
 
     // Fetch interns under this supervisor (or all interns if admin)
@@ -111,15 +125,28 @@ export default function TaskDashboard() {
     const [taskDueDate, setTaskDueDate] = useState('');
     const [taskPriority, setTaskPriority] = useState('medium');
     const [manualSupervisorId, setManualSupervisorId] = useState('');
+    const [taskAttachmentFile, setTaskAttachmentFile] = useState<File | null>(null);
+    const [taskAttachmentName, setTaskAttachmentName] = useState('');
+    const [taskAttachmentPath, setTaskAttachmentPath] = useState<string | null>(null);
+    const attachmentInputRef = useRef<HTMLInputElement>(null);
 
     // Feedback form state
     const [feedback, setFeedback] = useState('');
     const [newProgress, setNewProgress] = useState('');
     const [newStatus, setNewStatus] = useState('');
-    const [signedUrl, setSignedUrl] = useState<string | null>(null);
+    const [submissionSignedUrl, setSubmissionSignedUrl] = useState<string | null>(null);
+    const [taskAttachmentSignedUrl, setTaskAttachmentSignedUrl] = useState<string | null>(null);
 
     const resetForm = () => {
-        setTaskTitle(''); setTaskDesc(''); setTaskInternIds([]); setTaskDueDate(''); setTaskPriority('medium'); setManualSupervisorId('');
+        setTaskTitle('');
+        setTaskDesc('');
+        setTaskInternIds([]);
+        setTaskDueDate('');
+        setTaskPriority('medium');
+        setManualSupervisorId('');
+        setTaskAttachmentFile(null);
+        setTaskAttachmentName('');
+        setTaskAttachmentPath(null);
         setEditingTask(null);
     };
 
@@ -132,6 +159,9 @@ export default function TaskDashboard() {
         setTaskInternIds([task.intern_id]);
         setTaskDueDate(task.due_date || '');
         setTaskPriority(task.priority);
+        setTaskAttachmentFile(null);
+        setTaskAttachmentName(getTaskAttachmentLabel(task));
+        setTaskAttachmentPath(task.task_attachment_path);
         setIsFormOpen(true);
     };
 
@@ -141,14 +171,42 @@ export default function TaskDashboard() {
         setNewProgress(String(task.progress));
         setNewStatus(task.status);
         setIsDetailOpen(true);
-        setSignedUrl(null);
+        setSubmissionSignedUrl(null);
+        setTaskAttachmentSignedUrl(null);
 
         if (task.submission_file_path) {
             const { data } = await supabase.storage
                 .from('task-submissions')
                 .createSignedUrl(task.submission_file_path, 3600);
-            if (data?.signedUrl) setSignedUrl(data.signedUrl);
+            if (data?.signedUrl) setSubmissionSignedUrl(data.signedUrl);
         }
+
+        if (task.task_attachment_path) {
+            const { data } = await supabase.storage
+                .from('task-submissions')
+                .createSignedUrl(task.task_attachment_path, 3600);
+            if (data?.signedUrl) setTaskAttachmentSignedUrl(data.signedUrl);
+        }
+    };
+
+    const handleTaskAttachmentChange = (file: File | null) => {
+        if (!file) {
+            setTaskAttachmentFile(null);
+            return;
+        }
+
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+            toast({
+                title: 'PDF only',
+                description: 'Please choose a PDF file for the task attachment.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setTaskAttachmentFile(file);
+        setTaskAttachmentName(file.name);
     };
 
     const handleSubmitTask = async () => {
@@ -222,6 +280,15 @@ export default function TaskDashboard() {
     }
 
         try {
+            let attachmentPath = taskAttachmentPath;
+            let attachmentName = taskAttachmentPath ? taskAttachmentName || 'Attached PDF' : null;
+
+            if (taskAttachmentFile) {
+                const uploadedAttachment = await uploadTaskAttachment.mutateAsync({ file: taskAttachmentFile });
+                attachmentPath = uploadedAttachment.path;
+                attachmentName = uploadedAttachment.name;
+            }
+
             if (editingTask) {
                 await updateTask.mutateAsync({
                     id: editingTask.id,
@@ -230,6 +297,8 @@ export default function TaskDashboard() {
                     intern_id: taskInternIds[0],
                     due_date: taskDueDate || null,
                     priority: taskPriority,
+                    task_attachment_name: attachmentName,
+                    task_attachment_path: attachmentPath,
                 });
                 toast({ title: 'Task updated' });
             } else {
@@ -241,6 +310,8 @@ export default function TaskDashboard() {
                     description: taskDesc.trim() || undefined,
                     due_date: taskDueDate || undefined,
                     priority: taskPriority,
+                    task_attachment_name: attachmentName,
+                    task_attachment_path: attachmentPath,
                 });
                 toast({
                     title: taskInternIds.length === 1 ? 'Task created' : 'Tasks created',
@@ -430,6 +501,12 @@ export default function TaskDashboard() {
                                             <div className="flex-1 min-w-0 space-y-1">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <p className="text-sm font-bold truncate">{task.title}</p>
+                                                    {task.task_attachment_path && (
+                                                        <Badge variant="secondary" className="gap-1 text-[8px] font-bold uppercase">
+                                                            <FileText className="h-3 w-3" />
+                                                            PDF
+                                                        </Badge>
+                                                    )}
                                                     <Badge variant="outline" className={cn("text-[8px] font-bold uppercase", priorityColors[task.priority])}>
                                                         {task.priority}
                                                     </Badge>
@@ -572,6 +649,55 @@ export default function TaskDashboard() {
                             <Label>Description</Label>
                             <Textarea placeholder="Detailed task description..." rows={3} value={taskDesc} onChange={e => setTaskDesc(e.target.value)} />
                         </div>
+                        <div className="space-y-2">
+                            <Label>Task PDF</Label>
+                            <input
+                                ref={attachmentInputRef}
+                                type="file"
+                                accept="application/pdf,.pdf"
+                                className="hidden"
+                                onChange={(e) => handleTaskAttachmentChange(e.target.files?.[0] || null)}
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-16 w-full justify-start gap-2 border-dashed text-left"
+                                onClick={() => attachmentInputRef.current?.click()}
+                            >
+                                {taskAttachmentName ? (
+                                    <>
+                                        <FileText className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">{taskAttachmentName}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        <span className="text-muted-foreground">Upload a PDF with instructions, templates, or references</span>
+                                    </>
+                                )}
+                            </Button>
+                            {taskAttachmentName && (
+                                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                    <span className="truncate">{taskAttachmentName}</span>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-auto px-2 py-1 text-xs"
+                                        onClick={() => {
+                                            setTaskAttachmentFile(null);
+                                            setTaskAttachmentName('');
+                                            setTaskAttachmentPath(null);
+                                            if (attachmentInputRef.current) {
+                                                attachmentInputRef.current.value = '';
+                                            }
+                                        }}
+                                    >
+                                        Remove
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Due Date</Label>
@@ -593,7 +719,11 @@ export default function TaskDashboard() {
                     </div>
                     <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                        <Button className="w-full sm:w-auto" onClick={handleSubmitTask} disabled={createTask.isPending || updateTask.isPending}>
+                        <Button
+                            className="w-full sm:w-auto"
+                            onClick={handleSubmitTask}
+                            disabled={createTask.isPending || updateTask.isPending || uploadTaskAttachment.isPending}
+                        >
                             {editingTask ? 'Update Task' : 'Create Task'}
                         </Button>
                     </DialogFooter>
@@ -624,24 +754,50 @@ export default function TaskDashboard() {
                                 </div>
                             </div>
 
+                            {viewingTask.task_attachment_path && (
+                                <div className="space-y-2 rounded-lg border bg-primary/5 p-3">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div>
+                                            <p className="text-[10px] text-primary uppercase font-bold">Task Attachment</p>
+                                            <p className="text-sm font-medium">{getTaskAttachmentLabel(viewingTask)}</p>
+                                        </div>
+                                        {taskAttachmentSignedUrl && (
+                                            <Button variant="outline" size="sm" onClick={() => window.open(taskAttachmentSignedUrl, '_blank')}>
+                                                <Eye className="mr-2 h-3 w-3" />
+                                                Open PDF
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {taskAttachmentSignedUrl ? (
+                                        <div className="overflow-hidden rounded-lg border bg-black/5">
+                                            <iframe src={taskAttachmentSignedUrl} className="h-[50vh] w-full sm:h-[400px]" title="Task PDF Preview" />
+                                        </div>
+                                    ) : (
+                                        <div className="flex h-20 items-center justify-center rounded-lg border border-dashed">
+                                            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {viewingTask.submission_notes && (
                                 <div className="p-3 rounded-lg bg-hrms-warning/5 border border-hrms-warning/20">
                                     <p className="text-[10px] text-hrms-warning uppercase font-bold mb-1">Intern Submission</p>
                                     <p className="text-sm">{viewingTask.submission_notes}</p>
                                     {viewingTask.submission_file_path && (
                                         <div className="mt-3 space-y-2">
-                                            {signedUrl ? (
+                                            {submissionSignedUrl ? (
                                                 <div className="rounded-lg overflow-hidden border bg-black/5">
                                                     {viewingTask.submission_file_path.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
-                                                        <video src={signedUrl} controls className="w-full max-h-[40vh] sm:max-h-[300px]" />
+                                                        <video src={submissionSignedUrl} controls className="w-full max-h-[40vh] sm:max-h-[300px]" />
                                                     ) : viewingTask.submission_file_path.toLowerCase().endsWith('.pdf') ? (
-                                                        <iframe src={signedUrl} className="h-[50vh] w-full sm:h-[400px]" title="PDF Preview" />
+                                                        <iframe src={submissionSignedUrl} className="h-[50vh] w-full sm:h-[400px]" title="PDF Preview" />
                                                     ) : viewingTask.submission_file_path.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
-                                                        <img src={signedUrl} alt="Submission" className="w-full object-contain max-h-[50vh] sm:max-h-[400px]" />
+                                                        <img src={submissionSignedUrl} alt="Submission" className="w-full object-contain max-h-[50vh] sm:max-h-[400px]" />
                                                     ) : (
                                                         <div className="p-8 text-center">
                                                             <p className="text-xs text-muted-foreground mb-3">Preview not available for this file type.</p>
-                                                            <Button variant="outline" size="sm" onClick={() => window.open(signedUrl, '_blank')}>
+                                                            <Button variant="outline" size="sm" onClick={() => window.open(submissionSignedUrl, '_blank')}>
                                                                 <Eye className="h-3 w-3 mr-2" /> Open in New Tab
                                                             </Button>
                                                         </div>

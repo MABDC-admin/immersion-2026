@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+const TASK_FILES_BUCKET = 'task-submissions';
+
 export interface InternTask {
     id: string;
     supervisor_id: string;
@@ -13,6 +15,8 @@ export interface InternTask {
     progress: number;
     submission_notes: string | null;
     submission_file_path: string | null;
+    task_attachment_name: string | null;
+    task_attachment_path: string | null;
     supervisor_feedback: string | null;
     completed_at: string | null;
     created_at: string;
@@ -73,6 +77,8 @@ export function useCreateTask() {
             description?: string;
             due_date?: string;
             priority?: string;
+            task_attachment_name?: string | null;
+            task_attachment_path?: string | null;
         }) => {
             const assignments = task.assignments && task.assignments.length > 0
                 ? task.assignments
@@ -93,6 +99,8 @@ export function useCreateTask() {
                 description: task.description ?? null,
                 due_date: task.due_date ?? null,
                 priority: task.priority ?? 'medium',
+                task_attachment_name: task.task_attachment_name ?? null,
+                task_attachment_path: task.task_attachment_path ?? null,
             }));
 
             const { data, error } = await supabase
@@ -159,9 +167,30 @@ export function useUploadTaskFile() {
         mutationFn: async ({ taskId, file }: { taskId: string; file: File }) => {
             const ext = file.name.split('.').pop();
             const path = `${taskId}/${Date.now()}.${ext}`;
-            const { error } = await supabase.storage.from('task-submissions').upload(path, file);
+            const { error } = await supabase.storage.from(TASK_FILES_BUCKET).upload(path, file);
             if (error) throw error;
             return path;
+        },
+    });
+}
+
+export function useUploadTaskAttachment() {
+    return useMutation({
+        mutationFn: async ({ file }: { file: File }) => {
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            if (!isPdf) {
+                throw new Error('Only PDF files can be attached to a task.');
+            }
+
+            const path = `task-attachments/${crypto.randomUUID()}-${Date.now()}.pdf`;
+            const { error } = await supabase.storage.from(TASK_FILES_BUCKET).upload(path, file, {
+                contentType: 'application/pdf',
+            });
+            if (error) throw error;
+            return {
+                path,
+                name: file.name,
+            };
         },
     });
 }

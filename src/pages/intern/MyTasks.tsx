@@ -33,6 +33,12 @@ const statusColors: Record<string, string> = {
     overdue: 'bg-destructive/10 text-destructive',
 };
 
+function getTaskAttachmentLabel(task: Pick<InternTask, 'task_attachment_name' | 'task_attachment_path'>) {
+    if (task.task_attachment_name) return task.task_attachment_name;
+    if (!task.task_attachment_path) return 'Task PDF';
+    return task.task_attachment_path.split('/').pop() || 'Task PDF';
+}
+
 export default function MyTasks() {
     const { user } = useAuth();
     const { data: employee } = useCurrentEmployee(user?.id || '');
@@ -44,6 +50,9 @@ export default function MyTasks() {
     const [selectedTask, setSelectedTask] = useState<InternTask | null>(null);
     const [submissionNotes, setSubmissionNotes] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [openingAttachmentTaskId, setOpeningAttachmentTaskId] = useState<string | null>(null);
+    const [previewingAttachmentTask, setPreviewingAttachmentTask] = useState<InternTask | null>(null);
+    const [previewAttachmentUrl, setPreviewAttachmentUrl] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const [filter, setFilter] = useState<string>('all');
@@ -83,6 +92,33 @@ export default function MyTasks() {
             toast({ title: 'Task started' });
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        }
+    };
+
+    const handleOpenTaskAttachment = async (task: InternTask) => {
+        if (!task.task_attachment_path) return;
+
+        try {
+            setOpeningAttachmentTaskId(task.id);
+            setPreviewingAttachmentTask(task);
+            setPreviewAttachmentUrl(null);
+            const { data, error } = await supabase.storage
+                .from('task-submissions')
+                .createSignedUrl(task.task_attachment_path, 3600);
+
+            if (error) throw error;
+            if (data?.signedUrl) {
+                setPreviewAttachmentUrl(data.signedUrl);
+            }
+        } catch (err: any) {
+            setPreviewingAttachmentTask(null);
+            toast({
+                title: 'Unable to open PDF',
+                description: err.message || 'Something went wrong while loading the task PDF.',
+                variant: 'destructive',
+            });
+        } finally {
+            setOpeningAttachmentTaskId(null);
         }
     };
 
@@ -183,6 +219,20 @@ export default function MyTasks() {
                                                     {task.description && (
                                                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
                                                     )}
+                                                    {task.task_attachment_path && (
+                                                        <div className="mt-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-7 gap-1 text-[11px]"
+                                                                onClick={() => handleOpenTaskAttachment(task)}
+                                                                disabled={openingAttachmentTaskId === task.id}
+                                                            >
+                                                                <FileText className="h-3 w-3" />
+                                                                {openingAttachmentTaskId === task.id ? 'Opening...' : getTaskAttachmentLabel(task)}
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex w-full gap-2 shrink-0 sm:w-auto">
                                                     {task.status === 'pending' && (
@@ -249,6 +299,19 @@ export default function MyTasks() {
                             <div className="p-3 rounded-lg bg-muted/30 border">
                                 <p className="font-bold text-sm">{selectedTask.title}</p>
                                 {selectedTask.description && <p className="text-xs text-muted-foreground mt-1">{selectedTask.description}</p>}
+                                {selectedTask.task_attachment_path && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-3 gap-2"
+                                        onClick={() => handleOpenTaskAttachment(selectedTask)}
+                                        disabled={openingAttachmentTaskId === selectedTask.id}
+                                    >
+                                        <Eye className="h-3 w-3" />
+                                        {openingAttachmentTaskId === selectedTask.id ? 'Opening PDF...' : 'Open Task PDF'}
+                                    </Button>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>Submission Notes</Label>
@@ -292,6 +355,55 @@ export default function MyTasks() {
                         <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={updateTask.isPending || uploadFile.isPending}>
                             {(updateTask.isPending || uploadFile.isPending) ? 'Submitting...' : 'Submit Task'}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!previewingAttachmentTask} onOpenChange={(open) => {
+                if (!open) {
+                    setPreviewingAttachmentTask(null);
+                    setPreviewAttachmentUrl(null);
+                }
+            }}>
+                <DialogContent className="w-[95vw] max-h-[90vh] overflow-hidden sm:max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>{previewingAttachmentTask ? getTaskAttachmentLabel(previewingAttachmentTask) : 'Task PDF'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="overflow-y-auto py-2 pr-1">
+                        {previewAttachmentUrl ? (
+                            <div className="overflow-hidden rounded-lg border bg-black/5">
+                                <iframe
+                                    src={previewAttachmentUrl}
+                                    title="Task PDF Preview"
+                                    className="h-[70vh] w-full"
+                                />
+                            </div>
+                        ) : (
+                            <div className="flex h-[40vh] items-center justify-center rounded-lg border border-dashed">
+                                <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() => {
+                                setPreviewingAttachmentTask(null);
+                                setPreviewAttachmentUrl(null);
+                            }}
+                        >
+                            Close
+                        </Button>
+                        {previewAttachmentUrl && (
+                            <Button
+                                className="w-full sm:w-auto"
+                                onClick={() => window.open(previewAttachmentUrl, '_blank', 'noopener,noreferrer')}
+                            >
+                                <Eye className="mr-2 h-3 w-3" />
+                                Open in New Tab
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
