@@ -3,9 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const ROLE_PRIORITY = ['admin', 'hr_manager', 'principal', 'supervisor', 'manager', 'payroll_officer', 'employee'] as const;
+const DENNIS_ADMIN_EMAIL = 'sottodennis@gmail.com';
+const DEFAULT_PORTAL_PASSWORD = '654321';
 
 function resolvePrimaryRole(roles: string[]) {
   return ROLE_PRIORITY.find((role) => roles.includes(role)) || 'employee';
+}
+
+function isDennisAdminEmail(email?: string | null) {
+  return (email || '').trim().toLowerCase() === DENNIS_ADMIN_EMAIL;
 }
 
 export interface UserWithRole {
@@ -17,6 +23,20 @@ export interface UserWithRole {
   created_at: string;
   role?: string;
   email?: string;
+}
+
+export interface SupervisorAccessCandidate {
+  employee_id: string;
+  user_id: string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+  job_title: string | null;
+  assigned_intern_count: number;
+  roles: string[];
+  primary_role: string;
+  needs_account: boolean;
+  needs_supervisor_role: boolean;
 }
 
 // ── Users & Roles ──
@@ -61,6 +81,154 @@ export function useUpdateUserRole() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-profiles'] }); toast.success('Role updated'); },
     onError: (e: any) => toast.error(e.message || 'Failed to update role'),
+  });
+}
+
+export function useSupervisorAccessCandidates() {
+  return useQuery({
+    queryKey: ['supervisor-access-candidates'],
+    queryFn: async () => {
+      const [{ data: employees, error: employeesError }, { data: roles, error: rolesError }] = await Promise.all([
+        supabase
+          .from('employees')
+          .select('id, user_id, first_name, last_name, email, job_title, manager_id'),
+        supabase
+          .from('user_roles')
+          .select('user_id, role'),
+      ]);
+
+      if (employeesError) throw employeesError;
+      if (rolesError) throw rolesError;
+
+      const reportCounts = new Map<string, number>();
+      (employees || []).forEach((employee) => {
+        if (!employee.manager_id) return;
+        reportCounts.set(employee.manager_id, (reportCounts.get(employee.manager_id) || 0) + 1);
+      });
+
+      const roleMap = new Map<string, string[]>();
+      (roles || []).forEach((record) => {
+        const existing = roleMap.get(record.user_id) || [];
+        existing.push(record.role);
+        roleMap.set(record.user_id, existing);
+      });
+
+      return (employees || [])
+        .filter((employee) => {
+          const assignedInterns = reportCounts.get(employee.id) || 0;
+          return assignedInterns > 0 && !isDennisAdminEmail(employee.email);
+        })
+        .map((employee) => {
+          const currentRoles = employee.user_id ? roleMap.get(employee.user_id) || [] : [];
+          return {
+            employee_id: employee.id,
+            user_id: employee.user_id,
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            email: employee.email,
+            job_title: employee.job_title,
+            assigned_intern_count: reportCounts.get(employee.id) || 0,
+            roles: currentRoles,
+            primary_role: resolvePrimaryRole(currentRoles),
+            needs_account: !employee.user_id,
+            needs_supervisor_role: !currentRoles.includes('supervisor'),
+          } satisfies SupervisorAccessCandidate;
+        })
+        .sort((a, b) => {
+          const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+          const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+    },
+  });
+}
+
+export function useProvisionSupervisorAccess() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (candidate: SupervisorAccessCandidate) => {
+      if (isDennisAdminEmail(candidate.email)) {
+        throw new Error('Dennis remains on full admin access and is excluded from supervisor provisioning.');
+      }
+
+      let userId = candidate.user_id;
+      let createdNewAccount = false;
+      let linkedExistingAccount = false;
+
+      if (!userId) {
+        const { data: accountData, error: accountError } = await supabase.functions.invoke('create-employee-account', {
+          body: {
+            email: candidate.email,
+            password: DEFAULT_PORTAL_PASSWORD,
+            firstName: candidate.first_name,
+            lastName: candidate.last_name,
+          },
+        });
+
+        if (accountError) throw accountError;
+        if (!accountData?.userId) {
+          throw new Error('Unable to create or link a portal account for this supervisor.');
+        }
+
+        userId = accountData.userId;
+        createdNewAccount = !accountData.existing;
+        linkedExistingAccount = !!accountData.existing;
+
+        const { error: linkError } = await supabase
+          .from('employees')
+          .update({ user_id: userId })
+          .eq('id', candidate.employee_id);
+        if (linkError) throw linkError;
+      }
+
+      if (!candidate.roles.includes('supervisor')) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'supervisor' as any });
+
+        if (roleError && !roleError.message.toLowerCase().includes('duplicate')) {
+          throw roleError;
+        }
+      }
+
+      if (createdNewAccount) {
+        const { error: emailError } = await supabase.functions.invoke('send-portal-access-email', {
+          body: {
+            to: candidate.email,
+            firstName: candidate.first_name,
+            lastName: candidate.last_name,
+            username: candidate.email,
+            password: DEFAULT_PORTAL_PASSWORD,
+            portalRole: 'Supervisor Portal Access',
+            portalScope: 'Your portal dashboard will show only the interns assigned to you.',
+          },
+        });
+
+        if (emailError) {
+          throw emailError;
+        }
+      }
+
+      return {
+        createdNewAccount,
+        linkedExistingAccount,
+        userId,
+      };
+    },
+    onSuccess: (_, candidate) => {
+      qc.invalidateQueries({ queryKey: ['supervisor-access-candidates'] });
+      qc.invalidateQueries({ queryKey: ['admin-profiles'] });
+      qc.invalidateQueries({ queryKey: ['employees'] });
+      qc.invalidateQueries({ queryKey: ['supervisor-options'] });
+
+      toast.success(
+        candidate.user_id
+          ? `${candidate.first_name} ${candidate.last_name} now has supervisor portal access.`
+          : `${candidate.first_name} ${candidate.last_name} now has a supervisor account.`
+      );
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to provision supervisor access'),
   });
 }
 

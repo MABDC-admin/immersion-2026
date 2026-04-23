@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { SupervisorAccessCard } from '@/components/admin/SupervisorAccessCard';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
@@ -106,6 +107,9 @@ export function UserManagementTab() {
 
   return (
     <>
+    <div className="space-y-4">
+    <SupervisorAccessCard />
+
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -176,6 +180,7 @@ export function UserManagementTab() {
         </Table>
       </CardContent>
     </Card>
+    </div>
 
     <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
       <DialogContent>
