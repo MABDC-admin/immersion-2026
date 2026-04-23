@@ -194,7 +194,7 @@ export function useSupervisorOptions() {
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'supervisor');
+        .in('role', ['supervisor', 'admin', 'hr_manager']);
 
       if (roleError) throw roleError;
 

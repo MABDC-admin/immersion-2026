@@ -26,7 +26,7 @@ import {
     Trash2, MessageSquare, Eye, Edit2, Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCurrentEmployee } from '@/hooks/useEmployees';
+import { useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useSupervisorTasks, useCreateTask, useUpdateTask, useDeleteTask, InternTask } from '@/hooks/useTasks';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -68,6 +68,7 @@ export default function TaskDashboard() {
     const { user, isAdmin, userRole } = useAuth();
     const isAdminOrHR = isAdmin || userRole === 'hr_manager';
     const { data: employee, isLoading: isEmployeeLoading } = useCurrentEmployee(user?.id || '');
+    const { data: supervisorOptions = [] } = useSupervisorOptions();
     const { data: tasks = [], isLoading } = useSupervisorTasks(employee?.id || '', isAdminOrHR);
     const createTask = useCreateTask();
     const updateTask = useUpdateTask();
@@ -109,6 +110,7 @@ export default function TaskDashboard() {
     const [taskInternIds, setTaskInternIds] = useState<string[]>([]);
     const [taskDueDate, setTaskDueDate] = useState('');
     const [taskPriority, setTaskPriority] = useState('medium');
+    const [manualSupervisorId, setManualSupervisorId] = useState('');
 
     // Feedback form state
     const [feedback, setFeedback] = useState('');
@@ -117,7 +119,7 @@ export default function TaskDashboard() {
     const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
     const resetForm = () => {
-        setTaskTitle(''); setTaskDesc(''); setTaskInternIds([]); setTaskDueDate(''); setTaskPriority('medium');
+        setTaskTitle(''); setTaskDesc(''); setTaskInternIds([]); setTaskDueDate(''); setTaskPriority('medium'); setManualSupervisorId('');
         setEditingTask(null);
     };
 
@@ -182,9 +184,9 @@ export default function TaskDashboard() {
         if (selectedInternsError) throw selectedInternsError;
 
         // For interns without a manager, try to find any supervisor employee
-        let fallbackSupervisorId: string | null = null;
+        let fallbackSupervisorId: string | null = manualSupervisorId || null;
         const needsFallback = (selectedInterns || []).some((i) => !i.manager_id);
-        if (needsFallback) {
+        if (needsFallback && !fallbackSupervisorId) {
             const { data: anySupervisor } = await supabase
                 .from('user_roles')
                 .select('user_id')
@@ -207,7 +209,7 @@ export default function TaskDashboard() {
         if (internsWithoutSupervisor.length > 0) {
             toast({
                 title: 'Error',
-                description: 'One or more selected interns do not have an assigned supervisor. Please assign a supervisor first.',
+                description: 'One or more selected interns do not have an assigned supervisor. Choose a fallback supervisor below or assign a manager to those interns first.',
                 variant: 'destructive',
             });
             return;
@@ -546,6 +548,26 @@ export default function TaskDashboard() {
                             <Label>Task Title *</Label>
                             <Input placeholder="e.g. Complete filing of documents" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} />
                         </div>
+                        {isAdminOrHR && !employee?.id && !editingTask && (
+                            <div className="space-y-2">
+                                <Label>Fallback Supervisor</Label>
+                                <Select value={manualSupervisorId} onValueChange={setManualSupervisorId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Choose a supervisor for interns without a manager" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {supervisorOptions.map((supervisor) => (
+                                            <SelectItem key={supervisor.id} value={supervisor.id}>
+                                                {supervisor.first_name} {supervisor.last_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">
+                                    Used when a selected intern does not have an assigned manager in the employee record.
+                                </p>
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label>Description</Label>
                             <Textarea placeholder="Detailed task description..." rows={3} value={taskDesc} onChange={e => setTaskDesc(e.target.value)} />
