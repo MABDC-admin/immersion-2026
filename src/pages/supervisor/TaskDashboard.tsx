@@ -140,47 +140,69 @@ export default function TaskDashboard() {
             return;
         }
 
-        // For admins without an employee record, fall back to each intern's assigned supervisor
-        let supervisorId = employee?.id;
-        if (!supervisorId && user?.id) {
-            const { data: empLookup } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('user_id', user.id)
+    // Resolve supervisor ID
+    let supervisorId = employee?.id;
+    if (!supervisorId && user?.id) {
+        const { data: empLookup } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        supervisorId = empLookup?.id;
+    }
+    if (!supervisorId && !isAdminOrHR) {
+        toast({ title: 'Error: Could not find your employee record. Please contact admin.', variant: 'destructive' });
+        return;
+    }
+
+    // For admins without an employee record, build per-intern assignments
+    // using each intern's manager_id; if manager_id is also missing, pick any supervisor from DB
+    let assignments: { intern_id: string; supervisor_id: string }[] | undefined;
+    if (!supervisorId && isAdminOrHR) {
+        const { data: selectedInterns, error: selectedInternsError } = await supabase
+            .from('employees')
+            .select('id, manager_id')
+            .in('id', taskInternIds);
+
+        if (selectedInternsError) throw selectedInternsError;
+
+        // For interns without a manager, try to find any supervisor employee
+        let fallbackSupervisorId: string | null = null;
+        const needsFallback = (selectedInterns || []).some((i) => !i.manager_id);
+        if (needsFallback) {
+            const { data: anySupervisor } = await supabase
+                .from('user_roles')
+                .select('user_id')
+                .in('role', ['supervisor', 'admin', 'hr_manager'])
+                .limit(1)
                 .maybeSingle();
-            supervisorId = empLookup?.id;
+            if (anySupervisor) {
+                const { data: supEmp } = await supabase
+                    .from('employees')
+                    .select('id')
+                    .eq('user_id', anySupervisor.user_id)
+                    .maybeSingle();
+                fallbackSupervisorId = supEmp?.id ?? null;
+            }
         }
-        if (!supervisorId && !isAdminOrHR) {
-            toast({ title: 'Error: Could not find your employee record. Please contact admin.', variant: 'destructive' });
+
+        const internsWithoutSupervisor = (selectedInterns || []).filter(
+            (i) => !i.manager_id && !fallbackSupervisorId
+        );
+        if (internsWithoutSupervisor.length > 0) {
+            toast({
+                title: 'Error',
+                description: 'One or more selected interns do not have an assigned supervisor. Please assign a supervisor first.',
+                variant: 'destructive',
+            });
             return;
         }
 
-        let assignments: { intern_id: string; supervisor_id: string }[] | undefined;
-        if (!supervisorId && isAdminOrHR) {
-            const { data: selectedInterns, error: selectedInternsError } = await supabase
-                .from('employees')
-                .select('id, manager_id')
-                .in('id', taskInternIds);
-
-            if (selectedInternsError) {
-                throw selectedInternsError;
-            }
-
-            const missingSupervisor = (selectedInterns || []).find((intern) => !intern.manager_id);
-            if (missingSupervisor) {
-                toast({
-                    title: 'Error',
-                    description: 'One or more selected interns do not have an assigned supervisor yet.',
-                    variant: 'destructive'
-                });
-                return;
-            }
-
-            assignments = (selectedInterns || []).map((intern) => ({
-                intern_id: intern.id,
-                supervisor_id: intern.manager_id as string,
-            }));
-        }
+        assignments = (selectedInterns || []).map((intern) => ({
+            intern_id: intern.id,
+            supervisor_id: (intern.manager_id || fallbackSupervisorId) as string,
+        }));
+    }
 
         try {
             if (editingTask) {
