@@ -209,6 +209,12 @@ export default function MyTasks() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <h4 className="font-bold text-sm">{task.title}</h4>
+                                                        {task.task_attachment_path && (
+                                                            <Badge variant="secondary" className="gap-1 text-[8px] font-bold uppercase">
+                                                                <FileText className="h-3 w-3" />
+                                                                PDF Attached
+                                                            </Badge>
+                                                        )}
                                                         <Badge variant="outline" className={cn("text-[8px] font-bold uppercase", priorityColors[task.priority])}>
                                                             {task.priority}
                                                         </Badge>
