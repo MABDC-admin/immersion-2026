@@ -68,24 +68,27 @@ export function useCreateTask() {
             supervisor_id: string;
             intern_id?: string;
             intern_ids?: string[];
+            assignments?: { intern_id: string; supervisor_id: string }[];
             title: string;
             description?: string;
             due_date?: string;
             priority?: string;
         }) => {
-            const internIds = task.intern_ids && task.intern_ids.length > 0
-                ? task.intern_ids
-                : task.intern_id
-                    ? [task.intern_id]
-                    : [];
+            const assignments = task.assignments && task.assignments.length > 0
+                ? task.assignments
+                : (task.intern_ids && task.intern_ids.length > 0
+                    ? task.intern_ids.map((internId) => ({ intern_id: internId, supervisor_id: task.supervisor_id }))
+                    : task.intern_id
+                        ? [{ intern_id: task.intern_id, supervisor_id: task.supervisor_id }]
+                        : []);
 
-            if (internIds.length === 0) {
+            if (assignments.length === 0) {
                 throw new Error('Select at least one intern.');
             }
 
-            const payload = internIds.map((internId) => ({
-                supervisor_id: task.supervisor_id,
-                intern_id: internId,
+            const payload = assignments.map(({ intern_id, supervisor_id }) => ({
+                supervisor_id,
+                intern_id,
                 title: task.title,
                 description: task.description ?? null,
                 due_date: task.due_date ?? null,
@@ -101,12 +104,14 @@ export function useCreateTask() {
             return data;
         },
         onSuccess: (_, vars) => {
-            qc.invalidateQueries({ queryKey: ['supervisor-tasks', vars.supervisor_id] });
-            const internIds = vars.intern_ids && vars.intern_ids.length > 0
-                ? vars.intern_ids
-                : vars.intern_id
-                    ? [vars.intern_id]
-                    : [];
+            qc.invalidateQueries({ queryKey: ['supervisor-tasks'] });
+            const internIds = vars.assignments && vars.assignments.length > 0
+                ? vars.assignments.map(({ intern_id }) => intern_id)
+                : vars.intern_ids && vars.intern_ids.length > 0
+                    ? vars.intern_ids
+                    : vars.intern_id
+                        ? [vars.intern_id]
+                        : [];
 
             internIds.forEach((internId) => {
                 qc.invalidateQueries({ queryKey: ['intern-tasks', internId] });
