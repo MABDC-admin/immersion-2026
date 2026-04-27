@@ -711,66 +711,156 @@ export type Database = {
       intern_evaluations: {
         Row: {
           adaptability: number | null
+          attendance_absence_communication: number | null
+          attendance_arrives_on_time: number | null
+          attendance_meeting_deadline_punctuality: number | null
           attendance_punctuality: number | null
+          attendance_schedule_adherence: number | null
+          attendance_total: number | null
+          attitude_initiative_in_tasks: number | null
+          attitude_positive_towards_work: number | null
+          attitude_resilience_under_pressure: number | null
+          attitude_total: number | null
+          attitude_willingness_to_learn: number | null
+          award_eligible: boolean | null
           comments: string | null
           communication_skills: number | null
           created_at: string
+          ethics_accountability_for_mistakes: number | null
+          ethics_confidentiality: number | null
+          ethics_professional_behavior: number | null
+          ethics_task_reliability: number | null
+          ethics_total: number | null
           evaluation_date: string
           evaluation_period_end: string
           evaluation_period_start: string
           evaluator_id: string
+          finalized_at: string | null
           id: string
           initiative_creativity: number | null
           intern_id: string
           overall_rating: number | null
+          overall_score: number | null
           professionalism: number | null
+          quality_accuracy_thoroughness: number | null
+          quality_creativity_problem_solving: number | null
+          quality_initiative_new_tasks: number | null
+          quality_meeting_project_goals: number | null
+          quality_total: number | null
           recommendations: string | null
           status: string
+          submitted_at: string | null
+          supervisor_comments: string | null
+          teamwork_conflict_resolution: number | null
           teamwork_cooperation: number | null
+          teamwork_flexibility_adaptability: number | null
+          teamwork_supportiveness: number | null
+          teamwork_team_communication: number | null
+          teamwork_total: number | null
           updated_at: string
           work_quality: number | null
           work_quantity: number | null
         }
         Insert: {
           adaptability?: number | null
+          attendance_absence_communication?: number | null
+          attendance_arrives_on_time?: number | null
+          attendance_meeting_deadline_punctuality?: number | null
           attendance_punctuality?: number | null
+          attendance_schedule_adherence?: number | null
+          attendance_total?: number | null
+          attitude_initiative_in_tasks?: number | null
+          attitude_positive_towards_work?: number | null
+          attitude_resilience_under_pressure?: number | null
+          attitude_total?: number | null
+          attitude_willingness_to_learn?: number | null
+          award_eligible?: boolean | null
           comments?: string | null
           communication_skills?: number | null
           created_at?: string
+          ethics_accountability_for_mistakes?: number | null
+          ethics_confidentiality?: number | null
+          ethics_professional_behavior?: number | null
+          ethics_task_reliability?: number | null
+          ethics_total?: number | null
           evaluation_date?: string
           evaluation_period_end: string
           evaluation_period_start: string
           evaluator_id: string
+          finalized_at?: string | null
           id?: string
           initiative_creativity?: number | null
           intern_id: string
           overall_rating?: number | null
+          overall_score?: number | null
           professionalism?: number | null
+          quality_accuracy_thoroughness?: number | null
+          quality_creativity_problem_solving?: number | null
+          quality_initiative_new_tasks?: number | null
+          quality_meeting_project_goals?: number | null
+          quality_total?: number | null
           recommendations?: string | null
           status?: string
+          submitted_at?: string | null
+          supervisor_comments?: string | null
+          teamwork_conflict_resolution?: number | null
           teamwork_cooperation?: number | null
+          teamwork_flexibility_adaptability?: number | null
+          teamwork_supportiveness?: number | null
+          teamwork_team_communication?: number | null
+          teamwork_total?: number | null
           updated_at?: string
           work_quality?: number | null
           work_quantity?: number | null
         }
         Update: {
           adaptability?: number | null
+          attendance_absence_communication?: number | null
+          attendance_arrives_on_time?: number | null
+          attendance_meeting_deadline_punctuality?: number | null
           attendance_punctuality?: number | null
+          attendance_schedule_adherence?: number | null
+          attendance_total?: number | null
+          attitude_initiative_in_tasks?: number | null
+          attitude_positive_towards_work?: number | null
+          attitude_resilience_under_pressure?: number | null
+          attitude_total?: number | null
+          attitude_willingness_to_learn?: number | null
+          award_eligible?: boolean | null
           comments?: string | null
           communication_skills?: number | null
           created_at?: string
+          ethics_accountability_for_mistakes?: number | null
+          ethics_confidentiality?: number | null
+          ethics_professional_behavior?: number | null
+          ethics_task_reliability?: number | null
+          ethics_total?: number | null
           evaluation_date?: string
           evaluation_period_end?: string
           evaluation_period_start?: string
           evaluator_id?: string
+          finalized_at?: string | null
           id?: string
           initiative_creativity?: number | null
           intern_id?: string
           overall_rating?: number | null
+          overall_score?: number | null
           professionalism?: number | null
+          quality_accuracy_thoroughness?: number | null
+          quality_creativity_problem_solving?: number | null
+          quality_initiative_new_tasks?: number | null
+          quality_meeting_project_goals?: number | null
+          quality_total?: number | null
           recommendations?: string | null
           status?: string
+          submitted_at?: string | null
+          supervisor_comments?: string | null
+          teamwork_conflict_resolution?: number | null
           teamwork_cooperation?: number | null
+          teamwork_flexibility_adaptability?: number | null
+          teamwork_supportiveness?: number | null
+          teamwork_team_communication?: number | null
+          teamwork_total?: number | null
           updated_at?: string
           work_quality?: number | null
           work_quantity?: number | null
@@ -1577,7 +1667,86 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      evaluation_report_by_supervisor_v1: {
+        Row: {
+          avg_overall_score: number | null
+          award_eligible_count: number | null
+          evaluation_count: number | null
+          supervisor_id: string | null
+          supervisor_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intern_evaluations_evaluator_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_report_summary_v1: {
+        Row: {
+          avg_attendance_total: number | null
+          avg_attitude_total: number | null
+          avg_ethics_total: number | null
+          avg_overall_score: number | null
+          avg_quality_total: number | null
+          avg_teamwork_total: number | null
+          award_eligible_count: number | null
+          evaluation_count: number | null
+          evaluation_period_end: string | null
+          evaluation_period_start: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      evaluation_reports_v1: {
+        Row: {
+          attendance_total: number | null
+          attitude_total: number | null
+          award_eligible: boolean | null
+          department_name: string | null
+          ethics_total: number | null
+          evaluation_date: string | null
+          evaluation_period_end: string | null
+          evaluation_period_start: string | null
+          id: string | null
+          intern_department_id: string | null
+          intern_id: string | null
+          intern_name: string | null
+          overall_rating: number | null
+          overall_score: number | null
+          quality_total: number | null
+          status: string | null
+          supervisor_id: string | null
+          supervisor_name: string | null
+          teamwork_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["intern_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intern_evaluations_evaluator_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intern_evaluations_intern_id_fkey"
+            columns: ["intern_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_chat_membership: {
