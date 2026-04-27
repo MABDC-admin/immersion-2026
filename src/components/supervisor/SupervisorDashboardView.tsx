@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAssignedInterns } from '@/hooks/useEvaluations';
 import { usePendingJournalApprovals } from '@/hooks/useJournal';
