@@ -10,8 +10,9 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { isSupervisorLikeEmployee, useEmployees, useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
+import { isSupervisorLikeEmployee, useEmployees, useCurrentEmployee, useEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
+import { useImpersonation } from '@/hooks/useImpersonation';
 import { AnimatedStatCard } from '@/components/dashboard/AnimatedStatCard';
 import { EmployeeStatusChart } from '@/components/dashboard/EmployeeStatusChart';
 import { DepartmentDistributionChart } from '@/components/dashboard/DepartmentDistributionChart';
@@ -29,27 +30,37 @@ import { cn } from '@/lib/utils';
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
   const { user, isAdmin, userRole, isSupervisor, isPrincipal } = useAuth();
-  const { data: employee } = useCurrentEmployee(user?.id || '');
+  const { data: realEmployee } = useCurrentEmployee(user?.id || '');
+  const { isImpersonating, impersonating, effectiveRole } = useImpersonation();
+  const { data: impersonatedEmployee } = useEmployee(impersonating?.employeeId || '');
   const { data: supervisors = [] } = useSupervisorOptions();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  const isAdminOrHR = isAdmin || userRole === 'hr_manager';
-  const isOversightPortal = isPrincipal || isSupervisor;
+  // If impersonating, override everything to mimic the impersonated user
+  const employee = isImpersonating ? impersonatedEmployee : realEmployee;
+  const isAdminOrHR = isImpersonating
+    ? (effectiveRole === 'admin' || effectiveRole === 'hr_manager')
+    : (isAdmin || userRole === 'hr_manager');
+  const isOversightPortal = isImpersonating
+    ? (effectiveRole === 'principal' || effectiveRole === 'supervisor')
+    : (isPrincipal || isSupervisor);
+  const effectiveIsSupervisor = isImpersonating ? effectiveRole === 'supervisor' : isSupervisor;
+  const effectiveIsPrincipal = isImpersonating ? effectiveRole === 'principal' : isPrincipal;
   const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
   const visibleEmployees = useMemo(
     () => {
-      if (isSupervisor && employee) {
+      if (effectiveIsSupervisor && employee) {
         return employees.filter((currentEmployee) => currentEmployee.manager_id === employee.id);
       }
 
-      if (isPrincipal) {
+      if (effectiveIsPrincipal) {
         return employees.filter((currentEmployee) => !isSupervisorLikeEmployee(currentEmployee, supervisorIds));
       }
 
       return employees;
     },
-    [employee, employees, isPrincipal, isSupervisor, supervisorIds]
+    [employee, employees, effectiveIsPrincipal, effectiveIsSupervisor, supervisorIds]
   );
   const hiddenSupervisorCount = useMemo(
     () => employees.filter((currentEmployee) => isSupervisorLikeEmployee(currentEmployee, supervisorIds)).length,
@@ -97,9 +108,9 @@ export default function Dashboard() {
     () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
     [visibleEmployees]
   );
-  const oversightLabel = isSupervisor ? 'Supervisor Portal' : 'Principal Portal';
-  const oversightBadge = isSupervisor ? 'Assigned intern oversight' : 'Read-only intern oversight';
-  const oversightDescription = isSupervisor
+  const oversightLabel = effectiveIsSupervisor ? 'Supervisor Portal' : 'Principal Portal';
+  const oversightBadge = effectiveIsSupervisor ? 'Assigned intern oversight' : 'Read-only intern oversight';
+  const oversightDescription = effectiveIsSupervisor
     ? 'Focused oversight for your assigned interns using the same compact portal experience.'
     : 'Simple, read-only oversight of intern records. Supervisor profiles stay hidden in this portal.';
   const adminRoleLabel =
@@ -219,13 +230,13 @@ export default function Dashboard() {
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
                   <div className="rounded-xl border border-orange-100 bg-orange-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    {isSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
+                    {effectiveIsSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
                   </div>
                   <div className="rounded-xl border border-sky-100 bg-sky-500/5 px-4 py-3 text-sm text-muted-foreground">
                     Journal entries are read-only and appear inside each employee profile.
                   </div>
                   <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    {isSupervisor ? (
+                    {effectiveIsSupervisor ? (
                       <>Assigned interns: <span className="font-semibold text-foreground">{visibleEmployees.length}</span></>
                     ) : (
                       <>Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span></>
@@ -299,7 +310,7 @@ export default function Dashboard() {
               <UpcomingEventsWidget />
             </div>
           </>
-        ) : isSupervisor ? (
+        ) : effectiveIsSupervisor ? (
           /* ========== SUPERVISOR DASHBOARD ========== */
           <SupervisorDashboardView
             supervisorId={employee?.id || ''}

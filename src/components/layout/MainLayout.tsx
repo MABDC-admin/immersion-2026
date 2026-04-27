@@ -3,6 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { TopHeader } from './TopHeader';
 import { BottomNav } from './BottomNav';
+import { useImpersonation } from '@/hooks/useImpersonation';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -10,9 +11,11 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, onAddNew }: MainLayoutProps) {
+  const { isImpersonating } = useImpersonation();
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className={`min-h-screen flex w-full ${isImpersonating ? 'pt-11' : ''}`}>
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <TopHeader onAddNew={onAddNew} />

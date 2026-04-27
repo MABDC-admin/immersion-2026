@@ -2,7 +2,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Building, UserCheck, DollarSign, Clock, BarChart3, GitBranch, Lock, Wrench } from 'lucide-react';
+import { Shield, Users, Building, UserCheck, DollarSign, Clock, BarChart3, GitBranch, Lock, Wrench, Eye } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
 import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { CompanySetupTab } from '@/components/admin/CompanySetupTab';
@@ -14,6 +14,7 @@ import { WorkflowTab } from '@/components/admin/WorkflowTab';
 import { SecurityTab } from '@/components/admin/SecurityTab';
 import { MaintenanceTab } from '@/components/admin/MaintenanceTab';
 import { JournalsTab } from '@/components/admin/JournalsTab';
+import { ImpersonationTab } from '@/components/admin/ImpersonationTab';
 
 export default function AdminPanel() {
   const { isAdmin } = useAuth();
@@ -42,6 +43,7 @@ export default function AdminPanel() {
             <TabsTrigger value="security" className="text-xs"><Lock className="h-3.5 w-3.5 mr-1" />Security</TabsTrigger>
             <TabsTrigger value="maintenance" className="text-xs"><Wrench className="h-3.5 w-3.5 mr-1" />System</TabsTrigger>
             <TabsTrigger value="journals" className="text-xs"><BookOpen className="h-3.5 w-3.5 mr-1" />Journals</TabsTrigger>
+            <TabsTrigger value="impersonation" className="text-xs"><Eye className="h-3.5 w-3.5 mr-1" />Impersonation</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="mt-4"><UserManagementTab /></TabsContent>
@@ -54,6 +56,7 @@ export default function AdminPanel() {
           <TabsContent value="security" className="mt-4"><SecurityTab /></TabsContent>
           <TabsContent value="maintenance" className="mt-4"><MaintenanceTab /></TabsContent>
           <TabsContent value="journals" className="mt-4"><JournalsTab /></TabsContent>
+          <TabsContent value="impersonation" className="mt-4"><ImpersonationTab /></TabsContent>
         </Tabs>
       </div>
     </MainLayout>
