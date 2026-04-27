@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, Eye, Users, AlertTriangle, CheckCircle2, UserCheck, Shield } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Search, Eye, Users, AlertTriangle, CheckCircle2, UserCheck, Shield, Building, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 const ROLES = [
   { value: 'all', label: 'All Roles' },
@@ -50,6 +52,15 @@ function resolvePrimaryRole(roles: string[]) {
   return ROLE_PRIORITY.find((role) => roles.includes(role)) || 'employee';
 }
 
+interface AssignedIntern {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  jobTitle: string | null;
+  departmentName: string | null;
+}
+
 interface PortalUser {
   userId: string;
   employeeId: string;
@@ -59,14 +70,16 @@ interface PortalUser {
   role: string;
   avatarUrl: string | null;
   jobTitle: string | null;
+  departmentName: string | null;
   assignedInternCount: number;
+  assignedInterns: AssignedIntern[];
 }
 
 function usePortalUsers() {
   return useQuery({
     queryKey: ['impersonation-portal-users'],
     queryFn: async () => {
-      // Fetch all data in parallel
+      // Fetch all data in parallel — include department relation
       const [
         { data: profiles, error: profilesError },
         { data: roles, error: rolesError },
@@ -74,7 +87,7 @@ function usePortalUsers() {
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('user_roles').select('*'),
-        supabase.from('employees').select('id, user_id, first_name, last_name, email, job_title, avatar_url, manager_id'),
+        supabase.from('employees').select('id, user_id, first_name, last_name, email, job_title, avatar_url, manager_id, department_id, department:departments(id, name)'),
       ]);
 
       if (profilesError) throw profilesError;
@@ -95,11 +108,26 @@ function usePortalUsers() {
         if (emp.user_id) employeeByUserId.set(emp.user_id, emp);
       });
 
-      // Count assigned interns per employee (employees where manager_id = employee)
-      const internCounts = new Map<string, number>();
+      // Build employee map by ID for intern lookup
+      const employeeById = new Map<string, any>();
+      (employees || []).forEach((emp: any) => {
+        employeeById.set(emp.id, emp);
+      });
+
+      // Build assigned interns per supervisor (employees where manager_id = supervisor employee id)
+      const internsByManager = new Map<string, AssignedIntern[]>();
       (employees || []).forEach((emp: any) => {
         if (emp.manager_id) {
-          internCounts.set(emp.manager_id, (internCounts.get(emp.manager_id) || 0) + 1);
+          const list = internsByManager.get(emp.manager_id) || [];
+          list.push({
+            id: emp.id,
+            firstName: emp.first_name,
+            lastName: emp.last_name,
+            email: emp.email,
+            jobTitle: emp.job_title || null,
+            departmentName: emp.department?.name || null,
+          });
+          internsByManager.set(emp.manager_id, list);
         }
       });
 
@@ -109,6 +137,7 @@ function usePortalUsers() {
         const userRoles = roleMap.get(profile.user_id) || [];
         const primaryRole = resolvePrimaryRole(userRoles);
         const emp = employeeByUserId.get(profile.user_id);
+        const interns = emp ? (internsByManager.get(emp.id) || []) : [];
 
         portalUsers.push({
           userId: profile.user_id,
@@ -119,7 +148,9 @@ function usePortalUsers() {
           role: primaryRole,
           avatarUrl: emp?.avatar_url || profile.avatar_url || null,
           jobTitle: emp?.job_title || null,
-          assignedInternCount: emp ? (internCounts.get(emp.id) || 0) : 0,
+          departmentName: emp?.department?.name || null,
+          assignedInternCount: interns.length,
+          assignedInterns: interns,
         });
       });
 
@@ -138,6 +169,16 @@ export function ImpersonationTab() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [expandedSupervisors, setExpandedSupervisors] = useState<Set<string>>(new Set());
+
+  const toggleSupervisorExpand = (userId: string) => {
+    setExpandedSupervisors((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -219,47 +260,102 @@ export function ImpersonationTab() {
             </div>
           ) : (
             <div className="space-y-2">
-              {supervisors.map((sup) => (
-                <div
-                  key={sup.userId}
-                  className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3 bg-background hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={sup.avatarUrl || ''} />
-                      <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-700">
-                        {sup.firstName?.[0]}{sup.lastName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate">{sup.firstName} {sup.lastName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{sup.email}</p>
+              {supervisors.map((sup) => {
+                const isExpanded = expandedSupervisors.has(sup.userId);
+                return (
+                  <Collapsible key={sup.userId} open={isExpanded} onOpenChange={() => toggleSupervisorExpand(sup.userId)}>
+                    <div className="rounded-xl border bg-background hover:bg-muted/30 transition-colors overflow-hidden">
+                      <div className="flex items-center justify-between gap-3 px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={sup.avatarUrl || ''} />
+                            <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-700">
+                              {sup.firstName?.[0]}{sup.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate">{sup.firstName} {sup.lastName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{sup.email}</p>
+                          </div>
+                          {sup.departmentName && (
+                            <Badge variant="outline" className="border-blue-200 bg-blue-500/10 text-blue-700 gap-1 shrink-0">
+                              <Building className="h-3 w-3" />
+                              {sup.departmentName}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {sup.assignedInternCount > 0 ? (
+                            <CollapsibleTrigger asChild>
+                              <Badge variant="outline" className="border-emerald-200 bg-emerald-500/10 text-emerald-700 gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-colors">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {sup.assignedInternCount} intern{sup.assignedInternCount !== 1 ? 's' : ''}
+                                <ChevronDown className={cn('h-3 w-3 transition-transform', isExpanded && 'rotate-180')} />
+                              </Badge>
+                            </CollapsibleTrigger>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-200 bg-amber-500/10 text-amber-700 gap-1.5">
+                              <AlertTriangle className="h-3 w-3" />
+                              No interns assigned
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 text-xs"
+                            onClick={() => handleImpersonate(sup)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View As
+                          </Button>
+                        </div>
+                      </div>
+                      <CollapsibleContent>
+                        {sup.assignedInterns.length > 0 && (
+                          <div className="border-t bg-muted/20 px-4 py-3">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                              Assigned Interns
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {sup.assignedInterns.map((intern) => (
+                                <div
+                                  key={intern.id}
+                                  className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2"
+                                >
+                                  <Avatar className="h-7 w-7">
+                                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                      {intern.firstName?.[0]}{intern.lastName?.[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold truncate">{intern.firstName} {intern.lastName}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      {intern.departmentName ? (
+                                        <span className="text-[10px] text-blue-600 font-medium flex items-center gap-0.5">
+                                          <Building className="h-2.5 w-2.5" />
+                                          {intern.departmentName}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-muted-foreground italic">No department</span>
+                                      )}
+                                      {intern.jobTitle && (
+                                        <>
+                                          <span className="text-[10px] text-muted-foreground">·</span>
+                                          <span className="text-[10px] text-muted-foreground truncate">{intern.jobTitle}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CollapsibleContent>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {sup.assignedInternCount > 0 ? (
-                      <Badge variant="outline" className="border-emerald-200 bg-emerald-500/10 text-emerald-700 gap-1.5">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {sup.assignedInternCount} intern{sup.assignedInternCount !== 1 ? 's' : ''}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-amber-200 bg-amber-500/10 text-amber-700 gap-1.5">
-                        <AlertTriangle className="h-3 w-3" />
-                        No interns assigned
-                      </Badge>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={() => handleImpersonate(sup)}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      View As
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                  </Collapsible>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -309,6 +405,7 @@ export function ImpersonationTab() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Job Title</TableHead>
                 <TableHead className="text-center">Assigned Interns</TableHead>
                 <TableHead className="text-right">Action</TableHead>
@@ -317,7 +414,7 @@ export function ImpersonationTab() {
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No matching users found.
                   </TableCell>
                 </TableRow>
@@ -345,6 +442,16 @@ export function ImpersonationTab() {
                       <Badge variant="outline" className={roleColors[u.role] || roleColors.employee}>
                         {roleLabels[u.role] || u.role}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {u.departmentName ? (
+                        <Badge variant="outline" className="border-blue-200 bg-blue-500/5 text-blue-700 gap-1 text-xs">
+                          <Building className="h-3 w-3" />
+                          {u.departmentName}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">{u.jobTitle || '—'}</span>
