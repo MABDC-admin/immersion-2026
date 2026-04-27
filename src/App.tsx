@@ -130,7 +130,7 @@ const App = () => (
             <Route
               path="/supervisor/journals"
               element={
-                <ProtectedRoute allowedRoles={['admin', 'hr_manager', 'supervisor']}>
+                <ProtectedRoute allowedRoles={['admin', 'hr_manager', 'principal', 'supervisor']}>
                   <SupervisorJournalsView />
                 </ProtectedRoute>
               }

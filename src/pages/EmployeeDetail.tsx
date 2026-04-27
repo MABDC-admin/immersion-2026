@@ -103,6 +103,7 @@ export default function EmployeeDetail() {
   const isPrincipal = userRole === 'principal';
   const isSupervisor = userRole === 'supervisor';
   const isOversightPortal = isPrincipal || isSupervisor;
+  const canViewJournal = isAdminOrHR || isOversightPortal;
   const canEdit = isAdminOrHR || isOwnProfile;
 
   const { data: employee, isLoading, error } = useEmployee(id || '');
@@ -132,7 +133,7 @@ export default function EmployeeDetail() {
   const { data: leaveRequests = [] } = useLeaveRequests(id || '');
   const { data: leaveBalances = [] } = useLeaveBalances(id || '');
   const { data: enrollments = [] } = useEnrollments(id || '');
-  const { data: journalEntries = [] } = useJournalEntries(id || '');
+  const { data: journalEntries = [], error: journalEntriesError } = useJournalEntries(id || '');
   const supervisorIds = new Set(supervisors.map((supervisor) => supervisor.id));
 
   // Evaluations data (must be before early returns to satisfy React hooks rules)
@@ -411,12 +412,6 @@ export default function EmployeeDetail() {
                       <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       Profile
                     </TabsTrigger>
-                    {isOversightPortal && (
-                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                        <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        Journal
-                      </TabsTrigger>
-                    )}
                     {isAdminOrHR && (
                       <TabsTrigger value="leave" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
                         <ClipboardList className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -427,6 +422,12 @@ export default function EmployeeDetail() {
                       <TabsTrigger value="training" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm">
                         <GraduationCap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         Training
+                      </TabsTrigger>
+                    )}
+                    {canViewJournal && (
+                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+                        <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        Journal
                       </TabsTrigger>
                     )}
                   </TabsList>
@@ -537,7 +538,7 @@ export default function EmployeeDetail() {
                   </div>
                 </TabsContent>
 
-                {isOversightPortal && (
+                {canViewJournal && (
                   <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
                     <Card className="overflow-hidden border border-orange-200/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
                       <CardHeader className="pb-3">
@@ -554,7 +555,17 @@ export default function EmployeeDetail() {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        {journalEntries.length === 0 ? (
+                        {journalEntriesError ? (
+                          <div className="rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                              <BookOpen className="h-6 w-6 text-destructive" />
+                            </div>
+                            <h3 className="text-base font-semibold text-destructive">Journal entries could not be loaded</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Your account may not be linked to this intern's supervisor record yet.
+                            </p>
+                          </div>
+                        ) : journalEntries.length === 0 ? (
                           <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 px-6 py-12 text-center">
                             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
                               <BookOpen className="h-6 w-6 text-orange-600" />
