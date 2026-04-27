@@ -14,6 +14,7 @@ import { Loader2, Search, Eye, Users, AlertTriangle, CheckCircle2, UserCheck, Sh
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { ManageSupervisorInternsModal } from './ManageSupervisorInternsModal';
 
 const ROLES = [
   { value: 'all', label: 'All Roles' },
@@ -170,6 +171,7 @@ export function ImpersonationTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [expandedSupervisors, setExpandedSupervisors] = useState<Set<string>>(new Set());
+  const [managingSupervisor, setManagingSupervisor] = useState<PortalUser | null>(null);
 
   const toggleSupervisorExpand = (userId: string) => {
     setExpandedSupervisors((prev) => {
@@ -285,6 +287,22 @@ export function ImpersonationTab() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5 text-xs text-primary border-primary/20 hover:bg-primary/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!sup.employeeId) {
+                                toast.error('This supervisor has no employee record to attach interns to.');
+                                return;
+                              }
+                              setManagingSupervisor(sup);
+                            }}
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            Manage Interns
+                          </Button>
                           {sup.assignedInternCount > 0 ? (
                             <CollapsibleTrigger asChild>
                               <Badge variant="outline" className="border-emerald-200 bg-emerald-500/10 text-emerald-700 gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-colors">
@@ -490,6 +508,12 @@ export function ImpersonationTab() {
           </Table>
         </CardContent>
       </Card>
+
+      <ManageSupervisorInternsModal
+        open={!!managingSupervisor}
+        onOpenChange={(open) => !open && setManagingSupervisor(null)}
+        supervisor={managingSupervisor}
+      />
     </div>
   );
 }

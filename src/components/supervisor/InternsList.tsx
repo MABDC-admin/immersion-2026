@@ -30,6 +30,7 @@ const attendanceStatusColors: Record<string, string> = {
 interface InternsListProps {
   supervisorId: string;
   onEvaluate?: (internId: string) => void;
+  onManageInterns?: () => void;
 }
 
 function useInternsAttendance(internIds: string[]) {
@@ -274,7 +275,7 @@ function InternExpandedSection({ intern, supervisorId }: { intern: any; supervis
   );
 }
 
-export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
+export function InternsList({ supervisorId, onEvaluate, onManageInterns }: InternsListProps) {
   const navigate = useNavigate();
   const { data: interns = [], isLoading } = useAssignedInterns(supervisorId);
   const internIds = interns.map((i: any) => i.id);
@@ -297,9 +298,14 @@ export function InternsList({ supervisorId, onEvaluate }: InternsListProps) {
             <Users className="h-8 w-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-1">No Interns Assigned</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            No interns are currently assigned to you. Contact your administrator to assign interns.
+          <p className="text-sm text-muted-foreground max-w-sm mb-4">
+            No interns are currently assigned to this supervisor profile.
           </p>
+          {onManageInterns && (
+            <Button onClick={onManageInterns} className="font-bold">
+              Assign Interns Now
+            </Button>
+          )}
         </CardContent>
       </Card>
     );

@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAssignedInterns } from '@/hooks/useEvaluations';
 import { usePendingJournalApprovals } from '@/hooks/useJournal';
+import { useEmployee } from '@/hooks/useEmployees';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +22,10 @@ interface SupervisorDashboardViewProps {
 
 export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardViewProps) {
     const navigate = useNavigate();
+    const [isManageOpen, setIsManageOpen] = useState(false);
 
     // Data
+    const { data: supervisorEmployee } = useEmployee(supervisorId);
     const { data: interns = [], isLoading: internsLoading } = useAssignedInterns(supervisorId);
     const { data: pendingApprovals = [], isLoading: approvalsLoading } = usePendingJournalApprovals(supervisorId);
 
@@ -133,9 +136,18 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
                             <Users className="h-5 w-5 text-primary" />
                             Assigned Interns
                         </h3>
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase">{interns.length} total</Badge>
+                        <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" className="h-8 text-xs font-bold" onClick={() => setIsManageOpen(true)}>
+                                Manage Interns
+                            </Button>
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase">{interns.length} total</Badge>
+                        </div>
                     </div>
-                    <InternsList supervisorId={supervisorId} onEvaluate={(id) => navigate(`/evaluations?intern=${id}`)} />
+                    <InternsList 
+                        supervisorId={supervisorId} 
+                        onEvaluate={(id) => navigate(`/evaluations?intern=${id}`)} 
+                        onManageInterns={() => setIsManageOpen(true)}
+                    />
                 </div>
 
                 <div className="space-y-4">
@@ -186,6 +198,25 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
                     </Card>
                 </div>
             </div>
+
+            {/* Import dynamically to avoid circular dependencies or simply conditionally render the modal */}
+            {isManageOpen && supervisorEmployee && (
+                <ManageInternsLazyWrapper 
+                    open={isManageOpen} 
+                    onOpenChange={setIsManageOpen} 
+                    supervisor={{
+                        employeeId: supervisorId,
+                        firstName: supervisorEmployee.first_name,
+                        lastName: supervisorEmployee.last_name
+                    }} 
+                />
+            )}
         </div>
     );
+}
+
+// Simple wrapper to avoid top-level import issues if any
+import { ManageSupervisorInternsModal } from '@/components/admin/ManageSupervisorInternsModal';
+function ManageInternsLazyWrapper(props: any) {
+    return <ManageSupervisorInternsModal {...props} />;
 }

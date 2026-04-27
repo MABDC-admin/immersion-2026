@@ -49,19 +49,24 @@ export function useAllProfiles() {
       if (error) throw error;
       const { data: roles, error: rolesError } = await supabase.from('user_roles').select('*');
       if (rolesError) throw rolesError;
-      const { data: employees } = await supabase.from('employees').select('user_id, email');
+      const { data: employees } = await supabase.from('employees').select('user_id, email, first_name, last_name');
       const groupedRoles = new Map<string, string[]>();
       roles.forEach((roleRecord) => {
         const existing = groupedRoles.get(roleRecord.user_id) || [];
         existing.push(roleRecord.role);
         groupedRoles.set(roleRecord.user_id, existing);
       });
-      const emailMap = new Map(employees?.map(e => [e.user_id, e.email]) || []);
-      return profiles.map((profile) => ({
-        ...profile,
-        role: resolvePrimaryRole(groupedRoles.get(profile.user_id) || []),
-        email: emailMap.get(profile.user_id) || undefined,
-      })) as UserWithRole[];
+      const employeeMap = new Map(employees?.map(e => [e.user_id, e]) || []);
+      return profiles.map((profile) => {
+        const emp = employeeMap.get(profile.user_id);
+        return {
+          ...profile,
+          first_name: profile.first_name || emp?.first_name || null,
+          last_name: profile.last_name || emp?.last_name || null,
+          role: resolvePrimaryRole(groupedRoles.get(profile.user_id) || []),
+          email: emp?.email || undefined,
+        };
+      }) as UserWithRole[];
     },
   });
 }
