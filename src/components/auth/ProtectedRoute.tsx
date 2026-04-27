@@ -45,7 +45,11 @@ export function ProtectedRoute({ children, requiredRole, allowedRoles }: Protect
       location.pathname === '/' ||
       location.pathname === '/dashboard' ||
       location.pathname === '/employees' ||
-      location.pathname.startsWith('/employees/');
+      location.pathname.startsWith('/employees/') ||
+      location.pathname.startsWith('/journal/') ||
+      location.pathname === '/reports/evaluations' ||
+      location.pathname === '/supervisor/journals' ||
+      location.pathname === '/chat';
 
     if (!principalAllowed) {
       return <Navigate to="/dashboard" replace />;

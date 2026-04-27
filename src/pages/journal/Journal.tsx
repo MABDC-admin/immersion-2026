@@ -57,6 +57,7 @@ export default function Journal() {
     const { internId } = useParams<{ internId: string }>();
     const { user, isAdmin, userRole } = useAuth();
     const { data: viewerEmployee } = useCurrentEmployee(user?.id || '');
+    const isPrincipal = userRole === 'principal';
 
     const targetEmployeeId = internId || viewerEmployee?.id || '';
     const isViewingOwnJournal = !internId || internId === viewerEmployee?.id;
@@ -369,7 +370,11 @@ export default function Journal() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Daily Activity Journal</h1>
-                        <p className="text-sm text-muted-foreground">Log your daily OJT activities, learnings, and media updates</p>
+                        <p className="text-sm text-muted-foreground">
+                            {isPrincipal && targetEmployee
+                                ? `Read-only journal oversight for ${targetEmployee.first_name} ${targetEmployee.last_name}`
+                                : 'Log your daily OJT activities, learnings, and media updates'}
+                        </p>
                     </div>
                     {canManageJournalEntries && (
                         <Button onClick={openNewEntry} className="gap-2">

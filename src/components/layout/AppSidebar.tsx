@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, Clock, UserPlus, TrendingUp,
   UserCheck, GraduationCap, HelpCircle, ChevronRight, Shield, User, ClipboardCheck,
   BookOpen, FileText, MessageSquare, ListChecks, Target,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,7 +75,7 @@ const navItems: NavItem[] = [
       { title: 'Certificates', href: '/training/certificates' },
     ],
   },
-  { title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' },
+  { title: 'Evaluation Reports', icon: BarChart3, href: '/reports/evaluations', adminOnly: true },
   { title: 'Work Immersion', icon: Target, href: '/admin/ojt' },
   { title: 'Intern Journals', icon: BookOpen, href: '/admin/employee-journals' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
@@ -163,8 +164,10 @@ export function AppSidebar() {
       return [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
         { title: 'Interns', icon: Users, href: '/employees' },
-        { title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' },
-        { title: 'Intern Journals', icon: BookOpen, href: '/supervisor/journals' },
+        ...(isSupervisor ? [{ title: 'Evaluations', icon: ClipboardCheck, href: '/evaluations' }] : []),
+        ...(isPrincipal ? [{ title: 'Evaluation Reports', icon: BarChart3, href: '/reports/evaluations' }] : []),
+        ...(isSupervisor ? [{ title: 'Task Dashboard', icon: ListChecks, href: '/supervisor/tasks' }] : []),
+        ...(isSupervisor || isPrincipal ? [{ title: 'Intern Journals', icon: BookOpen, href: '/supervisor/journals' }] : []),
         { title: 'Chat', icon: MessageSquare, href: '/chat', badge: totalUnreadCount },
         {
           title: 'My Workspace', icon: User, subItems: [

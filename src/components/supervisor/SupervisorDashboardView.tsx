@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Users, Clock, BookOpen, ClipboardCheck,
-    ArrowRight, Target, ListChecks, MessageSquare
+    ArrowRight, Target, ListChecks, MessageSquare, FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -49,6 +49,7 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
     }, [interns, pendingApprovals]);
 
     const quickNav = [
+        { label: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', color: 'text-orange-600', bg: 'bg-orange-100' },
         { label: 'Attendance', icon: Clock, href: '/supervisor/attendance', color: 'text-blue-600', bg: 'bg-blue-100' },
         { label: 'Daily Journal for Interns', icon: BookOpen, href: '/supervisor/journals', color: 'text-green-600', bg: 'bg-green-100' },
         { label: 'Tasks', icon: ListChecks, href: '/supervisor/tasks', color: 'text-purple-600', bg: 'bg-purple-100' },
@@ -127,6 +128,47 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
                     </CardContent>
                 </Card>
             )}
+
+            <Card className="border-orange-200/70 bg-orange-50/40 shadow-sm">
+                <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <ClipboardCheck className="h-4 w-4 text-orange-600" />
+                        Evaluation Rubric
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                        Supervisor evaluations use the official work immersion rubric from the PDF: 5 categories, 20 scored items, total score out of 100.
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                        {[
+                            'Attendance & Punctuality',
+                            'Attitude & Enthusiasm',
+                            'Work Ethics & Responsibility',
+                            'Quality of Work & Accomplishments',
+                            'Teamwork & Collaboration',
+                        ].map((item) => (
+                            <div key={item} className="rounded-lg border bg-background px-3 py-2 text-xs font-medium">
+                                {item}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Button className="gap-2" onClick={() => navigate('/evaluations')}>
+                            <ClipboardCheck className="h-4 w-4" />
+                            Open Evaluations
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => window.open('/rubrics/work-immersion-internship-rubrics.pdf', '_blank', 'noopener,noreferrer')}
+                        >
+                            <FileText className="h-4 w-4" />
+                            View Rubric PDF
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Main Content: Interns List */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

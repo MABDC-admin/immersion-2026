@@ -220,7 +220,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-violet-200/70 bg-gradient-to-br from-violet-500/[0.06] via-background to-background shadow-sm">
+                <Card className="border-violet-200/70 bg-gradient-to-br from-violet-500/[0.06] via-background to-background shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle>Quick Access</CardTitle>
                 </CardHeader>
@@ -229,6 +229,18 @@ export default function Dashboard() {
                     Intern Directory
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
+                  {effectiveIsPrincipal && (
+                    <Button variant="outline" className="w-full justify-between border-sky-200 bg-sky-500/5 hover:bg-sky-500/10" onClick={() => navigate('/reports/evaluations')}>
+                      Evaluation Reports
+                      <TrendingUp className="h-4 w-4 text-sky-600" />
+                    </Button>
+                  )}
+                  {(effectiveIsPrincipal || effectiveIsSupervisor) && (
+                    <Button variant="outline" className="w-full justify-between border-emerald-200 bg-emerald-500/5 hover:bg-emerald-500/10" onClick={() => navigate('/supervisor/journals')}>
+                      Journal Oversight
+                      <UserCheck className="h-4 w-4 text-emerald-600" />
+                    </Button>
+                  )}
                   <div className="rounded-xl border border-orange-100 bg-orange-500/5 px-4 py-3 text-sm text-muted-foreground">
                     {effectiveIsSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
                   </div>

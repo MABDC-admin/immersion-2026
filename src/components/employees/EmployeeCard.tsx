@@ -44,8 +44,12 @@ export const EmployeeCard = React.forwardRef<HTMLDivElement, EmployeeCardProps>(
         className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
         onClick={() => onClick?.(employee)}
       >
-        {/* Blue header band */}
-        <div className="h-24 bg-primary relative">
+        {/* Scenic header band */}
+        <div
+          className="relative h-24 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/intern-card-header.svg')" }}
+        >
+          <div className="absolute inset-0 bg-slate-900/5" />
           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
             <div className="relative">
               <Avatar className="h-20 w-20 border-4 border-card">

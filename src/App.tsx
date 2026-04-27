@@ -40,6 +40,7 @@ import PublicJobApplication from "./pages/careers/PublicJobApplication";
 import AdminPanel from "./pages/admin/AdminPanel";
 import OjtManagement from "./pages/admin/OjtManagement";
 import EmployeeJournals from "./pages/admin/EmployeeJournals";
+import EvaluationReports from "./pages/admin/EvaluationReports";
 
 // Supervisor
 import TaskDashboard from "./pages/supervisor/TaskDashboard";
@@ -118,11 +119,26 @@ const App = () => (
             <Route path="/my-documents" element={<ProtectedRoute><MyDocuments /></ProtectedRoute>} />
 
             {/* Evaluations */}
-            <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
+            <Route
+              path="/evaluations"
+              element={
+                <ProtectedRoute allowedRoles={['supervisor']}>
+                  <EvaluationsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin OJT + Supervisor Tasks + Intern Tasks */}
             <Route path="/admin/ojt" element={<ProtectedRoute><OjtManagement /></ProtectedRoute>} />
             <Route path="/admin/employee-journals" element={<ProtectedRoute><EmployeeJournals /></ProtectedRoute>} />
+            <Route
+              path="/reports/evaluations"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'principal']}>
+                  <EvaluationReports />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/supervisor/tasks"
               element={

@@ -1,7 +1,7 @@
 import { useLocation, Link } from 'react-router-dom';
 import {
     ListChecks, BookOpen, MessageSquare,
-    Users, ClipboardCheck, Target, Clock, Home
+    Users, ClipboardCheck, Target, Clock, Home, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,7 +31,7 @@ export function BottomNav() {
     const items: BottomNavItem[] = isAdminOrHR
         ? [
             { label: 'Interns', icon: Users, to: '/employees' },
-            { label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' },
+            { label: 'Reports', icon: BarChart3, to: '/reports/evaluations' },
             { label: 'Journal', icon: BookOpen, to: '/admin/employee-journals' },
             { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
             { label: 'Chat', icon: MessageSquare, to: '/chat' },
@@ -40,6 +40,8 @@ export function BottomNav() {
             ? [
                 { label: 'Home', icon: Home, to: '/dashboard' },
                 { label: 'Interns', icon: Users, to: '/employees' },
+                ...(isSupervisor ? [{ label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' }] : []),
+                ...(isPrincipal ? [{ label: 'Reports', icon: BarChart3, to: '/reports/evaluations' }] : []),
                 { label: 'Chat', icon: MessageSquare, to: '/chat' },
                 { label: 'Profile', icon: ClipboardCheck, to: employee ? `/employees/${employee.id}` : '/dashboard' },
             ]
