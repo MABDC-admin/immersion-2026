@@ -11,10 +11,10 @@ const corsHeaders = {
 };
 
 interface ResetPayload {
-  userId: string;
+  userId?: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface CompanySettings {
@@ -27,13 +27,13 @@ interface CompanySettings {
   email: string | null;
 }
 
+type SupabaseAdminClient = ReturnType<typeof createClient>;
+
 function generatePassword(): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const digits = "0123456789";
   const all = upper + lower + digits;
-
-  // Guarantee at least 1 of each
   const chars: string[] = [
     upper[Math.floor(Math.random() * upper.length)],
     lower[Math.floor(Math.random() * lower.length)],
@@ -44,7 +44,6 @@ function generatePassword(): string {
     chars.push(all[Math.floor(Math.random() * all.length)]);
   }
 
-  // Shuffle
   for (let i = chars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [chars[i], chars[j]] = [chars[j], chars[i]];
@@ -53,101 +52,91 @@ function generatePassword(): string {
   return chars.join("");
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+async function findUserByEmail(supabaseAdmin: SupabaseAdminClient, email: string) {
+  const targetEmail = email.trim().toLowerCase();
+  let page = 1;
 
-  try {
-    const { userId, email, firstName, lastName }: ResetPayload = await req.json();
-
-    if (!userId || !email) {
-      return new Response(JSON.stringify({ error: "userId and email are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Generate password
-    const newPassword = generatePassword();
-
-    // Update user password and ensure email is synced
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: newPassword,
-      email: email,
-      email_confirm: true,
+  while (page <= 20) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: 1000,
     });
 
-    if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (error) throw error;
 
-    // Fetch company settings for branding
-    const { data: companyData } = await supabaseAdmin
-      .from("company_settings")
-      .select("name, logo_url, address, city, country, phone, email")
-      .limit(1)
-      .maybeSingle();
+    const match = data.users.find((user) => user.email?.toLowerCase() === targetEmail);
+    if (match) return match;
+    if (data.users.length < 1000) return null;
 
-    const company: CompanySettings = {
-      name: companyData?.name || "HRMS",
-      logo_url: companyData?.logo_url || null,
-      address: companyData?.address || null,
-      city: companyData?.city || null,
-      country: companyData?.country || null,
-      phone: companyData?.phone || null,
-      email: companyData?.email || null,
+    page += 1;
+  }
+
+  return null;
+}
+
+async function getEmployeeName(supabaseAdmin: SupabaseAdminClient, userId: string, email: string) {
+  const { data: profileData } = await supabaseAdmin
+    .from("profiles")
+    .select("first_name, last_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const { data: employeeByUser } = await supabaseAdmin
+    .from("employees")
+    .select("first_name, last_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (profileData?.first_name || profileData?.last_name || employeeByUser) {
+    return {
+      firstName: profileData?.first_name || employeeByUser?.first_name || "",
+      lastName: profileData?.last_name || employeeByUser?.last_name || "",
     };
+  }
 
-    // Build email
-    const logoHtml = company.logo_url
-      ? `<img src="${company.logo_url}" alt="${company.name}" style="max-width:180px;max-height:80px;display:block;margin:0 auto;" />`
-      : `<div style="font-size:24px;font-weight:bold;color:#1a1a2e;text-align:center;">${company.name}</div>`;
+  const { data: employeeByEmail } = await supabaseAdmin
+    .from("employees")
+    .select("first_name, last_name")
+    .ilike("email", email)
+    .maybeSingle();
 
-    const footerParts: string[] = [];
-    if (company.address) footerParts.push(company.address);
-    if (company.city && company.country) footerParts.push(`${company.city}, ${company.country}`);
-    else if (company.city) footerParts.push(company.city);
-    if (company.phone) footerParts.push(`Phone: ${company.phone}`);
-    if (company.email) footerParts.push(company.email);
+  return {
+    firstName: employeeByEmail?.first_name || "",
+    lastName: employeeByEmail?.last_name || "",
+  };
+}
 
-    const loginUrl = "https://immersion.mabdc.com/auth";
+async function getCompanySettings(supabaseAdmin: SupabaseAdminClient): Promise<CompanySettings> {
+  const { data: companyData } = await supabaseAdmin
+    .from("company_settings")
+    .select("name, logo_url, address, city, country, phone, email")
+    .limit(1)
+    .maybeSingle();
 
-    const subject = "Your Password Has Been Reset";
-    const bodyContent = `
-      <p>Dear <strong>${firstName || ""} ${lastName || ""}</strong>,</p>
-      <p>Your password has been reset by an administrator. Please use the credentials below to log in:</p>
-      <div style="margin:24px 0;padding:20px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
-        <h3 style="margin:0 0 14px;color:#1a1a2e;font-size:16px;font-weight:600;">🔐 Your New Login Credentials</h3>
-        <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px;">
-          <tr>
-            <td style="padding:6px 0;color:#6b7280;font-size:14px;width:90px;">Username:</td>
-            <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${email}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;color:#6b7280;font-size:14px;">Password:</td>
-            <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${newPassword}</td>
-          </tr>
-        </table>
-        <div style="text-align:center;margin-bottom:12px;">
-          <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Employee Portal</a>
-        </div>
-        <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">⚠️ Please change your password after logging in for security purposes.</p>
-      </div>
-      <p>If you did not expect this change, please contact your HR department immediately.</p>
-      <br />
-      <p>Kind regards,</p>
-      <p><strong>HR Department</strong><br/>${company.name}</p>
-    `;
+  return {
+    name: companyData?.name || "HRMS",
+    logo_url: companyData?.logo_url || null,
+    address: companyData?.address || null,
+    city: companyData?.city || null,
+    country: companyData?.country || null,
+    phone: companyData?.phone || null,
+    email: companyData?.email || null,
+  };
+}
 
-    const html = `<!DOCTYPE html>
+function buildEmailTemplate(company: CompanySettings, subject: string, bodyContent: string): string {
+  const logoHtml = company.logo_url
+    ? `<img src="${company.logo_url}" alt="${company.name}" style="max-width:180px;max-height:80px;display:block;margin:0 auto;" />`
+    : `<div style="font-size:24px;font-weight:bold;color:#1a1a2e;text-align:center;">${company.name}</div>`;
+
+  const footerParts: string[] = [];
+  if (company.address) footerParts.push(company.address);
+  if (company.city && company.country) footerParts.push(`${company.city}, ${company.country}`);
+  else if (company.city) footerParts.push(company.city);
+  if (company.phone) footerParts.push(`Phone: ${company.phone}`);
+  if (company.email) footerParts.push(company.email);
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:#f4f5f7;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;">
@@ -175,13 +164,102 @@ serve(async (req) => {
 </table>
 </body>
 </html>`;
+}
 
+function buildResetEmailBody(name: { firstName: string; lastName: string }, email: string, password: string, companyName: string) {
+  const loginUrl = "https://immersion.mabdc.com/auth";
+  const displayName = `${name.firstName || ""} ${name.lastName || ""}`.trim() || "Immersion Portal User";
+
+  return `
+    <p>Dear <strong>${displayName}</strong>,</p>
+    <p>Your Immersion Portal password has been reset. Please use the credentials below to log in:</p>
+    <div style="margin:24px 0;padding:20px;background-color:#f0f4f8;border-radius:8px;border:1px solid #d0dbe7;">
+      <h3 style="margin:0 0 14px;color:#1a1a2e;font-size:16px;font-weight:600;">Your New Immersion Login Credentials</h3>
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;width:90px;">Username:</td>
+          <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${email}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Password:</td>
+          <td style="padding:6px 0;font-family:'Courier New',monospace;font-size:14px;font-weight:600;color:#1a1a2e;">${password}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin-bottom:12px;">
+        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login Immersion Portal</a>
+      </div>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Please change your password after logging in for security purposes.</p>
+    </div>
+    <p>If you did not expect this change, please contact your HR department immediately.</p>
+    <br />
+    <p>Kind regards,</p>
+    <p><strong>HR Department</strong><br/>${companyName}</p>
+  `;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const {
+      userId: payloadUserId,
+      email,
+      firstName: payloadFirstName,
+      lastName: payloadLastName,
+    }: ResetPayload = await req.json();
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: "Email is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const normalizedEmail = email.trim().toLowerCase();
+    const authUser = payloadUserId
+      ? { id: payloadUserId, email: normalizedEmail }
+      : await findUserByEmail(supabaseAdmin, normalizedEmail);
+
+    if (!authUser?.id) {
+      return new Response(JSON.stringify({ error: "No portal account found for this email address" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const profileName = await getEmployeeName(supabaseAdmin, authUser.id, normalizedEmail);
+    const recipientName = {
+      firstName: payloadFirstName || profileName.firstName,
+      lastName: payloadLastName || profileName.lastName,
+    };
+    const newPassword = generatePassword();
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+      password: newPassword,
+      email: normalizedEmail,
+      email_confirm: true,
+    });
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const company = await getCompanySettings(supabaseAdmin);
+    const subject = "Immersion Password Reset";
+    const bodyContent = buildResetEmailBody(recipientName, normalizedEmail, newPassword, company.name);
+    const html = buildEmailTemplate(company, subject, bodyContent);
     const fromName = company.name || "HRMS";
-    const fromEmail = `${fromName} <immersion@mabdc.com>`;
-
     const emailPayload: Record<string, unknown> = {
-      from: fromEmail,
-      to: [email],
+      from: `${fromName} <immersion@mabdc.com>`,
+      to: [normalizedEmail],
       subject: `${subject} - ${company.name}`,
       html,
     };
@@ -190,7 +268,7 @@ serve(async (req) => {
       emailPayload.reply_to = company.email;
     }
 
-    const { error: emailError } = await resend.emails.send(emailPayload as any);
+    const { error: emailError } = await resend.emails.send(emailPayload as never);
 
     if (emailError) {
       return new Response(JSON.stringify({ error: "Password updated but failed to send email" }), {

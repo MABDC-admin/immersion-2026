@@ -113,7 +113,7 @@ function buildCredentialsBox(username?: string, password?: string): string {
         </tr>
       </table>
       <div style="text-align:center;margin-bottom:12px;">
-        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login to Employee Portal</a>
+        <a href="${loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">Login Immersion Portal</a>
       </div>
       <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">⚠️ Please change your password after your first login for security purposes.</p>
     </div>
