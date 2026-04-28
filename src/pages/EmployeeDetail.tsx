@@ -313,7 +313,7 @@ export default function EmployeeDetail() {
             <Card className={cn(
               "w-full lg:w-80 shrink-0 shadow-sm hover:shadow-md transition-all duration-300",
               isPrincipal
-                ? "border border-orange-200/70 bg-gradient-to-b from-orange-50 via-background to-background"
+                ? "border border-intern-border/70 bg-gradient-to-b from-orange-50 via-background to-background"
                 : "border-l-4 border-l-primary"
             )}>
               <CardContent className="pt-8 pb-6 px-5 text-center sm:text-left lg:text-center">
@@ -336,7 +336,7 @@ export default function EmployeeDetail() {
                   <h1 className="text-2xl font-bold mt-4 text-foreground">{fullName}</h1>
                   <p className={cn(
                     "text-sm font-semibold mt-1",
-                    isPrincipal ? "text-orange-600" : "text-primary"
+                    isPrincipal ? "text-intern" : "text-primary"
                   )}>
                     {employee.job_title || 'Intern'}
                   </p>
@@ -346,14 +346,14 @@ export default function EmployeeDetail() {
                 </div>
                 <div className={cn(
                   "mt-8 space-y-4 pt-6 border-t",
-                  isPrincipal ? "border-orange-100/80" : "border-muted/30"
+                  isPrincipal ? "border-intern-border/60/80" : "border-muted/30"
                 )}>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
                     <div className={cn(
                       "p-2 rounded-lg",
-                      isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                      isPrincipal ? "bg-intern-soft text-intern" : "bg-primary/5"
                     )}>
-                      <Mail className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
+                      <Mail className={cn("h-4 w-4", isPrincipal ? "text-intern" : "text-primary")} />
                     </div>
                     <span className="truncate max-w-[200px]">{employee.email}</span>
                   </div>
@@ -361,9 +361,9 @@ export default function EmployeeDetail() {
                     <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
                       <div className={cn(
                         "p-2 rounded-lg",
-                        isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                        isPrincipal ? "bg-intern-soft text-intern" : "bg-primary/5"
                       )}>
-                        <Phone className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
+                        <Phone className={cn("h-4 w-4", isPrincipal ? "text-intern" : "text-primary")} />
                       </div>
                       <span>{employee.phone}</span>
                     </div>
@@ -371,9 +371,9 @@ export default function EmployeeDetail() {
                   <div className="flex items-center gap-3 text-sm text-muted-foreground justify-center sm:justify-start lg:justify-center">
                     <div className={cn(
                       "p-2 rounded-lg",
-                      isPrincipal ? "bg-orange-100 text-orange-600" : "bg-primary/5"
+                      isPrincipal ? "bg-intern-soft text-intern" : "bg-primary/5"
                     )}>
-                      <Building2 className={cn("h-4 w-4", isPrincipal ? "text-orange-600" : "text-primary")} />
+                      <Building2 className={cn("h-4 w-4", isPrincipal ? "text-intern" : "text-primary")} />
                     </div>
                     <span>{employee.department?.name || 'Unassigned'}</span>
                   </div>
@@ -425,7 +425,7 @@ export default function EmployeeDetail() {
                       </TabsTrigger>
                     )}
                     {canViewJournal && (
-                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+                      <TabsTrigger value="journal" className="gap-1.5 min-w-fit px-3 py-1.5 text-[10px] sm:text-xs rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-intern data-[state=active]:text-white">
                         <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         Journal
                       </TabsTrigger>
@@ -540,7 +540,7 @@ export default function EmployeeDetail() {
 
                 {canViewJournal && (
                   <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
-                    <Card className="overflow-hidden border border-orange-200/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
+                    <Card className="overflow-hidden border border-intern-border/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
                       <CardHeader className="pb-3">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div>
@@ -549,7 +549,7 @@ export default function EmployeeDetail() {
                               Read-only journal entries, learnings, and media evidence for {fullName}.
                             </p>
                           </div>
-                          <Badge variant="outline" className="w-fit border-orange-200 bg-orange-100 text-orange-700">
+                          <Badge variant="outline" className="w-fit border-intern-border bg-intern-soft text-intern">
                             {journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}
                           </Badge>
                         </div>
@@ -566,9 +566,9 @@ export default function EmployeeDetail() {
                             </p>
                           </div>
                         ) : journalEntries.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 px-6 py-12 text-center">
-                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
-                              <BookOpen className="h-6 w-6 text-orange-600" />
+                          <div className="rounded-2xl border border-dashed border-intern-border bg-intern-soft/60 px-6 py-12 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-intern-soft">
+                              <BookOpen className="h-6 w-6 text-intern" />
                             </div>
                             <h3 className="text-base font-semibold">No journal entries yet</h3>
                             <p className="mt-1 text-sm text-muted-foreground">
@@ -581,7 +581,7 @@ export default function EmployeeDetail() {
                               <AccordionItem
                                 key={entry.id}
                                 value={entry.id}
-                                className="rounded-2xl border border-orange-100 bg-white/90 px-4 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/40"
+                                className="rounded-2xl border border-intern-border/60 bg-white/90 px-4 shadow-sm transition-colors hover:border-intern-border hover:bg-intern-soft/40"
                               >
                                 <AccordionTrigger className="py-4 hover:no-underline">
                                   <div className="flex w-full flex-col gap-3 pr-4 text-left sm:flex-row sm:items-start sm:justify-between">
@@ -592,14 +592,14 @@ export default function EmployeeDetail() {
                                       </p>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+                                      <Badge variant="outline" className="border-evalinfo-border bg-evalinfo-soft text-evalinfo">
                                         {entry.status}
                                       </Badge>
                                       {entry.hours_worked !== null && (
-                                        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{entry.hours_worked} hrs</Badge>
+                                        <Badge className="bg-intern-soft text-intern hover:bg-intern-soft">{entry.hours_worked} hrs</Badge>
                                       )}
                                       {entry.attachments && entry.attachments.length > 0 && (
-                                        <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                                        <Badge variant="outline" className="border-evaldanger-border bg-evaldanger-soft text-evaldanger">
                                           {entry.attachments.length} media
                                         </Badge>
                                       )}
@@ -607,36 +607,36 @@ export default function EmployeeDetail() {
                                   </div>
                                 </AccordionTrigger>
 
-                                <AccordionContent className="space-y-4 border-t border-orange-100 pb-4 pt-4">
+                                <AccordionContent className="space-y-4 border-t border-intern-border/60 pb-4 pt-4">
                                   <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Activities</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-intern">Activities</p>
                                     <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.activities}</p>
                                   </div>
 
                                   {entry.learnings && (
                                     <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Key Learnings</p>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-intern">Key Learnings</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.learnings}</p>
                                     </div>
                                   )}
 
                                   {entry.challenges && (
-                                    <div className="rounded-xl border border-rose-100 bg-rose-50/60 p-3">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Challenges</p>
+                                    <div className="rounded-xl border border-evaldanger-border/60 bg-evaldanger-soft/60 p-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-evaldanger">Challenges</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.challenges}</p>
                                     </div>
                                   )}
 
                                   {entry.supervisor_notes && (
-                                    <div className="rounded-xl border border-orange-200 bg-orange-100/70 p-3">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Supervisor Notes</p>
+                                    <div className="rounded-xl border border-intern-border bg-intern-soft/70 p-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-intern">Supervisor Notes</p>
                                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{entry.supervisor_notes}</p>
                                     </div>
                                   )}
 
                                   {entry.attachments && entry.attachments.length > 0 && (
                                     <div className="space-y-2">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Photo & Video Evidence</p>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-evaldanger">Photo & Video Evidence</p>
                                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                         {entry.attachments.map((attachment) => renderAttachmentCard(attachment))}
                                       </div>
