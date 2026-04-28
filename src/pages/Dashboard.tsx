@@ -125,7 +125,7 @@ export default function Dashboard() {
       <div className="space-y-8">
         {isOversightPortal ? (
           <>
-            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-orange-500/12 via-background to-background shadow-sm">
+            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-intern/15 via-background to-background shadow-sm">
               <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">{oversightLabel}</h1>
@@ -140,7 +140,7 @@ export default function Dashboard() {
             </Card>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="border-intern-border/70 bg-gradient-to-br from-orange-500/12 via-background to-background shadow-sm">
+              <Card className="border-intern-border/70 bg-gradient-to-br from-intern/15 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -155,7 +155,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-emerald-200/70 bg-gradient-to-br from-emerald-500/10 via-background to-background shadow-sm">
+              <Card className="border-hrms-success/30 bg-gradient-to-br from-hrms-success/10 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -170,7 +170,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-amber-200/80 bg-gradient-to-br from-amber-500/14 via-background to-background shadow-sm">
+              <Card className="border-hrms-warning/30 bg-gradient-to-br from-hrms-warning/15 via-background to-background shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -187,7 +187,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-              <Card className="border-intern-border/70 bg-gradient-to-br from-orange-500/[0.06] via-background to-background shadow-sm">
+              <Card className="border-intern-border/70 bg-gradient-to-br from-intern/5 via-background to-background shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle>Recent Hires</CardTitle>
                 </CardHeader>
@@ -230,13 +230,13 @@ export default function Dashboard() {
                     <Users className="h-4 w-4 text-primary" />
                   </Button>
                   {effectiveIsPrincipal && (
-                    <Button variant="outline" className="w-full justify-between border-evalinfo-border bg-evalinfo-soft0/5 hover:bg-evalinfo-soft0/10" onClick={() => navigate('/reports/evaluations')}>
+                    <Button variant="outline" className="w-full justify-between border-evalinfo-border bg-evalinfo/5 hover:bg-evalinfo/10" onClick={() => navigate('/reports/evaluations')}>
                       Evaluation Reports
                       <TrendingUp className="h-4 w-4 text-evalinfo" />
                     </Button>
                   )}
                   {(effectiveIsPrincipal || effectiveIsSupervisor) && (
-                    <Button variant="outline" className="w-full justify-between border-emerald-200 bg-emerald-500/5 hover:bg-hrms-success/10" onClick={() => navigate('/supervisor/journals')}>
+                    <Button variant="outline" className="w-full justify-between border-hrms-success/30 bg-hrms-success/5 hover:bg-hrms-success/10" onClick={() => navigate('/supervisor/journals')}>
                       Journal Oversight
                       <UserCheck className="h-4 w-4 text-hrms-success" />
                     </Button>
@@ -244,7 +244,7 @@ export default function Dashboard() {
                   <div className="rounded-xl border border-intern-border/60 bg-intern/5 px-4 py-3 text-sm text-muted-foreground">
                     {effectiveIsSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
                   </div>
-                  <div className="rounded-xl border border-sky-100 bg-evalinfo-soft0/5 px-4 py-3 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-evalinfo-border/60 bg-evalinfo/5 px-4 py-3 text-sm text-muted-foreground">
                     Journal entries are read-only and appear inside each employee profile.
                   </div>
                   <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
@@ -262,7 +262,7 @@ export default function Dashboard() {
           /* ========== ADMIN / HR DASHBOARD ========== */
           <>
             {/* Welcome Header */}
-            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-orange-500/14 via-background to-background shadow-sm">
+            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-intern/15 via-background to-background shadow-sm">
               <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">
@@ -284,9 +284,9 @@ export default function Dashboard() {
                   variant="outline"
                   className={cn(
                     'h-auto flex-col gap-2 border-white/70 py-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md',
-                    index === 0 && 'bg-gradient-to-br from-orange-500/12 to-background hover:bg-intern/10',
-                    index === 1 && 'bg-gradient-to-br from-sky-500/10 to-background hover:bg-evalinfo-soft0/10',
-                    index === 2 && 'bg-gradient-to-br from-emerald-500/10 to-background hover:bg-hrms-success/10',
+                    index === 0 && 'bg-gradient-to-br from-intern/15 to-background hover:bg-intern/10',
+                    index === 1 && 'bg-gradient-to-br from-evalinfo/10 to-background hover:bg-evalinfo/10',
+                    index === 2 && 'bg-gradient-to-br from-hrms-success/10 to-background hover:bg-hrms-success/10',
                     index === 3 && 'bg-gradient-to-br from-violet-500/10 to-background hover:bg-violet-500/10'
                   )}
                   onClick={() => navigate(item.href)}

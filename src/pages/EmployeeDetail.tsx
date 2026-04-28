@@ -313,7 +313,7 @@ export default function EmployeeDetail() {
             <Card className={cn(
               "w-full lg:w-80 shrink-0 shadow-sm hover:shadow-md transition-all duration-300",
               isPrincipal
-                ? "border border-intern-border/70 bg-gradient-to-b from-orange-50 via-background to-background"
+                ? "border border-intern-border/70 bg-gradient-to-b from-intern-soft via-background to-background"
                 : "border-l-4 border-l-primary"
             )}>
               <CardContent className="pt-8 pb-6 px-5 text-center sm:text-left lg:text-center">
@@ -540,7 +540,7 @@ export default function EmployeeDetail() {
 
                 {canViewJournal && (
                   <TabsContent value="journal" className="space-y-6 focus-visible:outline-none">
-                    <Card className="overflow-hidden border border-intern-border/70 bg-gradient-to-br from-orange-50/80 via-background to-rose-50/50 shadow-sm">
+                    <Card className="overflow-hidden border border-intern-border/70 bg-gradient-to-br from-intern-soft/80 via-background to-evaldanger-soft/50 shadow-sm">
                       <CardHeader className="pb-3">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div>
