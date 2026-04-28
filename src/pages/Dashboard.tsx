@@ -42,9 +42,6 @@ export default function Dashboard() {
   const isAdminOrHR = isImpersonating
     ? (effectiveRole === 'admin' || effectiveRole === 'hr_manager')
     : (isAdmin || userRole === 'hr_manager');
-  const isOversightPortal = isImpersonating
-    ? (effectiveRole === 'principal' || effectiveRole === 'supervisor')
-    : (isPrincipal || isSupervisor);
   const effectiveIsSupervisor = isImpersonating ? effectiveRole === 'supervisor' : isSupervisor;
   const effectiveIsPrincipal = isImpersonating ? effectiveRole === 'principal' : isPrincipal;
   const supervisorIds = useMemo(() => new Set(supervisors.map((supervisor) => supervisor.id)), [supervisors]);
@@ -123,7 +120,7 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="space-y-8">
-        {isOversightPortal ? (
+        {effectiveIsPrincipal ? (
           <>
             <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-intern/15 via-background to-background shadow-sm">
               <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
@@ -235,29 +232,28 @@ export default function Dashboard() {
                       <TrendingUp className="h-4 w-4 text-evalinfo" />
                     </Button>
                   )}
-                  {(effectiveIsPrincipal || effectiveIsSupervisor) && (
-                    <Button variant="outline" className="w-full justify-between border-hrms-success/30 bg-hrms-success/5 hover:bg-hrms-success/10" onClick={() => navigate('/supervisor/journals')}>
-                      Journal Oversight
-                      <UserCheck className="h-4 w-4 text-hrms-success" />
-                    </Button>
-                  )}
+                  <Button variant="outline" className="w-full justify-between border-hrms-success/30 bg-hrms-success/5 hover:bg-hrms-success/10" onClick={() => navigate('/supervisor/journals')}>
+                    Journal Oversight
+                    <UserCheck className="h-4 w-4 text-hrms-success" />
+                  </Button>
                   <div className="rounded-xl border border-intern-border/60 bg-intern/5 px-4 py-3 text-sm text-muted-foreground">
-                    {effectiveIsSupervisor ? 'Only your assigned interns appear in this portal.' : 'Supervisor records are hidden by design in the principal portal.'}
+                    Supervisor records are hidden by design in the principal portal.
                   </div>
                   <div className="rounded-xl border border-evalinfo-border/60 bg-evalinfo/5 px-4 py-3 text-sm text-muted-foreground">
                     Journal entries are read-only and appear inside each employee profile.
                   </div>
                   <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    {effectiveIsSupervisor ? (
-                      <>Assigned interns: <span className="font-semibold text-foreground">{visibleEmployees.length}</span></>
-                    ) : (
-                      <>Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span></>
-                    )}
+                    Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </>
+        ) : effectiveIsSupervisor ? (
+          /* ========== SUPERVISOR DASHBOARD ========== */
+          <SupervisorDashboardView
+            supervisorId={employee?.id || ''}
+          />
         ) : isAdminOrHR ? (
           /* ========== ADMIN / HR DASHBOARD ========== */
           <>
@@ -322,11 +318,6 @@ export default function Dashboard() {
               <UpcomingEventsWidget />
             </div>
           </>
-        ) : effectiveIsSupervisor ? (
-          /* ========== SUPERVISOR DASHBOARD ========== */
-          <SupervisorDashboardView
-            supervisorId={employee?.id || ''}
-          />
         ) : (
           /* ========== EMPLOYEE / INTERN DASHBOARD ========== */
           <EmployeeDashboardView
