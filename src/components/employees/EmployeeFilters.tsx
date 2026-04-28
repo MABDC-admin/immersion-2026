@@ -14,8 +14,6 @@ interface EmployeeFiltersProps {
   onSearchChange: (value: string) => void;
   statusFilter: string;
   onStatusChange: (value: string) => void;
-  groupBy: string;
-  onGroupByChange: (value: string) => void;
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   totalCount: number;
@@ -26,33 +24,31 @@ export function EmployeeFilters({
   onSearchChange,
   statusFilter,
   onStatusChange,
-  groupBy,
-  onGroupByChange,
   viewMode,
   onViewModeChange,
   totalCount,
 }: EmployeeFiltersProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-3xl border border-violet-200 bg-gradient-to-r from-violet-50/80 via-white to-amber-50/80 p-4 shadow-sm sm:flex-row sm:items-center">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <span className="text-lg font-medium text-foreground">
+        <span className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-2 text-lg font-semibold text-orange-900">
           {totalCount} Interns
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-700" />
           <Input
             placeholder="Search by name"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 w-48"
+            className="w-48 border-cyan-200 bg-cyan-50/50 pl-10 focus-visible:ring-cyan-500"
           />
         </div>
 
         <Select value={statusFilter} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36 border-emerald-200 bg-emerald-50/60 focus:ring-emerald-500">
             <SelectValue placeholder="All Interns" />
           </SelectTrigger>
           <SelectContent className="bg-popover">
@@ -63,30 +59,19 @@ export function EmployeeFilters({
           </SelectContent>
         </Select>
 
-        <Select value={groupBy} onValueChange={onGroupByChange}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Group by" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover">
-            <SelectItem value="location">Location</SelectItem>
-            <SelectItem value="department">Department</SelectItem>
-            <SelectItem value="none">None</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="flex border rounded-md overflow-hidden">
+        <div className="flex overflow-hidden rounded-md border border-violet-200 bg-white">
           <Button
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="icon"
-            className="rounded-none h-9 w-9"
+            className={`h-9 w-9 rounded-none ${viewMode === 'list' ? 'bg-violet-100 text-violet-800 hover:bg-violet-100' : 'hover:bg-violet-50'}`}
             onClick={() => onViewModeChange('list')}
           >
             <List className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="icon"
-            className="rounded-none h-9 w-9"
+            className={`h-9 w-9 rounded-none ${viewMode === 'grid' ? 'bg-violet-100 text-violet-800 hover:bg-violet-100' : 'hover:bg-violet-50'}`}
             onClick={() => onViewModeChange('grid')}
           >
             <LayoutGrid className="h-4 w-4" />

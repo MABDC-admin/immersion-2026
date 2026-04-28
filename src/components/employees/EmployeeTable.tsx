@@ -4,10 +4,8 @@ import {
     Edit2,
     Trash2,
     ExternalLink,
-    Phone,
     Mail,
     Building2,
-    MapPin
 } from 'lucide-react';
 import {
     Table,
@@ -26,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { getEmployeeDepartmentName } from '@/lib/departments';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,10 +48,10 @@ interface EmployeeTableProps {
 }
 
 const statusColors = {
-    active: 'bg-hrms-success text-white',
-    inactive: 'bg-muted-foreground text-white',
-    on_leave: 'bg-hrms-warning text-white',
-    terminated: 'bg-destructive text-white',
+    active: 'border-emerald-200 bg-emerald-100 text-emerald-800',
+    inactive: 'border-slate-200 bg-slate-100 text-slate-700',
+    on_leave: 'border-amber-200 bg-amber-100 text-amber-800',
+    terminated: 'border-rose-200 bg-rose-100 text-rose-800',
 };
 
 const statusLabels = {
@@ -62,32 +61,55 @@ const statusLabels = {
     terminated: 'Terminated',
 };
 
+const TABLE_ACCENTS = [
+    {
+        row: 'hover:bg-orange-50/60',
+        avatar: 'border-orange-200 bg-orange-100 text-orange-800',
+        icon: 'text-orange-700',
+    },
+    {
+        row: 'hover:bg-cyan-50/60',
+        avatar: 'border-cyan-200 bg-cyan-100 text-cyan-800',
+        icon: 'text-cyan-700',
+    },
+    {
+        row: 'hover:bg-violet-50/60',
+        avatar: 'border-violet-200 bg-violet-100 text-violet-800',
+        icon: 'text-violet-700',
+    },
+    {
+        row: 'hover:bg-emerald-50/60',
+        avatar: 'border-emerald-200 bg-emerald-100 text-emerald-800',
+        icon: 'text-emerald-700',
+    },
+] as const;
+
 export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, onView }: EmployeeTableProps) => {
     return (
-        <div className="rounded-md border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50/50 via-white to-orange-50/40 shadow-sm">
             <Table>
                 <TableHeader>
-                    <TableRow>
+                    <TableRow className="border-cyan-100 bg-white/80">
                         <TableHead className="w-[300px]">Intern</TableHead>
                         <TableHead>Department</TableHead>
-                        <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Contact</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {employees.map((employee) => {
+                    {employees.map((employee, index) => {
                         const fullName = `${employee.first_name} ${employee.last_name}`;
                         const initials = `${employee.first_name[0]}${employee.last_name[0]}`.toUpperCase();
+                        const accent = TABLE_ACCENTS[index % TABLE_ACCENTS.length];
 
                         return (
-                            <TableRow key={employee.id} className="group transition-colors">
+                            <TableRow key={employee.id} className={`group border-cyan-100 bg-white/70 transition-colors ${accent.row}`}>
                                 <TableCell>
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-10 w-10">
+                                        <Avatar className={`h-10 w-10 border ${accent.avatar}`}>
                                             <AvatarImage src={employee.avatar_url || ''} alt={fullName} />
-                                            <AvatarFallback className="bg-muted text-foreground font-medium">
+                                            <AvatarFallback className={`font-medium ${accent.avatar}`}>
                                                 {initials}
                                             </AvatarFallback>
                                         </Avatar>
@@ -99,33 +121,21 @@ export const EmployeeTable = ({ employees, readOnly = false, onEdit, onDelete, o
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                                        <span>{employee.department?.name || 'Unassigned'}</span>
+                                        <Building2 className={`h-4 w-4 ${accent.icon}`} />
+                                        <span>{getEmployeeDepartmentName(employee)}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                                        <span>{employee.location?.city || 'Unassigned'}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge className={cn(statusColors[employee.status])}>
+                                    <Badge variant="outline" className={cn(statusColors[employee.status])}>
                                         {statusLabels[employee.status]}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Mail className="h-3 w-3" />
+                                            <Mail className={`h-3 w-3 ${accent.icon}`} />
                                             <span>{employee.email}</span>
                                         </div>
-                                        {employee.phone && (
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Phone className="h-3 w-3" />
-                                                <span>{employee.phone}</span>
-                                            </div>
-                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right">

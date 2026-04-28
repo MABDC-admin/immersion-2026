@@ -22,10 +22,41 @@ import type { EmployeeWithRelations } from '@/types/employee';
 
 const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
-    pending: 'bg-hrms-warning/15 text-hrms-warning',
-    approved: 'bg-hrms-success/15 text-emerald-900',
-    rejected: 'bg-evaldanger-soft text-rose-900',
+    pending: 'border-amber-200 bg-amber-100 text-amber-800',
+    approved: 'border-emerald-200 bg-emerald-100 text-emerald-800',
+    rejected: 'border-rose-200 bg-rose-100 text-rose-800',
 };
+
+const INTERN_CARD_STYLES = [
+    {
+        active: 'border-orange-200 bg-orange-50 text-orange-900',
+        idle: 'hover:bg-orange-50/70',
+        avatar: 'bg-orange-100 text-orange-800',
+        badge: 'border-orange-200 bg-orange-50 text-orange-800',
+    },
+    {
+        active: 'border-cyan-200 bg-cyan-50 text-cyan-900',
+        idle: 'hover:bg-cyan-50/70',
+        avatar: 'bg-cyan-100 text-cyan-800',
+        badge: 'border-cyan-200 bg-cyan-50 text-cyan-800',
+    },
+    {
+        active: 'border-violet-200 bg-violet-50 text-violet-900',
+        idle: 'hover:bg-violet-50/70',
+        avatar: 'bg-violet-100 text-violet-800',
+        badge: 'border-violet-200 bg-violet-50 text-violet-800',
+    },
+    {
+        active: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+        idle: 'hover:bg-emerald-50/70',
+        avatar: 'bg-emerald-100 text-emerald-800',
+        badge: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+] as const;
+
+function getInternAccent(index: number) {
+    return INTERN_CARD_STYLES[index % INTERN_CARD_STYLES.length];
+}
 
 export default function SupervisorJournalsView() {
     const { user, userRole } = useAuth();
@@ -68,7 +99,7 @@ export default function SupervisorJournalsView() {
     return (
         <MainLayout>
             <div className="space-y-6">
-                <div>
+                <div className="rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-white to-cyan-50 p-6 shadow-sm">
                     <h1 className="text-2xl font-bold text-foreground">Intern Daily Journals</h1>
                     <p className="text-sm text-muted-foreground">
                         {isPrincipal
@@ -79,15 +110,19 @@ export default function SupervisorJournalsView() {
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="space-y-4 md:col-span-1">
-                        <Card>
+                        <Card className="border-violet-200 bg-gradient-to-br from-violet-50/75 via-white to-orange-50/75 shadow-sm">
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-sm font-medium">
                                     {isPrincipal ? 'All Interns' : 'Assigned Interns'}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                                <div className="divide-y">
-                                                        {interns.map((intern) => (
+                                <div className="space-y-2 p-3">
+                                    {interns.map((intern, index) => {
+                                        const accent = getInternAccent(index);
+                                        const isSelected = selectedIntern?.id === intern.id;
+
+                                        return (
                                         <button
                                             key={intern.id}
                                             onClick={() => {
@@ -95,13 +130,13 @@ export default function SupervisorJournalsView() {
                                                 nextParams.set('intern', intern.id);
                                                 setSearchParams(nextParams, { replace: true });
                                             }}
-                                            className={`w-full p-4 text-left transition-colors ${
-                                                selectedIntern?.id === intern.id ? 'bg-primary/5' : 'hover:bg-muted/50'
+                                            className={`w-full rounded-2xl border p-4 text-left transition-colors ${
+                                                isSelected ? accent.active : `border-transparent bg-white/70 ${accent.idle}`
                                             }`}
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${accent.avatar}`}>
                                                         {intern.first_name[0]}{intern.last_name[0]}
                                                     </div>
                                                     <div>
@@ -111,12 +146,13 @@ export default function SupervisorJournalsView() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className="text-[10px]">
+                                                <Badge variant="outline" className={`text-[10px] ${accent.badge}`}>
                                                     View Journal
                                                 </Badge>
                                             </div>
                                         </button>
-                                    ))}
+                                        );
+                                    })}
                                     {interns.length === 0 && (
                                         <div className="p-8 text-center text-muted-foreground">
                                             <User className="h-8 w-8 mx-auto mb-2 opacity-20" />
@@ -130,10 +166,10 @@ export default function SupervisorJournalsView() {
 
                     <div className="md:col-span-2">
                         {!selectedIntern ? (
-                            <Card className="border-dashed h-full flex items-center justify-center min-h-[400px]">
+                            <Card className="flex h-full min-h-[400px] items-center justify-center border-dashed border-cyan-200 bg-cyan-50/40">
                                 <CardContent className="text-center space-y-4">
-                                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                                        <BookOpen className="h-8 w-8 text-muted-foreground" />
+                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-100">
+                                        <BookOpen className="h-8 w-8 text-cyan-700" />
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-semibold">Select an Intern</h3>
@@ -146,13 +182,13 @@ export default function SupervisorJournalsView() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <Card className="min-h-[400px]">
-                                <CardHeader className="border-b bg-muted/20">
+                            <Card className="min-h-[400px] border-cyan-200 bg-gradient-to-br from-cyan-50/60 via-white to-emerald-50/50 shadow-sm">
+                                <CardHeader className="border-b border-cyan-100 bg-cyan-50/70">
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-12 w-12 border border-slate-200">
+                                            <Avatar className="h-12 w-12 border border-cyan-200">
                                                 <AvatarImage src={selectedIntern.avatar_url || ''} />
-                                                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                                                <AvatarFallback className="bg-cyan-100 font-semibold text-cyan-800">
                                                     {selectedIntern.first_name[0]}{selectedIntern.last_name[0]}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -163,7 +199,7 @@ export default function SupervisorJournalsView() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <Badge variant="outline" className="w-fit">
+                                        <Badge variant="outline" className="w-fit border-emerald-200 bg-emerald-50 text-emerald-800">
                                             {entries.length} journal {entries.length === 1 ? 'entry' : 'entries'}
                                         </Badge>
                                     </div>
@@ -175,8 +211,8 @@ export default function SupervisorJournalsView() {
                                         </div>
                                     ) : entries.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-16 text-center">
-                                            <div className="mb-4 rounded-full bg-muted p-4">
-                                                <BookOpen className="h-8 w-8 text-muted-foreground" />
+                                            <div className="mb-4 rounded-full bg-amber-100 p-4">
+                                                <BookOpen className="h-8 w-8 text-amber-700" />
                                             </div>
                                             <h3 className="text-lg font-semibold">No Journal Entries Yet</h3>
                                             <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -187,8 +223,11 @@ export default function SupervisorJournalsView() {
                                         </div>
                                     ) : (
                                         <Accordion type="single" collapsible className="space-y-4">
-                                            {entries.map((entry) => (
-                                                <AccordionItem key={entry.id} value={entry.id} className="rounded-2xl border bg-white px-4 shadow-sm">
+                                            {entries.map((entry, index) => {
+                                                const accent = getInternAccent(index);
+
+                                                return (
+                                                <AccordionItem key={entry.id} value={entry.id} className={`rounded-2xl border px-4 shadow-sm ${isPrincipal ? 'bg-white' : 'bg-white/90'} ${accent.active}`}>
                                                     <AccordionTrigger className="py-4 hover:no-underline">
                                                         <div className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between">
                                                             <div className="space-y-2">
@@ -200,13 +239,13 @@ export default function SupervisorJournalsView() {
                                                                         {entry.status}
                                                                     </Badge>
                                                                     {entry.hours_worked ? (
-                                                                        <Badge variant="outline" className="gap-1">
+                                                                        <Badge variant="outline" className="gap-1 border-cyan-200 bg-cyan-50 text-cyan-800">
                                                                             <Clock3 className="h-3 w-3" />
                                                                             {entry.hours_worked}h
                                                                         </Badge>
                                                                     ) : null}
                                                                     {entry.attachments?.length ? (
-                                                                        <Badge variant="outline" className="gap-1">
+                                                                        <Badge variant="outline" className="gap-1 border-violet-200 bg-violet-50 text-violet-800">
                                                                             <ImageIcon className="h-3 w-3" />
                                                                             {entry.attachments.length} media
                                                                         </Badge>
@@ -223,10 +262,10 @@ export default function SupervisorJournalsView() {
                                                         </div>
                                                     </AccordionTrigger>
                                                     <AccordionContent className="pb-4">
-                                                        <div className="space-y-4 border-t pt-4">
-                                                            <DetailBlock label="Activities" value={entry.activities} />
-                                                            {entry.learnings ? <DetailBlock label="Key Learnings" value={entry.learnings} /> : null}
-                                                            {entry.challenges ? <DetailBlock label="Challenges" value={entry.challenges} /> : null}
+                                                        <div className="space-y-4 border-t border-cyan-100 pt-4">
+                                                            <DetailBlock label="Activities" value={entry.activities} tone="activity" />
+                                                            {entry.learnings ? <DetailBlock label="Key Learnings" value={entry.learnings} tone="learning" /> : null}
+                                                            {entry.challenges ? <DetailBlock label="Challenges" value={entry.challenges} tone="challenge" /> : null}
                                                             {entry.attachments && entry.attachments.length > 0 ? (
                                                                 <div className="space-y-3">
                                                                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -243,11 +282,12 @@ export default function SupervisorJournalsView() {
                                                                     </div>
                                                                 </div>
                                                             ) : null}
-                                                            {entry.supervisor_notes ? <DetailBlock label="Supervisor Notes" value={entry.supervisor_notes} emphasized /> : null}
+                                                            {entry.supervisor_notes ? <DetailBlock label="Supervisor Notes" value={entry.supervisor_notes} tone="supervisor" /> : null}
                                                         </div>
                                                     </AccordionContent>
                                                 </AccordionItem>
-                                            ))}
+                                                );
+                                            })}
                                         </Accordion>
                                     )}
                                 </CardContent>
@@ -277,9 +317,24 @@ export default function SupervisorJournalsView() {
     );
 }
 
-function DetailBlock({ label, value, emphasized = false }: { label: string; value: string; emphasized?: boolean }) {
+const DETAIL_BLOCK_STYLES = {
+    activity: 'border-orange-200 bg-orange-50/80',
+    learning: 'border-emerald-200 bg-emerald-50/80',
+    challenge: 'border-rose-200 bg-rose-50/80',
+    supervisor: 'border-violet-200 bg-violet-50/80',
+} as const;
+
+function DetailBlock({
+    label,
+    value,
+    tone = 'activity',
+}: {
+    label: string;
+    value: string;
+    tone?: keyof typeof DETAIL_BLOCK_STYLES;
+}) {
     return (
-        <div className={`rounded-xl border p-3 ${emphasized ? 'border-primary/20 bg-primary/5' : 'bg-muted/20'}`}>
+        <div className={`rounded-xl border p-3 ${DETAIL_BLOCK_STYLES[tone]}`}>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
             <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{value}</p>
         </div>
@@ -305,7 +360,7 @@ function JournalAttachmentCard({
         <button
             type="button"
             onClick={() => onPreview({ url: attachmentUrl, type: attachment.file_type, name: attachment.file_name })}
-            className="group overflow-hidden rounded-xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group overflow-hidden rounded-xl border border-violet-200 bg-violet-50/70 shadow-sm transition hover:-translate-y-0.5 hover:bg-violet-50 hover:shadow-md"
         >
             {isVideo ? (
                 <div className="relative aspect-video overflow-hidden bg-black">
@@ -315,7 +370,7 @@ function JournalAttachmentCard({
                     </div>
                 </div>
             ) : (
-                <div className="aspect-video overflow-hidden bg-muted/20">
+                <div className="aspect-video overflow-hidden bg-cyan-50">
                     <img src={attachmentUrl} alt={attachment.file_name} className="h-full w-full object-cover" />
                 </div>
             )}

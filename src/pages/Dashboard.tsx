@@ -1,10 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
+  Activity,
+  ArrowUpRight,
+  BarChart3,
+  BookOpen,
   Briefcase,
+  Building2,
   Calendar,
+  ClipboardCheck,
+  MessageSquare,
   Shield,
+  Sparkles,
   TrendingUp,
   UserCheck,
   UserPlus,
@@ -24,8 +32,8 @@ import { EditEmployeeModal } from '@/components/employees/EditEmployeeModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getEmployeeDepartmentName } from '@/lib/departments';
 
 export default function Dashboard() {
   const { data: employees = [] } = useEmployees();
@@ -87,9 +95,6 @@ export default function Dashboard() {
     { label: 'Recruitment', icon: Briefcase, href: '/recruitment/jobs' },
     { label: 'Onboarding', icon: UserCheck, href: '/onboarding/new-hires' },
   ];
-  const principalQuickNav = [
-    { label: 'Interns', icon: Users, href: '/employees' },
-  ];
   const principalRecentHires = useMemo(
     () =>
       [...visibleEmployees]
@@ -105,6 +110,104 @@ export default function Dashboard() {
     () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
     [visibleEmployees]
   );
+  const principalInactiveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status !== 'active' && currentEmployee.status !== 'on_leave').length,
+    [visibleEmployees]
+  );
+  const principalRecentHireCount = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return visibleEmployees.filter((currentEmployee) => new Date(currentEmployee.hire_date) >= thirtyDaysAgo).length;
+  }, [visibleEmployees]);
+  const principalDepartmentRows = useMemo(() => {
+    const totals = new Map<string, number>();
+
+    visibleEmployees.forEach((currentEmployee) => {
+      const departmentName = getEmployeeDepartmentName(currentEmployee);
+      totals.set(departmentName, (totals.get(departmentName) || 0) + 1);
+    });
+
+    return Array.from(totals, ([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [visibleEmployees]);
+  const principalActiveRate = visibleEmployees.length > 0
+    ? Math.round((principalActiveCount / visibleEmployees.length) * 100)
+    : 0;
+  const principalStatusRows = [
+    { label: 'Active', value: principalActiveCount, color: 'bg-emerald-500', badge: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+    { label: 'On Leave', value: principalOnLeaveCount, color: 'bg-amber-500', badge: 'border-amber-200 bg-amber-50 text-amber-700' },
+    { label: 'Other', value: principalInactiveCount, color: 'bg-violet-500', badge: 'border-violet-200 bg-violet-50 text-violet-700' },
+  ];
+  const principalKpiWidgets = [
+    {
+      label: 'Visible Interns',
+      value: visibleEmployees.length,
+      detail: 'Intern-only records',
+      icon: Users,
+      cardClass: 'border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-white',
+      iconClass: 'bg-orange-100 text-orange-700',
+    },
+    {
+      label: 'Active Rate',
+      value: `${principalActiveRate}%`,
+      detail: `${principalActiveCount} active interns`,
+      icon: Activity,
+      cardClass: 'border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white',
+      iconClass: 'bg-emerald-100 text-emerald-700',
+    },
+    {
+      label: 'New Hires',
+      value: principalRecentHireCount,
+      detail: 'Last 30 days',
+      icon: Sparkles,
+      cardClass: 'border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-white',
+      iconClass: 'bg-sky-100 text-sky-700',
+    },
+    {
+      label: 'On Leave',
+      value: principalOnLeaveCount,
+      detail: 'Currently away',
+      icon: Calendar,
+      cardClass: 'border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-white',
+      iconClass: 'bg-violet-100 text-violet-700',
+    },
+  ];
+  const principalActionWidgets = [
+    {
+      label: 'Intern Directory',
+      description: 'Profiles, departments, status, and supervisor links.',
+      href: '/employees',
+      icon: Users,
+      cardClass: 'border-orange-200/80 bg-orange-50/80 hover:bg-orange-50',
+      iconClass: 'bg-orange-100 text-orange-700',
+    },
+    {
+      label: 'Evaluation Reports',
+      description: 'Review intern ratings, scores, and PDF exports.',
+      href: '/reports/evaluations',
+      icon: BarChart3,
+      cardClass: 'border-sky-200/80 bg-sky-50/80 hover:bg-sky-50',
+      iconClass: 'bg-sky-100 text-sky-700',
+    },
+    {
+      label: 'Intern Journals',
+      description: 'Open journal oversight and approval records.',
+      href: '/supervisor/journals',
+      icon: BookOpen,
+      cardClass: 'border-emerald-200/80 bg-emerald-50/80 hover:bg-emerald-50',
+      iconClass: 'bg-emerald-100 text-emerald-700',
+    },
+    {
+      label: 'Messages',
+      description: 'Continue portal communication and follow-ups.',
+      href: '/chat',
+      icon: MessageSquare,
+      cardClass: 'border-rose-200/80 bg-rose-50/80 hover:bg-rose-50',
+      iconClass: 'bg-rose-100 text-rose-700',
+    },
+  ];
   const oversightLabel = effectiveIsSupervisor ? 'Supervisor Portal' : 'Principal Portal';
   const oversightBadge = effectiveIsSupervisor ? 'Assigned intern oversight' : 'Read-only intern oversight';
   const oversightDescription = effectiveIsSupervisor
@@ -122,129 +225,211 @@ export default function Dashboard() {
       <div className="space-y-8">
         {effectiveIsPrincipal ? (
           <>
-            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-intern/15 via-background to-background shadow-sm">
-              <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">{oversightLabel}</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {oversightDescription}
-                  </p>
+            <Card className="overflow-hidden border-white/80 bg-gradient-to-br from-orange-500/15 via-sky-500/10 to-violet-500/15 shadow-sm">
+              <CardContent className="p-0">
+                <div className="grid gap-0 lg:grid-cols-[1.5fr_0.8fr]">
+                  <div className="px-6 py-6 md:px-8">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="border-orange-200 bg-white/80 text-orange-700">
+                        {oversightBadge}
+                      </Badge>
+                      <Badge variant="outline" className="border-sky-200 bg-white/80 text-sky-700">
+                        Supervisor profiles hidden
+                      </Badge>
+                    </div>
+                    <h1 className="mt-5 text-3xl font-bold text-foreground">{oversightLabel}</h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {oversightDescription}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Button className="gap-2 bg-orange-600 hover:bg-orange-700" onClick={() => navigate('/employees')}>
+                        <Users className="h-4 w-4" />
+                        View Interns
+                      </Button>
+                      <Button variant="outline" className="gap-2 border-sky-200 bg-white/80 text-sky-800 hover:bg-sky-50" onClick={() => navigate('/reports/evaluations')}>
+                        <BarChart3 className="h-4 w-4" />
+                        Reports
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/70 bg-white/55 px-6 py-6 lg:border-l lg:border-t-0">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-violet-100 p-3 text-violet-700">
+                        <ClipboardCheck className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Oversight Health</p>
+                        <p className="text-3xl font-bold text-foreground">{principalActiveRate}%</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-violet-500" style={{ width: `${principalActiveRate}%` }} />
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {principalActiveCount} active of {visibleEmployees.length} visible interns.
+                    </p>
+                  </div>
                 </div>
-                <Badge variant="outline" className="w-fit border-intern-border bg-intern/10 text-intern">
-                  {oversightBadge}
-                </Badge>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Card className="border-intern-border/70 bg-gradient-to-br from-intern/15 via-background to-background shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {principalKpiWidgets.map((widget) => (
+                <Card key={widget.label} className={cn('border shadow-sm', widget.cardClass)}>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">{widget.label}</p>
+                        <p className="mt-2 text-3xl font-bold text-foreground">{widget.value}</p>
+                      </div>
+                      <div className={cn('rounded-2xl p-3', widget.iconClass)}>
+                        <widget.icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">{widget.detail}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <Card className="border-white/80 bg-gradient-to-br from-white via-orange-50/60 to-sky-50/60 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Interns</p>
-                      <p className="mt-2 text-3xl font-semibold">{visibleEmployees.length}</p>
+                      <CardTitle>Principal Widgets</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground">Fast actions for daily oversight.</p>
                     </div>
-                    <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                      <Users className="h-5 w-5" />
-                    </div>
+                    <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+                      Read-only
+                    </Badge>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Visible intern records only.</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {principalActionWidgets.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        className={cn(
+                          'group rounded-xl border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+                          item.cardClass
+                        )}
+                        onClick={() => navigate(item.href)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className={cn('rounded-xl p-2.5', item.iconClass)}>
+                            <item.icon className="h-5 w-5" />
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </div>
+                        <p className="mt-4 text-sm font-semibold text-foreground">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                      </button>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-hrms-success/30 bg-gradient-to-br from-hrms-success/10 via-background to-background shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Active</p>
-                      <p className="mt-2 text-3xl font-semibold">{principalActiveCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-hrms-success/10 p-3 text-hrms-success">
-                      <TrendingUp className="h-5 w-5" />
-                    </div>
+              <Card className="border-violet-200/70 bg-gradient-to-br from-violet-50 via-white to-white shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Status Snapshot</CardTitle>
+                    <Activity className="h-5 w-5 text-violet-600" />
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Currently active intern records.</p>
-                </CardContent>
-              </Card>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {principalStatusRows.map((status) => {
+                    const percent = visibleEmployees.length > 0 ? (status.value / visibleEmployees.length) * 100 : 0;
 
-              <Card className="border-hrms-warning/30 bg-gradient-to-br from-hrms-warning/15 via-background to-background shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">On Leave</p>
-                      <p className="mt-2 text-3xl font-semibold">{principalOnLeaveCount}</p>
-                    </div>
-                    <div className="rounded-2xl bg-hrms-warning/10 p-3 text-hrms-warning">
-                      <Calendar className="h-5 w-5" />
-                    </div>
+                    return (
+                      <div key={status.label} className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <Badge variant="outline" className={status.badge}>
+                            {status.label}
+                          </Badge>
+                          <span className="text-sm font-semibold text-foreground">{status.value}</span>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                          <div className={cn('h-full rounded-full', status.color)} style={{ width: `${percent}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-sm text-sky-800">
+                    Hidden supervisors: <span className="font-semibold">{hiddenSupervisorCount}</span>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">Interns currently marked on leave.</p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-              <Card className="border-intern-border/70 bg-gradient-to-br from-intern/5 via-background to-background shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Recent Hires</CardTitle>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+              <Card className="border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-white shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Department Mix</CardTitle>
+                    <Building2 className="h-5 w-5 text-emerald-700" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {principalDepartmentRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No department data available yet.</p>
+                  ) : (
+                    principalDepartmentRows.map((department, index) => {
+                      const percent = visibleEmployees.length > 0 ? (department.count / visibleEmployees.length) * 100 : 0;
+                      const color = ['bg-orange-500', 'bg-sky-500', 'bg-emerald-500', 'bg-violet-500', 'bg-rose-500'][index] || 'bg-slate-500';
+
+                      return (
+                        <div key={department.name} className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="truncate text-sm font-semibold text-foreground">{department.name}</p>
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                              {department.count}
+                            </span>
+                          </div>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                            <div className={cn('h-full rounded-full', color)} style={{ width: `${percent}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-orange-50/50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Recent Hires</CardTitle>
+                    <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+                      {principalRecentHireCount} this month
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {principalRecentHires.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No recent hires available yet.</p>
                   ) : (
                     principalRecentHires.map((recentHire) => (
-                      <div key={recentHire.id} className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">
-                              {recentHire.first_name} {recentHire.last_name}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {recentHire.department?.name || 'No department assigned'}
-                            </p>
-                          </div>
-                          <div className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                            New
+                      <div key={recentHire.id} className="flex flex-col gap-3 rounded-xl border border-white bg-white/85 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {recentHire.first_name} {recentHire.last_name}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">
+                              {recentHire.job_title || 'Intern'}
+                            </span>
+                            <span>{getEmployeeDepartmentName(recentHire)}</span>
                           </div>
                         </div>
-                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          Hired {new Date(recentHire.hire_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5 text-sky-700" />
+                          {new Date(recentHire.hire_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       </div>
                     ))
                   )}
-                </CardContent>
-              </Card>
-
-                <Card className="border-violet-200/70 bg-gradient-to-br from-violet-500/[0.06] via-background to-background shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Quick Access</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-between border-intern-border bg-intern/5 hover:bg-intern/10" onClick={() => navigate('/employees')}>
-                    Intern Directory
-                    <Users className="h-4 w-4 text-primary" />
-                  </Button>
-                  {effectiveIsPrincipal && (
-                    <Button variant="outline" className="w-full justify-between border-evalinfo-border bg-evalinfo/5 hover:bg-evalinfo/10" onClick={() => navigate('/reports/evaluations')}>
-                      Evaluation Reports
-                      <TrendingUp className="h-4 w-4 text-evalinfo" />
-                    </Button>
-                  )}
-                  <Button variant="outline" className="w-full justify-between border-hrms-success/30 bg-hrms-success/5 hover:bg-hrms-success/10" onClick={() => navigate('/supervisor/journals')}>
-                    Journal Oversight
-                    <UserCheck className="h-4 w-4 text-hrms-success" />
-                  </Button>
-                  <div className="rounded-xl border border-intern-border/60 bg-intern/5 px-4 py-3 text-sm text-muted-foreground">
-                    Supervisor records are hidden by design in the principal portal.
-                  </div>
-                  <div className="rounded-xl border border-evalinfo-border/60 bg-evalinfo/5 px-4 py-3 text-sm text-muted-foreground">
-                    Journal entries are read-only and appear inside each employee profile.
-                  </div>
-                  <div className="rounded-xl border border-violet-100 bg-violet-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    Hidden supervisors: <span className="font-semibold text-foreground">{hiddenSupervisorCount}</span>
-                  </div>
                 </CardContent>
               </Card>
             </div>

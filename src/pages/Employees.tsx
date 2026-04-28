@@ -28,7 +28,6 @@ export default function Employees() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [groupBy, setGroupBy] = useState<'location' | 'department' | 'none'>('location');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -96,19 +95,6 @@ export default function Employees() {
   return (
     <MainLayout onAddNew={canCreateEmployee ? handleAddNew : undefined}>
       <div className="space-y-6">
-        {isOversightPortal && (
-          <div className="rounded-2xl border border-sky-500/15 bg-sky-50/70 px-5 py-4">
-            <p className="text-sm font-semibold text-sky-900">
-              {isSupervisor ? 'Only assigned interns appear in the supervisor portal.' : 'Supervisor records are hidden in the principal portal.'}
-            </p>
-            <p className="mt-1 text-sm text-sky-900/75">
-              {isSupervisor
-                ? 'This directory is intentionally limited to interns assigned to you.'
-                : 'This directory is intentionally limited to intern oversight only.'}
-            </p>
-          </div>
-        )}
-
         <EmployeeFilters
           searchQuery={searchQuery}
           onSearchChange={(value) => {
@@ -120,8 +106,6 @@ export default function Employees() {
             setStatusFilter(value);
             setCurrentPage(1);
           }}
-          groupBy={groupBy}
-          onGroupByChange={(value) => setGroupBy(value as 'location' | 'department' | 'none')}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           totalCount={filteredEmployees.length}
@@ -132,13 +116,13 @@ export default function Employees() {
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="h-80 bg-muted animate-pulse rounded-lg"
+                className="h-80 animate-pulse rounded-2xl border border-cyan-100 bg-cyan-50/60"
               />
             ))}
           </div>
         ) : filteredEmployees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96 text-center">
-            <p className="text-muted-foreground mb-2">No interns found</p>
+          <div className="flex h-96 flex-col items-center justify-center rounded-3xl border border-amber-200 bg-amber-50/60 text-center">
+            <p className="mb-2 font-semibold text-amber-900">No interns found</p>
             <p className="text-sm text-muted-foreground">
               {searchQuery
                 ? 'Try adjusting your search or filters'
@@ -148,7 +132,6 @@ export default function Employees() {
         ) : viewMode === 'grid' ? (
           <EmployeeGrid
             employees={paginatedEmployees}
-            groupBy={groupBy}
             onEmployeeClick={handleEmployeeClick}
           />
         ) : (
@@ -195,6 +178,7 @@ export default function Employees() {
                   key={pageNum}
                   variant={currentPage === pageNum ? 'default' : 'outline'}
                   size="icon"
+                  className={currentPage === pageNum ? 'bg-cyan-600 text-white hover:bg-cyan-700' : 'border-cyan-200 bg-white text-cyan-800 hover:bg-cyan-50'}
                   onClick={() => setCurrentPage(pageNum)}
                 >
                   {pageNum}
