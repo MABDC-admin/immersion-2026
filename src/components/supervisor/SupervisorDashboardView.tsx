@@ -49,7 +49,7 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
     }, [interns, pendingApprovals]);
 
     const quickNav = [
-        { label: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', color: 'text-orange-600', bg: 'bg-orange-100' },
+        { label: 'Evaluations', icon: ClipboardCheck, href: '/evaluations', color: 'text-intern', bg: 'bg-intern-soft' },
         { label: 'Attendance', icon: Clock, href: '/supervisor/attendance', color: 'text-blue-600', bg: 'bg-blue-100' },
         { label: 'Daily Journal for Interns', icon: BookOpen, href: '/supervisor/journals', color: 'text-green-600', bg: 'bg-green-100' },
         { label: 'Tasks', icon: ListChecks, href: '/supervisor/tasks', color: 'text-purple-600', bg: 'bg-purple-100' },
@@ -129,10 +129,10 @@ export function SupervisorDashboardView({ supervisorId }: SupervisorDashboardVie
                 </Card>
             )}
 
-            <Card className="border-orange-200/70 bg-orange-50/40 shadow-sm">
+            <Card className="border-intern-border/70 bg-intern-soft/40 shadow-sm">
                 <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base">
-                        <ClipboardCheck className="h-4 w-4 text-orange-600" />
+                        <ClipboardCheck className="h-4 w-4 text-intern" />
                         Evaluation Rubric
                     </CardTitle>
                 </CardHeader>

@@ -28,9 +28,9 @@ export function AnimatedStatCard({
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const accentShell = useMemo(() => {
-    if (bgColor.includes('success')) return 'border-emerald-200/80 bg-gradient-to-br from-emerald-500/12 via-background to-background';
-    if (bgColor.includes('warning')) return 'border-amber-200/80 bg-gradient-to-br from-amber-500/14 via-background to-background';
-    return 'border-orange-200/70 bg-gradient-to-br from-orange-500/12 via-background to-background';
+    if (bgColor.includes('success')) return 'border-hrms-success/30/80 bg-gradient-to-br from-emerald-500/12 via-background to-background';
+    if (bgColor.includes('warning')) return 'border-hrms-warning/30/80 bg-gradient-to-br from-amber-500/14 via-background to-background';
+    return 'border-intern-border/70 bg-gradient-to-br from-intern/15 via-background to-background';
   }, [bgColor]);
 
   useEffect(() => {

@@ -6,9 +6,9 @@ import { Eye, X } from 'lucide-react';
 const roleColors: Record<string, string> = {
   admin: 'bg-red-500/20 text-red-200 border-red-400/30',
   hr_manager: 'bg-blue-500/20 text-blue-200 border-blue-400/30',
-  principal: 'bg-sky-500/20 text-sky-200 border-sky-400/30',
-  supervisor: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30',
-  manager: 'bg-amber-500/20 text-amber-200 border-amber-400/30',
+  principal: 'bg-evalinfo-soft0/20 text-sky-200 border-sky-400/30',
+  supervisor: 'bg-hrms-success/100/20 text-emerald-200 border-emerald-400/30',
+  manager: 'bg-hrms-warning/100/20 text-amber-200 border-amber-400/30',
   payroll_officer: 'bg-purple-500/20 text-purple-200 border-purple-400/30',
   employee: 'bg-gray-500/20 text-gray-200 border-gray-400/30',
 };

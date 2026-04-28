@@ -25,7 +25,7 @@ const PREPARED_BY = [
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   submitted: 'bg-primary text-primary-foreground',
-  finalized: 'bg-emerald-600 text-white',
+  finalized: 'bg-hrms-success text-white',
 };
 
 const PAGE_TWO_SECTION_IDS = ['attendance', 'attitude', 'ethics'] as const;
@@ -247,7 +247,7 @@ export function EvaluationDetail({ open, onOpenChange, evaluation }: EvaluationD
                 Export PDF
               </Button>
               <Badge className={statusColors[evaluation.status] || 'bg-muted'}>{evaluation.status.toUpperCase()}</Badge>
-              {evaluation.award_eligible && <Badge className="bg-amber-500 text-black">Award Eligible</Badge>}
+              {evaluation.award_eligible && <Badge className="bg-hrms-warning/100 text-black">Award Eligible</Badge>}
             </div>
           </div>
         </DialogHeader>

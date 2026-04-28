@@ -22,9 +22,9 @@ import type { EmployeeWithRelations } from '@/types/employee';
 
 const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
-    pending: 'bg-amber-100 text-amber-900',
-    approved: 'bg-emerald-100 text-emerald-900',
-    rejected: 'bg-rose-100 text-rose-900',
+    pending: 'bg-hrms-warning/15 text-hrms-warning',
+    approved: 'bg-hrms-success/15 text-emerald-900',
+    rejected: 'bg-evaldanger-soft text-rose-900',
 };
 
 export default function SupervisorJournalsView() {
