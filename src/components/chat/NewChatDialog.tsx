@@ -10,6 +10,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error) return error.message;
+    if (error && typeof error === 'object' && 'message' in error) {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === 'string' && message.trim()) return message;
+    }
+    return fallback;
+}
+
 interface NewChatDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -24,7 +33,6 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
     const [isCreating, setIsCreating] = useState(false);
 
     const isSupervisor = userRole === 'supervisor';
-    const currentEmployee = employees?.find(e => e.id === currentEmployeeId);
 
     const filteredEmployees = employees?.filter(emp => {
         const isNotMe = emp.id !== currentEmployeeId;
@@ -42,6 +50,11 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
     });
 
     const handleCreateChat = async (targetEmployeeId: string) => {
+        if (!currentEmployeeId) {
+            toast.error('Your employee profile is still loading. Please try again in a moment.');
+            return;
+        }
+
         setIsCreating(true);
         try {
             const { data: convId, error } = await supabase
@@ -55,7 +68,7 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
             onConversationCreated(convId);
             onOpenChange(false);
         } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : 'Failed to create chat');
+            toast.error(getErrorMessage(error, 'Failed to create chat'));
         } finally {
             setIsCreating(false);
         }
@@ -89,7 +102,7 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
                                 <div
                                     key={emp.id}
                                     className="flex items-center justify-between p-2 rounded-xl hover:bg-accent transition-colors cursor-pointer group"
-                                    onClick={() => handleCreateChat(emp.id)}
+                                    onClick={() => !isCreating && handleCreateChat(emp.id)}
                                 >
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-10 w-10">

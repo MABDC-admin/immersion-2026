@@ -12,11 +12,15 @@ import { NewGroupChatDialog } from '@/components/chat/NewGroupChatDialog';
 import { IncomingCallModal } from '@/components/chat/IncomingCallModal';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MessageSquare, User, Users } from 'lucide-react';
+import { Loader2, Plus, MessageSquare, User, Users } from 'lucide-react';
 
 export default function ChatPage() {
     const { user, userRole, isAdmin, isHrManager } = useAuth();
-    const { data: employee } = useCurrentEmployee(user?.id || '');
+    const { data: employee, isLoading: isEmployeeLoading, error: employeeError } = useCurrentEmployee(
+        user?.id || '',
+        user?.email || null,
+        userRole ? `${userRole.replace(/_/g, ' ')} portal account` : null
+    );
     const { useConversations, useGlobalChatSync, usePresence } = useChat();
     const { data: allConversations = [], isLoading, refetch } = useConversations(employee?.id || '');
     useGlobalChatSync(employee?.id || '');
@@ -60,6 +64,8 @@ export default function ChatPage() {
         refetch();
     };
 
+    const canUseChat = Boolean(employee?.id) && !employeeError;
+
     return (
         <MainLayout>
             <div className="flex h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] gap-4 animate-fade-in mb-8 md:mb-0">
@@ -69,8 +75,13 @@ export default function ChatPage() {
                         <h1 className="text-2xl font-bold">Messages</h1>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="rounded-full">
-                                    <Plus className="h-5 w-5" />
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="rounded-full"
+                                    disabled={isEmployeeLoading || Boolean(employeeError)}
+                                >
+                                    {isEmployeeLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -123,10 +134,14 @@ export default function ChatPage() {
                             <div>
                                 <h3 className="text-xl font-bold">Your Conversations</h3>
                                 <p className="text-muted-foreground max-w-xs mx-auto">
-                                    Select a message to start chatting with your colleagues or HR support.
+                                    {employeeError
+                                        ? 'Your account needs an employee chat profile before messaging can start.'
+                                        : 'Select a message to start chatting with your colleagues or HR support.'}
                                 </p>
                             </div>
-                            <Button className="rounded-full px-6" onClick={() => setIsNewChatOpen(true)}>New Conversation</Button>
+                            <Button className="rounded-full px-6" onClick={() => setIsNewChatOpen(true)} disabled={!canUseChat}>
+                                {isEmployeeLoading ? 'Loading Profile...' : employeeError ? 'Profile Setup Needed' : 'New Conversation'}
+                            </Button>
                         </div>
                     )}
                 </div>

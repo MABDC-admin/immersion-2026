@@ -1808,6 +1808,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_hr: { Args: { _user_id: string }; Returns: boolean }
+      ensure_chat_employee_profile: {
+        Args: { user_email: string; role_label?: string | null }
+        Returns: string
+      }
     }
     Enums: {
       app_role:

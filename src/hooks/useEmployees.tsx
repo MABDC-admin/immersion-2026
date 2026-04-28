@@ -39,6 +39,7 @@ export function isHiddenPortalAccount(
   return (
     (!!employee.user_id && hiddenUserIds.has(employee.user_id)) ||
     email.includes('principal') ||
+    jobTitle.includes('portal account') ||
     jobTitle.includes('principal') ||
     jobTitle.includes('oversight')
   );
@@ -146,11 +147,11 @@ export function useEmployee(id: string) {
   });
 }
 
-export function useCurrentEmployee(userId: string) {
+export function useCurrentEmployee(userId: string, email?: string | null, roleLabel?: string | null) {
   return useQuery({
-    queryKey: ['employee', 'current', userId],
+    queryKey: ['employee', 'current', userId, email, roleLabel],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('employees')
         .select(`
           *,
@@ -159,6 +160,34 @@ export function useCurrentEmployee(userId: string) {
         `)
         .eq('user_id', userId)
         .maybeSingle();
+
+      if (!data && email) {
+        const { data: linkedEmployeeId, error: linkError } = await supabase
+          .rpc('ensure_chat_employee_profile', {
+            user_email: email,
+            role_label: roleLabel,
+          });
+
+        if (linkError) {
+          console.error('Error linking current employee:', linkError);
+          throw linkError;
+        }
+
+        if (linkedEmployeeId) {
+          const result = await supabase
+            .from('employees')
+            .select(`
+              *,
+              location:locations(id, name, city, country),
+              department:departments(id, name)
+            `)
+            .eq('id', linkedEmployeeId)
+            .maybeSingle();
+
+          data = result.data;
+          error = result.error;
+        }
+      }
 
       if (error) {
         console.error('Error fetching current employee:', error);

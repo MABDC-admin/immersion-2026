@@ -11,6 +11,15 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error) return error.message;
+    if (error && typeof error === 'object' && 'message' in error) {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === 'string' && message.trim()) return message;
+    }
+    return fallback;
+}
+
 interface NewGroupChatDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -78,7 +87,7 @@ export function NewGroupChatDialog({ open, onOpenChange, currentEmployeeId, onCo
             setGroupName('');
             setSearchQuery('');
         } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : 'Failed to create group chat');
+            toast.error(getErrorMessage(error, 'Failed to create group chat'));
         } finally {
             setIsCreating(false);
         }
