@@ -54,6 +54,19 @@
     --hrms-warning: 38 92% 50%;
     --hrms-online: 142 71% 45%;
     --hrms-offline: 0 0% 70%;
+
+    /* Portal accent tokens — shared across all roles */
+    --intern-accent: 25 95% 53%;          /* orange — Intern / Journal */
+    --intern-accent-soft: 33 100% 96%;
+    --intern-accent-border: 32 97% 83%;
+    --evaluation-info: 199 89% 48%;       /* sky — info badges */
+    --evaluation-info-soft: 204 94% 94%;
+    --evaluation-info-border: 201 94% 86%;
+    --evaluation-danger: 350 89% 60%;     /* rose — challenges / negative */
+    --evaluation-danger-soft: 356 100% 97%;
+    --evaluation-danger-border: 353 96% 90%;
+    --award-gold: 43 96% 56%;             /* amber — award eligible */
+    --award-gold-soft: 48 100% 96%;
   }
 
   .dark {
@@ -101,6 +114,18 @@
     --hrms-warning: 38 92% 50%;
     --hrms-online: 142 71% 45%;
     --hrms-offline: 0 0% 50%;
+
+    --intern-accent: 25 95% 60%;
+    --intern-accent-soft: 25 40% 18%;
+    --intern-accent-border: 25 40% 28%;
+    --evaluation-info: 199 89% 60%;
+    --evaluation-info-soft: 199 50% 18%;
+    --evaluation-info-border: 199 50% 28%;
+    --evaluation-danger: 350 89% 65%;
+    --evaluation-danger-soft: 350 50% 18%;
+    --evaluation-danger-border: 350 50% 28%;
+    --award-gold: 43 96% 60%;
+    --award-gold-soft: 43 50% 18%;
   }
 }
 
