@@ -17,6 +17,7 @@ import {
   sumEvaluationSection,
   useAssignedInterns,
   useCreateEvaluation,
+  useEvaluations,
   useUpdateEvaluation,
 } from '@/hooks/useEvaluations';
 
@@ -34,6 +35,22 @@ const PREPARED_BY = [
   'STEM Work Immersion Facilitator - Mr. Jan Alfred Macalintal',
 ] as const;
 
+const SECTION_COLORS = [
+  'border-orange-200 bg-orange-50/70 text-orange-700',
+  'border-sky-200 bg-sky-50/70 text-sky-700',
+  'border-violet-200 bg-violet-50/70 text-violet-700',
+  'border-emerald-200 bg-emerald-50/70 text-emerald-700',
+  'border-rose-200 bg-rose-50/70 text-rose-700',
+] as const;
+
+const SCORE_COLORS: Record<number, string> = {
+  1: 'border-rose-200 bg-rose-50 text-rose-700',
+  2: 'border-orange-200 bg-orange-50 text-orange-700',
+  3: 'border-sky-200 bg-sky-50 text-sky-700',
+  4: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  5: 'border-violet-200 bg-violet-50 text-violet-700',
+};
+
 interface EvaluationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,6 +63,7 @@ type ScoreState = Partial<Record<EvaluationScoreField, number>>;
 
 export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, preselectedInternId }: EvaluationFormProps) {
   const { data: interns = [] } = useAssignedInterns(evaluatorId);
+  const { data: existingEvaluations = [] } = useEvaluations(evaluatorId);
   const createEvaluation = useCreateEvaluation();
   const updateEvaluation = useUpdateEvaluation();
 
@@ -56,6 +74,19 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
   const [comments, setComments] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [supervisorComments, setSupervisorComments] = useState('');
+  const submittedInternIds = useMemo(
+    () =>
+      new Set(
+        existingEvaluations
+          .filter((entry) => entry.status === 'submitted' || entry.status === 'finalized')
+          .map((entry) => entry.intern_id)
+      ),
+    [existingEvaluations]
+  );
+  const availableInterns = useMemo(
+    () => interns.filter((intern) => !submittedInternIds.has(intern.id)),
+    [interns, submittedInternIds]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -78,7 +109,10 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
       return;
     }
 
-    setInternId(preselectedInternId || '');
+    const nextInternId = preselectedInternId && availableInterns.some((intern) => intern.id === preselectedInternId)
+      ? preselectedInternId
+      : '';
+    setInternId(nextInternId);
     setPeriodStart('');
     setPeriodEnd('');
     setScores({});
@@ -86,6 +120,13 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
     setRecommendations('');
     setSupervisorComments('');
   }, [evaluation, open, preselectedInternId]);
+
+  useEffect(() => {
+    if (!open || evaluation || !internId) return;
+    if (submittedInternIds.has(internId)) {
+      setInternId('');
+    }
+  }, [evaluation, internId, open, submittedInternIds]);
 
   const completedCount = countCompletedRubricItems(scores);
   const categoryTotals = useMemo(
@@ -136,7 +177,7 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">
             {evaluation ? 'Edit Supervisor Evaluation' : 'Supervisor Evaluation Rubric'}
@@ -144,14 +185,14 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border bg-card p-5 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-orange-200/70 bg-gradient-to-br from-orange-50 via-white to-sky-50 p-5 shadow-sm">
             <div className="space-y-1">
               <p className="text-sm font-semibold tracking-wide">M.A. Brain Development Center</p>
               <p className="text-sm text-muted-foreground">Abu Dhabi, United Arab Emirates</p>
               <h2 className="pt-1 text-lg font-bold">Work Immersion Internship</h2>
               <p className="text-sm text-muted-foreground">Guidelines for Supervisors Before Intern Evaluation</p>
             </div>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+            <ul className="mt-4 grid gap-2 text-sm text-muted-foreground lg:grid-cols-2">
               {SUPERVISOR_EVALUATION_GUIDELINES.map((guideline) => (
                 <li key={guideline} className="flex gap-2">
                   <span className="mt-1 text-foreground">•</span>
@@ -173,6 +214,12 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
                   <Badge variant="secondary">{overallRating.toFixed(2)} / 5</Badge>
                   {awardEligible && <Badge className="bg-amber-500 text-black">Award Eligible</Badge>}
                 </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-orange-500 via-sky-500 to-emerald-500"
+                    style={{ width: `${Math.round((completedCount / RUBRIC_FIELD_KEYS.length) * 100)}%` }}
+                  />
+                </div>
               </div>
               <p className="max-w-2xl text-sm text-muted-foreground">
                 Rate each rubric item from 1 to 5 using the official rating scale from the PDF and base your assessment only on observable internship performance and behavior.
@@ -180,7 +227,7 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-muted/20 p-4">
+          <div className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-white p-4 shadow-sm">
             <div className="mb-3">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Rating Scale</p>
             </div>
@@ -195,7 +242,7 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
                 };
 
                 return (
-                  <div key={value} className="rounded-xl border bg-background p-3">
+                  <div key={value} className={cn('rounded-xl border p-3 shadow-sm', SCORE_COLORS[Number(value)])}>
                     <p className="text-base font-bold">{value}</p>
                     <p className="text-sm font-semibold">{label}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{descriptions[value]}</p>
@@ -213,13 +260,22 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
                   <SelectValue placeholder="Select intern to evaluate" />
                 </SelectTrigger>
                 <SelectContent>
-                  {interns.map((intern) => (
+                  {availableInterns.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      All assigned interns already have submitted evaluations.
+                    </div>
+                  ) : availableInterns.map((intern) => (
                     <SelectItem key={intern.id} value={intern.id}>
                       {intern.first_name} {intern.last_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {!evaluation && (
+                <p className="text-xs text-muted-foreground">
+                  Interns with submitted or finalized evaluations are hidden from this list.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Period Start</Label>
@@ -232,21 +288,23 @@ export function EvaluationForm({ open, onOpenChange, evaluatorId, evaluation, pr
           </div>
 
           <div className="space-y-5">
-            {RUBRIC_SECTIONS.map((section) => (
-              <div key={section.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {RUBRIC_SECTIONS.map((section, sectionIndex) => (
+              <div key={section.id} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <div className={cn('border-b px-4 py-3', SECTION_COLORS[sectionIndex])}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-base font-bold">{section.title}</h3>
-                    <p className="text-sm text-muted-foreground">Maximum total: {section.maxScore} points</p>
+                    <p className="text-sm opacity-80">Maximum total: {section.maxScore} points</p>
                   </div>
-                  <Badge variant="outline" className="w-fit">
+                  <Badge variant="outline" className="w-fit bg-white/80">
                     Category Total: {categoryTotals[section.id]} / {section.maxScore}
                   </Badge>
                 </div>
+                </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 p-4">
                   {section.items.map((item, itemIndex) => (
-                    <div key={item.key} className="rounded-xl border border-muted/70 bg-muted/20 p-4">
+                    <div key={item.key} className="rounded-xl border border-muted/70 bg-gradient-to-br from-white to-muted/20 p-4">
                       <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                         <div className="space-y-1">
                           <p className="text-sm font-semibold">

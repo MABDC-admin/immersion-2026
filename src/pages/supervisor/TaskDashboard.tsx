@@ -24,6 +24,7 @@ import {
 import {
     Plus, ListChecks, Clock, CheckCircle, AlertTriangle,
     Trash2, Eye, Edit2, Users, Upload, FileText,
+    Activity, BarChart3, CalendarClock, Sparkles, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
@@ -42,18 +43,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
 const priorityColors: Record<string, string> = {
-    low: 'text-muted-foreground border-muted-foreground/20',
-    medium: 'text-primary border-primary/20',
-    high: 'text-hrms-warning border-hrms-warning/20',
-    urgent: 'text-destructive border-destructive/20',
+    low: 'border-slate-200 bg-slate-50 text-slate-700',
+    medium: 'border-sky-200 bg-sky-50 text-sky-700',
+    high: 'border-amber-200 bg-amber-50 text-amber-700',
+    urgent: 'border-rose-200 bg-rose-50 text-rose-700',
 };
 
 const statusColors: Record<string, string> = {
-    pending: 'bg-muted text-muted-foreground',
-    in_progress: 'bg-primary/10 text-primary',
-    submitted: 'bg-hrms-warning/10 text-hrms-warning',
-    completed: 'bg-hrms-success/10 text-hrms-success',
-    overdue: 'bg-destructive/10 text-destructive',
+    pending: 'border-slate-200 bg-slate-50 text-slate-700',
+    in_progress: 'border-sky-200 bg-sky-50 text-sky-700',
+    submitted: 'border-amber-200 bg-amber-50 text-amber-700',
+    completed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    overdue: 'border-rose-200 bg-rose-50 text-rose-700',
 };
 
 function getTaskMutationErrorMessage(error: unknown) {
@@ -417,42 +418,231 @@ export default function TaskDashboard() {
         }
         return Array.from(map.values());
     }, [tasks]);
+    const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+    const submittedRate = stats.total > 0 ? Math.round((stats.submitted / stats.total) * 100) : 0;
+    const taskHealthRows = [
+        { label: 'Pending', value: stats.pending, color: 'bg-slate-500', badge: statusColors.pending },
+        { label: 'In Progress', value: stats.inProgress, color: 'bg-sky-500', badge: statusColors.in_progress },
+        { label: 'Submitted', value: stats.submitted, color: 'bg-amber-500', badge: statusColors.submitted },
+        { label: 'Completed', value: stats.completed, color: 'bg-emerald-500', badge: statusColors.completed },
+        { label: 'Overdue', value: stats.overdue, color: 'bg-rose-500', badge: statusColors.overdue },
+    ];
+    const priorityRows = ['urgent', 'high', 'medium', 'low'].map((priority) => ({
+        label: priority,
+        value: tasks.filter((task) => task.priority === priority).length,
+        badge: priorityColors[priority],
+        color:
+            priority === 'urgent'
+                ? 'bg-rose-500'
+                : priority === 'high'
+                    ? 'bg-amber-500'
+                    : priority === 'medium'
+                        ? 'bg-sky-500'
+                        : 'bg-slate-500',
+    }));
+    const recentSubmittedTasks = useMemo(
+        () =>
+            [...tasks]
+                .filter((task) => task.status === 'submitted')
+                .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                .slice(0, 5),
+        [tasks]
+    );
+    const kpiWidgets = [
+        {
+            label: 'Total Tasks',
+            value: stats.total,
+            detail: `${tasksByIntern.length} interns with assignments`,
+            icon: ListChecks,
+            cardClass: 'border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-white',
+            iconClass: 'bg-orange-100 text-orange-700',
+        },
+        {
+            label: 'Submitted',
+            value: stats.submitted,
+            detail: `${submittedRate}% awaiting review`,
+            icon: Upload,
+            cardClass: 'border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-white',
+            iconClass: 'bg-amber-100 text-amber-700',
+        },
+        {
+            label: 'Completed',
+            value: stats.completed,
+            detail: `${completionRate}% completion rate`,
+            icon: CheckCircle,
+            cardClass: 'border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white',
+            iconClass: 'bg-emerald-100 text-emerald-700',
+        },
+        {
+            label: 'Overdue',
+            value: stats.overdue,
+            detail: 'Needs supervisor follow-up',
+            icon: AlertTriangle,
+            cardClass: 'border-rose-200/80 bg-gradient-to-br from-rose-50 via-white to-white',
+            iconClass: 'bg-rose-100 text-rose-700',
+        },
+    ];
 
     return (
         <MainLayout>
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-bold">Task Dashboard</h1>
-                        <p className="text-sm text-muted-foreground">Create and manage intern tasks</p>
-                    </div>
-                    <Button onClick={openNewTask} className="w-full gap-2 sm:w-auto">
-                        <Plus className="h-4 w-4" />
-                        New Task
-                    </Button>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6 md:gap-3">
-                    {[
-                        { label: 'Total', value: stats.total, icon: ListChecks, color: 'text-primary', bg: 'bg-primary/10' },
-                        { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted' },
-                        { label: 'Active', value: stats.inProgress, icon: ListChecks, color: 'text-primary', bg: 'bg-primary/10' },
-                        { label: 'Submitted', value: stats.submitted, icon: ListChecks, color: 'text-hrms-warning', bg: 'bg-hrms-warning/10' },
-                        { label: 'Done', value: stats.completed, icon: CheckCircle, color: 'text-hrms-success', bg: 'bg-hrms-success/10' },
-                        { label: 'Overdue', value: stats.overdue, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
-                    ].map(s => (
-                        <Card key={s.label} className="shadow-sm">
-                            <CardContent className="p-3 text-center">
-                                <div className={cn("p-1.5 rounded-lg inline-flex mb-1", s.bg)}>
-                                    <s.icon className={cn("h-3.5 w-3.5", s.color)} />
+            <div className="space-y-8 animate-fade-in">
+                <Card className="overflow-hidden border-white/80 bg-gradient-to-br from-violet-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="grid gap-0 xl:grid-cols-[1.45fr_0.85fr]">
+                            <div className="px-6 py-6 md:px-8">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-violet-200 bg-white/80 text-violet-700">
+                                        Supervisor Tasks
+                                    </Badge>
+                                    <Badge variant="outline" className="border-sky-200 bg-white/80 text-sky-700">
+                                        Intern work tracking
+                                    </Badge>
                                 </div>
-                                <p className="text-lg font-bold">{s.value}</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-bold">{s.label}</p>
+                                <h1 className="mt-5 text-3xl font-bold text-foreground">Task Dashboard</h1>
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                                    Assign tasks, review submissions, track progress, and keep intern work moving from one dashboard.
+                                </p>
+                                <div className="mt-5 flex flex-wrap gap-3">
+                                    <Button onClick={openNewTask} className="gap-2 bg-violet-600 hover:bg-violet-700">
+                                        <Plus className="h-4 w-4" />
+                                        New Task
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="border-t border-white/70 bg-white/55 px-6 py-6 xl:border-l xl:border-t-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                                        <Activity className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                                        <p className="text-3xl font-bold text-foreground">{completionRate}%</p>
+                                    </div>
+                                </div>
+                                <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                                    <div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-sky-500 to-emerald-500" style={{ width: `${completionRate}%` }} />
+                                </div>
+                                <p className="mt-3 text-sm text-muted-foreground">
+                                    {stats.completed} completed of {stats.total} assigned tasks.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {kpiWidgets.map((widget) => (
+                        <Card key={widget.label} className={cn('border shadow-sm', widget.cardClass)}>
+                            <CardContent className="p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase text-muted-foreground">{widget.label}</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">{widget.value}</p>
+                                    </div>
+                                    <div className={cn('rounded-2xl p-3', widget.iconClass)}>
+                                        <widget.icon className="h-5 w-5" />
+                                    </div>
+                                </div>
+                                <p className="mt-3 text-sm text-muted-foreground">{widget.detail}</p>
                             </CardContent>
                         </Card>
                     ))}
                 </div>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                    <Card className="border-white/80 bg-gradient-to-br from-white via-sky-50/60 to-violet-50/60 shadow-sm">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <CardTitle>Task Health</CardTitle>
+                                    <p className="mt-1 text-sm text-muted-foreground">Live task status across assigned interns.</p>
+                                </div>
+                                <BarChart3 className="h-5 w-5 text-violet-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {taskHealthRows.map((row) => {
+                                const percent = stats.total > 0 ? (row.value / stats.total) * 100 : 0;
+
+                                return (
+                                    <div key={row.label} className="rounded-xl border border-white bg-white/85 p-4 shadow-sm">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <Badge variant="outline" className={row.badge}>
+                                                {row.label}
+                                            </Badge>
+                                            <span className="text-sm font-semibold text-foreground">{row.value}</span>
+                                        </div>
+                                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                                            <div className={cn('h-full rounded-full', row.color)} style={{ width: `${percent}%` }} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-white shadow-sm">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between gap-4">
+                                <CardTitle>Priority Mix</CardTitle>
+                                <Sparkles className="h-5 w-5 text-amber-700" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {priorityRows.map((row) => {
+                                const percent = stats.total > 0 ? (row.value / stats.total) * 100 : 0;
+
+                                return (
+                                    <div key={row.label} className="rounded-xl border border-white bg-white/85 p-4 shadow-sm">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <Badge variant="outline" className={cn('capitalize', row.badge)}>
+                                                {row.label}
+                                            </Badge>
+                                            <span className="text-sm font-semibold text-foreground">{row.value}</span>
+                                        </div>
+                                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                                            <div className={cn('h-full rounded-full', row.color)} style={{ width: `${percent}%` }} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {recentSubmittedTasks.length > 0 && (
+                    <Card className="border-amber-200/70 bg-gradient-to-r from-amber-50 via-white to-sky-50 shadow-sm">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between gap-4">
+                                <CardTitle>Submitted for Review</CardTitle>
+                                <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                                    {recentSubmittedTasks.length} recent
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            {recentSubmittedTasks.map((task) => (
+                                <button
+                                    key={task.id}
+                                    type="button"
+                                    className="flex items-center gap-3 rounded-xl border border-white bg-white/85 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                                    onClick={() => openDetail(task)}
+                                >
+                                    <div className="rounded-xl bg-amber-100 p-2.5 text-amber-700">
+                                        <Upload className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-foreground">{task.title}</p>
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            {task.intern ? `${task.intern.first_name} ${task.intern.last_name}` : 'Unknown Intern'}
+                                        </p>
+                                    </div>
+                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                </button>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Tasks by Intern */}
                 {isLoading ? (
@@ -460,28 +650,32 @@ export default function TaskDashboard() {
                         <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : tasksByIntern.length === 0 ? (
-                    <Card className="border-dashed">
+                    <Card className="border-dashed bg-gradient-to-br from-violet-50 via-white to-sky-50">
                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                            <ListChecks className="h-8 w-8 text-muted-foreground mb-3" />
+                            <div className="mb-4 rounded-2xl bg-violet-100 p-4 text-violet-700">
+                                <ListChecks className="h-8 w-8" />
+                            </div>
                             <h3 className="text-lg font-semibold mb-1">No Tasks Yet</h3>
                             <p className="text-sm text-muted-foreground mb-4">Create tasks for your interns to track their progress.</p>
                             <Button onClick={openNewTask} className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Create First Task</Button>
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         {tasksByIntern.map(({ intern, tasks: internTasks }) => (
-                            <Card key={intern?.email || 'unknown'} className="shadow-sm">
+                            <Card key={intern?.email || 'unknown'} className="overflow-hidden border-white/80 bg-gradient-to-br from-white via-slate-50/80 to-white shadow-sm">
+                                <div className="h-2 bg-gradient-to-r from-violet-500 via-sky-500 to-emerald-500" />
                                 <CardHeader className="pb-3">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                        <Avatar className="h-8 w-8">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border border-sky-100">
                                             <AvatarImage src={intern?.avatar_url || ''} />
-                                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                            <AvatarFallback className="text-xs bg-sky-100 text-sky-700">
                                                 {intern ? `${intern.first_name[0]}${intern.last_name[0]}` : '?'}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <CardTitle className="text-sm font-bold">
+                                            <CardTitle className="text-base font-bold">
                                                 {intern ? `${intern.first_name} ${intern.last_name}` : 'Unknown Intern'}
                                             </CardTitle>
                                             <p className="text-[10px] text-muted-foreground">
@@ -489,18 +683,22 @@ export default function TaskDashboard() {
                                                 {internTasks.filter(t => t.status === 'completed').length} completed
                                             </p>
                                         </div>
+                                        </div>
+                                        <Badge variant="outline" className="w-fit border-emerald-200 bg-emerald-50 text-emerald-700">
+                                            {Math.round((internTasks.filter(t => t.status === 'completed').length / internTasks.length) * 100)}% complete
+                                        </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="px-3 sm:px-6 space-y-2">
+                                <CardContent className="px-3 sm:px-6 space-y-3">
                                     {internTasks.map(task => (
                                         <div
                                             key={task.id}
-                                            className="flex flex-col justify-between gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-sm md:flex-row md:items-center"
+                                            className="flex cursor-pointer flex-col justify-between gap-4 rounded-xl border border-white bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center"
                                             onClick={() => openDetail(task)}
                                         >
                                             <div className="flex-1 min-w-0 space-y-1">
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                    <p className="text-sm font-bold truncate">{task.title}</p>
+                                                    <p className="text-sm font-bold text-foreground truncate">{task.title}</p>
                                                     {task.task_attachment_path && (
                                                         <Badge variant="secondary" className="gap-1 text-[8px] font-bold uppercase">
                                                             <FileText className="h-3 w-3" />
@@ -510,12 +708,13 @@ export default function TaskDashboard() {
                                                     <Badge variant="outline" className={cn("text-[8px] font-bold uppercase", priorityColors[task.priority])}>
                                                         {task.priority}
                                                     </Badge>
-                                                    <Badge className={cn("text-[8px] font-bold uppercase", statusColors[task.status])}>
+                                                    <Badge variant="outline" className={cn("text-[8px] font-bold uppercase", statusColors[task.status])}>
                                                         {task.status.replace('_', ' ')}
                                                     </Badge>
                                                 </div>
                                                 {task.due_date && (
-                                                    <p className={cn("text-[10px]", isPast(parseISO(task.due_date)) && task.status !== 'completed' ? 'text-destructive font-bold' : 'text-muted-foreground')}>
+                                                    <p className={cn("flex items-center gap-1 text-[10px]", isPast(parseISO(task.due_date)) && task.status !== 'completed' ? 'text-rose-700 font-bold' : 'text-muted-foreground')}>
+                                                        <CalendarClock className="h-3 w-3" />
                                                         Due: {format(parseISO(task.due_date), 'MMM d, yyyy')}
                                                     </p>
                                                 )}
@@ -526,7 +725,7 @@ export default function TaskDashboard() {
                                                         <span className="text-muted-foreground">Progress</span>
                                                         <span className="font-bold">{task.progress}%</span>
                                                     </div>
-                                                    <Progress value={task.progress} className="h-1.5" />
+                                                    <Progress value={task.progress} className="h-2" />
                                                 </div>
                                                 <div className="flex gap-2 sm:gap-1">
                                                     <Button variant="ghost" size="sm" className="h-9 flex-1 px-0 sm:h-7 sm:w-7 sm:flex-none sm:p-0" onClick={(e) => { e.stopPropagation(); openEditTask(task); }}>
