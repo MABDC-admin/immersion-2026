@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAllProfiles, useUpdateUserRole, useUpdateProfile, useDeleteUser } from '@/hooks/useAdmin';
+import type { UserWithRole } from '@/hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,25 @@ const roleColors: Record<string, string> = {
   employee: 'bg-muted text-muted-foreground border-muted',
 };
 
+async function getFunctionErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+
+  const response = (error as Error & { context?: unknown }).context;
+
+  if (response instanceof Response) {
+    const text = await response.text();
+
+    try {
+      const parsed = JSON.parse(text);
+      return parsed?.error || parsed?.message || fallback;
+    } catch {
+      return text || fallback;
+    }
+  }
+
+  return error.message || fallback;
+}
+
 export function UserManagementTab() {
   const { data: profiles = [], isLoading } = useAllProfiles();
   const updateRole = useUpdateUserRole();
@@ -42,7 +62,7 @@ export function UserManagementTab() {
   const deleteUser = useDeleteUser();
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editUser, setEditUser] = useState<any>(null);
+  const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
@@ -51,7 +71,7 @@ export function UserManagementTab() {
     updateRole.mutate({ userId, role });
   };
 
-  const openEdit = (profile: any) => {
+  const openEdit = (profile: UserWithRole) => {
     setEditUser(profile);
     setEditFirstName(profile.first_name || '');
     setEditLastName(profile.last_name || '');
@@ -75,27 +95,19 @@ export function UserManagementTab() {
     return (p.first_name || '').toLowerCase().includes(q) || (p.last_name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
   });
 
-  const handlePasswordReset = async (profile: any) => {
-    const email = profile.email;
-    if (!email) {
-      toast.error('No email found for this user');
-      return;
-    }
+  const handlePasswordReset = async (profile: UserWithRole) => {
     setResettingId(profile.user_id);
     try {
       const { data, error } = await supabase.functions.invoke('reset-user-password', {
         body: {
           userId: profile.user_id,
-          email,
-          firstName: profile.first_name || '',
-          lastName: profile.last_name || '',
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`New password sent to ${email}`);
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to reset password');
+      toast.success(`New password sent to ${data?.email || profile.email || 'the user'}`);
+    } catch (e: unknown) {
+      toast.error(await getFunctionErrorMessage(e, 'Failed to reset password'));
     } finally {
       setResettingId(null);
     }

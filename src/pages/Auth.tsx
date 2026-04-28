@@ -15,32 +15,12 @@ const authSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-async function getFunctionErrorMessage(error: any, fallback: string) {
-  const response = error?.context;
-
-  if (response instanceof Response) {
-    const text = await response.text();
-
-    try {
-      const parsed = JSON.parse(text);
-      return parsed?.error || parsed?.message || fallback;
-    } catch {
-      return text || fallback;
-    }
-  }
-
-  return error?.message || fallback;
-}
-
 export default function Auth() {
   const navigate = useNavigate();
   const { user, signIn, signUp, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [companyName, setCompanyName] = useState("Immersion HRMS");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
@@ -118,37 +98,6 @@ export default function Auth() {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const cleanEmail = (resetEmail || email).trim();
-    const result = z.string().email("Invalid email address").safeParse(cleanEmail);
-
-    if (!result.success) {
-      toast.error(result.error.errors[0].message);
-      return;
-    }
-
-    setIsResettingPassword(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { email: cleanEmail },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      toast.success(`New password sent to ${cleanEmail}`);
-      setShowForgotPassword(false);
-      setResetEmail("");
-    } catch (error: any) {
-      toast.error(await getFunctionErrorMessage(error, "Failed to send new password"));
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -208,45 +157,10 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto px-0 text-sm"
-                    onClick={() => {
-                      setResetEmail(email);
-                      setShowForgotPassword((current) => !current);
-                    }}
-                  >
-                    Forgot password?
-                  </Button>
-                </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
-
-              {showForgotPassword && (
-                <form onSubmit={handleForgotPassword} className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reset-email">Email for password reset</Label>
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    A new Immersion Portal password will be sent to this email.
-                  </p>
-                  <Button type="submit" className="mt-4 w-full" disabled={isResettingPassword}>
-                    {isResettingPassword ? "Sending password..." : "Send New Password"}
-                  </Button>
-                </form>
-              )}
             </TabsContent>
 
 

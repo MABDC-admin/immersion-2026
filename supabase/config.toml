@@ -13,7 +13,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.reset-user-password]
-verify_jwt = false
+verify_jwt = true
 
 [functions.extract-cv-data]
 enabled = true

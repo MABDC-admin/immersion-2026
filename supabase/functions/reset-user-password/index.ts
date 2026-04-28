@@ -11,10 +11,7 @@ const corsHeaders = {
 };
 
 interface ResetPayload {
-  userId?: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
+  userId: string;
 }
 
 interface CompanySettings {
@@ -28,6 +25,24 @@ interface CompanySettings {
 }
 
 type SupabaseAdminClient = ReturnType<typeof createClient>;
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function getBearerToken(req: Request) {
+  const authHeader = req.headers.get("Authorization") || "";
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return null;
+  }
+
+  return token;
+}
 
 function generatePassword(): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -52,29 +67,30 @@ function generatePassword(): string {
   return chars.join("");
 }
 
-async function findUserByEmail(supabaseAdmin: SupabaseAdminClient, email: string) {
-  const targetEmail = email.trim().toLowerCase();
-  let page = 1;
+async function assertCanResetPasswords(supabaseAdmin: SupabaseAdminClient, token: string) {
+  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
 
-  while (page <= 20) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-      page,
-      perPage: 1000,
-    });
-
-    if (error) throw error;
-
-    const match = data.users.find((user) => user.email?.toLowerCase() === targetEmail);
-    if (match) return match;
-    if (data.users.length < 1000) return null;
-
-    page += 1;
+  if (authError || !authData.user) {
+    return { allowed: false, status: 401, error: "You must be signed in to reset passwords" };
   }
 
-  return null;
+  const { data: roleData, error: roleError } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", authData.user.id)
+    .in("role", ["admin", "hr_manager"])
+    .limit(1);
+
+  if (roleError) throw roleError;
+
+  if (!roleData?.length) {
+    return { allowed: false, status: 403, error: "Only admins and HR managers can reset passwords" };
+  }
+
+  return { allowed: true, status: 200, error: null };
 }
 
-async function getEmployeeName(supabaseAdmin: SupabaseAdminClient, userId: string, email: string) {
+async function getEmployeeName(supabaseAdmin: SupabaseAdminClient, userId: string) {
   const { data: profileData } = await supabaseAdmin
     .from("profiles")
     .select("first_name, last_name")
@@ -94,16 +110,7 @@ async function getEmployeeName(supabaseAdmin: SupabaseAdminClient, userId: strin
     };
   }
 
-  const { data: employeeByEmail } = await supabaseAdmin
-    .from("employees")
-    .select("first_name, last_name")
-    .ilike("email", email)
-    .maybeSingle();
-
-  return {
-    firstName: employeeByEmail?.first_name || "",
-    lastName: employeeByEmail?.last_name || "",
-  };
+  return { firstName: "", lastName: "" };
 }
 
 async function getCompanySettings(supabaseAdmin: SupabaseAdminClient): Promise<CompanySettings> {
@@ -203,63 +210,55 @@ serve(async (req) => {
   }
 
   try {
-    const {
-      userId: payloadUserId,
-      email,
-      firstName: payloadFirstName,
-      lastName: payloadLastName,
-    }: ResetPayload = await req.json();
-
-    if (!email) {
-      return new Response(JSON.stringify({ error: "Email is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const normalizedEmail = email.trim().toLowerCase();
-    const authUser = payloadUserId
-      ? { id: payloadUserId, email: normalizedEmail }
-      : await findUserByEmail(supabaseAdmin, normalizedEmail);
 
-    if (!authUser?.id) {
-      return new Response(JSON.stringify({ error: "No portal account found for this email address" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const token = getBearerToken(req);
+    if (!token) {
+      return jsonResponse({ error: "You must be signed in to reset passwords" }, 401);
     }
 
-    const profileName = await getEmployeeName(supabaseAdmin, authUser.id, normalizedEmail);
-    const recipientName = {
-      firstName: payloadFirstName || profileName.firstName,
-      lastName: payloadLastName || profileName.lastName,
-    };
+    const permission = await assertCanResetPasswords(supabaseAdmin, token);
+    if (!permission.allowed) {
+      return jsonResponse({ error: permission.error }, permission.status);
+    }
+
+    const { userId }: ResetPayload = await req.json();
+    if (!userId) {
+      return jsonResponse({ error: "User ID is required" }, 400);
+    }
+
+    const { data: targetData, error: targetError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (targetError || !targetData.user) {
+      return jsonResponse({ error: targetError?.message || "No portal account found for this user" }, 404);
+    }
+
+    const targetEmail = targetData.user.email?.trim().toLowerCase();
+    if (!targetEmail) {
+      return jsonResponse({ error: "This portal account has no email address" }, 400);
+    }
+
+    const recipientName = await getEmployeeName(supabaseAdmin, targetData.user.id);
     const newPassword = generatePassword();
 
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(targetData.user.id, {
       password: newPassword,
-      email: normalizedEmail,
       email_confirm: true,
     });
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: updateError.message }, 400);
     }
 
     const company = await getCompanySettings(supabaseAdmin);
     const subject = "Immersion Password Reset";
-    const bodyContent = buildResetEmailBody(recipientName, normalizedEmail, newPassword, company.name);
+    const bodyContent = buildResetEmailBody(recipientName, targetEmail, newPassword, company.name);
     const html = buildEmailTemplate(company, subject, bodyContent);
     const fromName = company.name || "HRMS";
     const emailPayload: Record<string, unknown> = {
       from: `${fromName} <immersion@mabdc.com>`,
-      to: [normalizedEmail],
+      to: [targetEmail],
       subject: `${subject} - ${company.name}`,
       html,
     };
@@ -271,20 +270,11 @@ serve(async (req) => {
     const { error: emailError } = await resend.emails.send(emailPayload as never);
 
     if (emailError) {
-      return new Response(JSON.stringify({ error: "Password updated but failed to send email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Password updated but failed to send email" }, 400);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, email: targetEmail });
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: (error as Error).message }, 500);
   }
 });
