@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import {
   Activity,
+  ArrowRight,
   ArrowUpRight,
   BarChart3,
   BookOpen,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   Shield,
   Sparkles,
+  Target,
   TrendingUp,
   UserCheck,
   UserPlus,
@@ -21,7 +23,6 @@ import {
 import { isSupervisorLikeEmployee, useEmployees, useCurrentEmployee, useEmployee, useSupervisorOptions } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
 import { useImpersonation } from '@/hooks/useImpersonation';
-import { AnimatedStatCard } from '@/components/dashboard/AnimatedStatCard';
 import { EmployeeStatusChart } from '@/components/dashboard/EmployeeStatusChart';
 import { DepartmentDistributionChart } from '@/components/dashboard/DepartmentDistributionChart';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
@@ -72,28 +73,134 @@ export default function Dashboard() {
     [employees, supervisorIds]
   );
 
-  const stats = useMemo(() => {
-    const activeEmployees = visibleEmployees.filter((e) => e.status === 'active').length;
-    const onLeaveEmployees = visibleEmployees.filter((e) => e.status === 'on_leave').length;
+  const adminActiveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'active').length,
+    [visibleEmployees]
+  );
+  const adminOnLeaveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status === 'on_leave').length,
+    [visibleEmployees]
+  );
+  const adminInactiveCount = useMemo(
+    () => visibleEmployees.filter((currentEmployee) => currentEmployee.status !== 'active' && currentEmployee.status !== 'on_leave').length,
+    [visibleEmployees]
+  );
+  const adminRecentHireCount = useMemo(() => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newHires = visibleEmployees.filter(
-      (e) => new Date(e.hire_date) >= thirtyDaysAgo
-    ).length;
 
-    return [
-      { title: 'Total Interns', value: visibleEmployees.length, icon: Users, color: 'text-primary', bgColor: 'bg-primary/10' },
-      { title: 'Active Interns', value: activeEmployees, icon: TrendingUp, color: 'text-hrms-success', bgColor: 'bg-hrms-success/10', trend: { value: 5, isPositive: true } },
-      { title: 'New Hires (30 days)', value: newHires, icon: UserPlus, color: 'text-primary', bgColor: 'bg-primary/10' },
-      { title: 'On Leave', value: onLeaveEmployees, icon: Calendar, color: 'text-hrms-warning', bgColor: 'bg-hrms-warning/10' },
-    ];
+    return visibleEmployees.filter((currentEmployee) => new Date(currentEmployee.hire_date) >= thirtyDaysAgo).length;
   }, [visibleEmployees]);
+  const adminRecentHires = useMemo(
+    () =>
+      [...visibleEmployees]
+        .sort((a, b) => new Date(b.hire_date).getTime() - new Date(a.hire_date).getTime())
+        .slice(0, 5),
+    [visibleEmployees]
+  );
+  const adminDepartmentRows = useMemo(() => {
+    const totals = new Map<string, number>();
 
-  const adminQuickNav = [
-    { label: 'Admin Panel', icon: Shield, href: '/admin' },
-    { label: 'Interns', icon: Users, href: '/employees' },
-    { label: 'Recruitment', icon: Briefcase, href: '/recruitment/jobs' },
-    { label: 'Onboarding', icon: UserCheck, href: '/onboarding/new-hires' },
+    visibleEmployees.forEach((currentEmployee) => {
+      const departmentName = getEmployeeDepartmentName(currentEmployee);
+      totals.set(departmentName, (totals.get(departmentName) || 0) + 1);
+    });
+
+    return Array.from(totals, ([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [visibleEmployees]);
+  const adminActiveRate = visibleEmployees.length > 0
+    ? Math.round((adminActiveCount / visibleEmployees.length) * 100)
+    : 0;
+  const adminStatusRows = [
+    { label: 'Active', value: adminActiveCount, color: 'bg-emerald-500', badge: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+    { label: 'On Leave', value: adminOnLeaveCount, color: 'bg-amber-500', badge: 'border-amber-200 bg-amber-50 text-amber-700' },
+    { label: 'Inactive', value: adminInactiveCount, color: 'bg-rose-500', badge: 'border-rose-200 bg-rose-50 text-rose-700' },
+  ];
+  const adminKpiWidgets = [
+    {
+      label: 'Total Interns',
+      value: visibleEmployees.length,
+      detail: `${adminActiveCount} active records`,
+      icon: Users,
+      cardClass: 'border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-white',
+      iconClass: 'bg-orange-100 text-orange-700',
+    },
+    {
+      label: 'Active Rate',
+      value: `${adminActiveRate}%`,
+      detail: 'Current active roster',
+      icon: Activity,
+      cardClass: 'border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white',
+      iconClass: 'bg-emerald-100 text-emerald-700',
+    },
+    {
+      label: 'New This Month',
+      value: adminRecentHireCount,
+      detail: 'Last 30 days',
+      icon: UserPlus,
+      cardClass: 'border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-white',
+      iconClass: 'bg-sky-100 text-sky-700',
+    },
+    {
+      label: 'On Leave',
+      value: adminOnLeaveCount,
+      detail: 'Needs coverage check',
+      icon: Calendar,
+      cardClass: 'border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-white',
+      iconClass: 'bg-violet-100 text-violet-700',
+    },
+  ];
+  const adminActionWidgets = [
+    {
+      label: 'Intern Directory',
+      description: 'Manage intern profiles, assignments, departments, and status.',
+      href: '/employees',
+      icon: Users,
+      cardClass: 'border-orange-200/80 bg-orange-50/80 hover:bg-orange-50',
+      iconClass: 'bg-orange-100 text-orange-700',
+    },
+    {
+      label: 'Admin Panel',
+      description: 'Open system settings, users, roles, and portal controls.',
+      href: '/admin',
+      icon: Shield,
+      cardClass: 'border-slate-200 bg-slate-50/90 hover:bg-slate-50',
+      iconClass: 'bg-slate-100 text-slate-700',
+    },
+    {
+      label: 'Work Immersion',
+      description: 'Coordinate immersion records, supervisors, and assignments.',
+      href: '/admin/ojt',
+      icon: Target,
+      cardClass: 'border-emerald-200/80 bg-emerald-50/80 hover:bg-emerald-50',
+      iconClass: 'bg-emerald-100 text-emerald-700',
+    },
+    {
+      label: 'Evaluation Reports',
+      description: 'Review scores, exports, and completion status.',
+      href: '/reports/evaluations',
+      icon: BarChart3,
+      cardClass: 'border-violet-200/80 bg-violet-50/80 hover:bg-violet-50',
+      iconClass: 'bg-violet-100 text-violet-700',
+    },
+    {
+      label: 'Recruitment',
+      description: 'View postings and candidate records.',
+      href: '/recruitment/jobs',
+      icon: Briefcase,
+      cardClass: 'border-sky-200/80 bg-sky-50/80 hover:bg-sky-50',
+      iconClass: 'bg-sky-100 text-sky-700',
+    },
+    {
+      label: 'Onboarding',
+      description: 'Track new hire checklists and documents.',
+      href: '/onboarding/new-hires',
+      icon: UserCheck,
+      cardClass: 'border-amber-200/80 bg-amber-50/80 hover:bg-amber-50',
+      iconClass: 'bg-amber-100 text-amber-700',
+    },
   ];
   const principalRecentHires = useMemo(
     () =>
@@ -442,63 +549,232 @@ export default function Dashboard() {
         ) : isAdminOrHR ? (
           /* ========== ADMIN / HR DASHBOARD ========== */
           <>
-            {/* Welcome Header */}
-            <Card className="overflow-hidden border-intern-border/80 bg-gradient-to-r from-intern/15 via-background to-background shadow-sm">
-              <CardContent className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
-                    Welcome back, {employee?.first_name || user?.email?.split('@')[0] || 'Admin'}
-                  </h1>
-                  <p className="text-muted-foreground mt-1">Organizational Overview</p>
+            <Card className="overflow-hidden border-white/80 bg-gradient-to-br from-orange-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
+              <CardContent className="p-0">
+                <div className="grid gap-0 xl:grid-cols-[1.5fr_0.8fr]">
+                  <div className="px-6 py-6 md:px-8">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="border-orange-200 bg-white/80 text-orange-700">
+                        {adminRoleLabel}
+                      </Badge>
+                      <Badge variant="outline" className="border-sky-200 bg-white/80 text-sky-700">
+                        Full portal management
+                      </Badge>
+                    </div>
+                    <h1 className="mt-5 text-3xl font-bold text-foreground">
+                      Welcome back, {employee?.first_name || user?.email?.split('@')[0] || 'Admin'}
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      Manage intern records, immersion assignments, onboarding, reports, and communication from one command dashboard.
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Button className="gap-2 bg-orange-600 hover:bg-orange-700" onClick={() => navigate('/employees')}>
+                        <Users className="h-4 w-4" />
+                        Manage Interns
+                      </Button>
+                      <Button variant="outline" className="gap-2 border-emerald-200 bg-white/80 text-emerald-800 hover:bg-emerald-50" onClick={() => navigate('/admin/ojt')}>
+                        <Target className="h-4 w-4" />
+                        Work Immersion
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/70 bg-white/55 px-6 py-6 xl:border-l xl:border-t-0">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                        <Activity className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Roster Health</p>
+                        <p className="text-3xl font-bold text-foreground">{adminActiveRate}%</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-orange-500 via-sky-500 to-emerald-500"
+                        style={{ width: `${adminActiveRate}%` }}
+                      />
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {adminActiveCount} active of {visibleEmployees.length} intern records.
+                    </p>
+                  </div>
                 </div>
-                <Badge variant="outline" className="w-fit border-intern-border bg-white/80 px-3 py-1 text-sm text-intern">
-                  {adminRoleLabel}
-                </Badge>
               </CardContent>
             </Card>
 
-            {/* Quick Navigation */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {adminQuickNav.map((item, index) => (
-                <Button
-                  key={item.label}
-                  variant="outline"
-                  className={cn(
-                    'h-auto flex-col gap-2 border-white/70 py-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md',
-                    index === 0 && 'bg-gradient-to-br from-intern/15 to-background hover:bg-intern/10',
-                    index === 1 && 'bg-gradient-to-br from-evalinfo/10 to-background hover:bg-evalinfo/10',
-                    index === 2 && 'bg-gradient-to-br from-hrms-success/10 to-background hover:bg-hrms-success/10',
-                    index === 3 && 'bg-gradient-to-br from-violet-500/10 to-background hover:bg-violet-500/10'
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {adminKpiWidgets.map((widget) => (
+                <Card key={widget.label} className={cn('border shadow-sm', widget.cardClass)}>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">{widget.label}</p>
+                        <p className="mt-2 text-3xl font-bold text-foreground">{widget.value}</p>
+                      </div>
+                      <div className={cn('rounded-2xl p-3', widget.iconClass)}>
+                        <widget.icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">{widget.detail}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <Card className="border-white/80 bg-gradient-to-br from-white via-orange-50/60 to-sky-50/60 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <CardTitle>Admin Widgets</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground">Fast routes for daily portal operations.</p>
+                    </div>
+                    <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+                      {visibleEmployees.length} records
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {adminActionWidgets.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        className={cn(
+                          'group rounded-xl border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+                          item.cardClass
+                        )}
+                        onClick={() => navigate(item.href)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className={cn('rounded-xl p-2.5', item.iconClass)}>
+                            <item.icon className="h-5 w-5" />
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </div>
+                        <p className="mt-4 text-sm font-semibold text-foreground">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-violet-200/70 bg-gradient-to-br from-violet-50 via-white to-white shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Status Snapshot</CardTitle>
+                    <BarChart3 className="h-5 w-5 text-violet-600" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {adminStatusRows.map((status) => {
+                    const percent = visibleEmployees.length > 0 ? (status.value / visibleEmployees.length) * 100 : 0;
+
+                    return (
+                      <div key={status.label} className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <Badge variant="outline" className={status.badge}>
+                            {status.label}
+                          </Badge>
+                          <span className="text-sm font-semibold text-foreground">{status.value}</span>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                          <div className={cn('h-full rounded-full', status.color)} style={{ width: `${percent}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <Button variant="outline" className="w-full justify-between border-violet-200 bg-white/80" onClick={() => navigate('/attendance')}>
+                    Open Attendance
+                    <ArrowRight className="h-4 w-4 text-violet-700" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+              <Card className="border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-white shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Department Mix</CardTitle>
+                    <Building2 className="h-5 w-5 text-emerald-700" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {adminDepartmentRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No department data available yet.</p>
+                  ) : (
+                    adminDepartmentRows.map((department, index) => {
+                      const percent = visibleEmployees.length > 0 ? (department.count / visibleEmployees.length) * 100 : 0;
+                      const color = ['bg-orange-500', 'bg-sky-500', 'bg-emerald-500', 'bg-violet-500', 'bg-rose-500'][index] || 'bg-slate-500';
+
+                      return (
+                        <div key={department.name} className="rounded-xl border border-white bg-white/80 p-4 shadow-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="truncate text-sm font-semibold text-foreground">{department.name}</p>
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                              {department.count}
+                            </span>
+                          </div>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                            <div className={cn('h-full rounded-full', color)} style={{ width: `${percent}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
-                  onClick={() => navigate(item.href)}
-                >
-                  <item.icon className={cn(
-                    'h-5 w-5',
-                    index === 0 && 'text-intern',
-                    index === 1 && 'text-evalinfo',
-                    index === 2 && 'text-hrms-success',
-                    index === 3 && 'text-violet-600'
-                  )} />
-                  <span className="text-xs font-medium">{item.label}</span>
-                </Button>
-              ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-orange-50/50 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <CardTitle>Recent Interns</CardTitle>
+                    <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+                      {adminRecentHireCount} this month
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {adminRecentHires.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No recent intern records available yet.</p>
+                  ) : (
+                    adminRecentHires.map((recentHire) => (
+                      <button
+                        key={recentHire.id}
+                        type="button"
+                        className="flex w-full flex-col gap-3 rounded-xl border border-white bg-white/85 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                        onClick={() => navigate(`/employees/${recentHire.id}`)}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {recentHire.first_name} {recentHire.last_name}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">
+                              {recentHire.job_title || 'Intern'}
+                            </span>
+                            <span>{getEmployeeDepartmentName(recentHire)}</span>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5 text-sky-700" />
+                          {new Date(recentHire.hire_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <AnimatedStatCard key={stat.title} {...stat} delay={index * 100} />
-              ))}
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <EmployeeStatusChart employees={visibleEmployees} />
               <DepartmentDistributionChart employees={visibleEmployees} />
             </div>
 
-            {/* Activity & Events */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <RecentActivityWidget className="lg:col-span-2" />
               <UpcomingEventsWidget />
             </div>

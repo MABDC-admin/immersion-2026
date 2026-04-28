@@ -6,19 +6,18 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useCurrentEmployee } from '@/hooks/useEmployees';
 
 interface BottomNavItem {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     to: string;
+    tone: string;
 }
 
 export function BottomNav() {
     const isMobile = useIsMobile();
     const location = useLocation();
-    const { user, isAdmin, userRole } = useAuth();
-    const { data: employee } = useCurrentEmployee(user?.id || '');
+    const { isAdmin, userRole } = useAuth();
 
     if (!isMobile) return null;
 
@@ -30,27 +29,28 @@ export function BottomNav() {
     // Keep the shared mobile nav focused and compact.
     const items: BottomNavItem[] = isAdminOrHR
         ? [
-            { label: 'Interns', icon: Users, to: '/employees' },
-            { label: 'Reports', icon: BarChart3, to: '/reports/evaluations' },
-            { label: 'Journal', icon: BookOpen, to: '/admin/employee-journals' },
-            { label: 'Work Immersion', icon: Target, to: '/admin/ojt' },
-            { label: 'Chat', icon: MessageSquare, to: '/chat' },
+            { label: 'Interns', icon: Users, to: '/employees', tone: 'text-orange-600 bg-orange-50' },
+            { label: 'Reports', icon: BarChart3, to: '/reports/evaluations', tone: 'text-violet-600 bg-violet-50' },
+            { label: 'Journal', icon: BookOpen, to: '/admin/employee-journals', tone: 'text-amber-600 bg-amber-50' },
+            { label: 'Immersion', icon: Target, to: '/admin/ojt', tone: 'text-emerald-600 bg-emerald-50' },
+            { label: 'Chat', icon: MessageSquare, to: '/chat', tone: 'text-sky-600 bg-sky-50' },
         ]
         : isOversightPortal
             ? [
-                { label: 'Home', icon: Home, to: '/dashboard' },
-                { label: 'Interns', icon: Users, to: '/employees' },
-                ...(isSupervisor ? [{ label: 'Evaluations', icon: ClipboardCheck, to: '/evaluations' }] : []),
-                ...(isPrincipal ? [{ label: 'Reports', icon: BarChart3, to: '/reports/evaluations' }] : []),
-                { label: 'Chat', icon: MessageSquare, to: '/chat' },
-                { label: 'Profile', icon: ClipboardCheck, to: employee ? `/employees/${employee.id}` : '/dashboard' },
+                { label: 'Home', icon: Home, to: '/dashboard', tone: 'text-sky-600 bg-sky-50' },
+                { label: 'Interns', icon: Users, to: '/employees', tone: 'text-orange-600 bg-orange-50' },
+                ...(isSupervisor ? [{ label: 'Eval', icon: ClipboardCheck, to: '/evaluations', tone: 'text-violet-600 bg-violet-50' }] : []),
+                ...(isPrincipal ? [{ label: 'Reports', icon: BarChart3, to: '/reports/evaluations', tone: 'text-violet-600 bg-violet-50' }] : []),
+                ...(isSupervisor ? [{ label: 'Tasks', icon: ListChecks, to: '/supervisor/tasks', tone: 'text-orange-600 bg-orange-50' }] : []),
+                ...(isPrincipal ? [{ label: 'Journals', icon: BookOpen, to: '/supervisor/journals', tone: 'text-amber-600 bg-amber-50' }] : []),
+                { label: 'Chat', icon: MessageSquare, to: '/chat', tone: 'text-sky-600 bg-sky-50' },
             ]
         : [
-            { label: 'Home', icon: Home, to: '/dashboard' },
-            { label: 'Tasks', icon: ListChecks, to: '/my-tasks' },
-            { label: 'Journal', icon: BookOpen, to: '/journal' },
-            { label: 'Attendance', icon: Clock, to: '/attendance' },
-            { label: 'Evaluations', icon: ClipboardCheck, to: '/my-evaluations' },
+            { label: 'Home', icon: Home, to: '/dashboard', tone: 'text-sky-600 bg-sky-50' },
+            { label: 'Tasks', icon: ListChecks, to: '/my-tasks', tone: 'text-orange-600 bg-orange-50' },
+            { label: 'Journal', icon: BookOpen, to: '/journal', tone: 'text-amber-600 bg-amber-50' },
+            { label: 'Attendance', icon: Clock, to: '/attendance', tone: 'text-emerald-600 bg-emerald-50' },
+            { label: 'Evaluations', icon: ClipboardCheck, to: '/my-evaluations', tone: 'text-violet-600 bg-violet-50' },
         ];
 
     const checkActive = (href: string) => {
@@ -78,9 +78,9 @@ export function BottomNav() {
                         >
                             <div className={cn(
                                 "p-1.5 rounded-lg transition-colors",
-                                active && "bg-primary/10"
+                                active ? item.tone : "bg-transparent"
                             )}>
-                                <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_rgba(59,130,246,0.4)]")} />
+                                <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_rgba(59,130,246,0.22)]")} />
                             </div>
                             <span className="text-[10px] font-semibold leading-none text-center">{item.label}</span>
                         </Link>

@@ -311,12 +311,15 @@ export default function EmployeeDetail() {
           {/* Profile Content */}
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <Card className={cn(
-              "w-full lg:w-80 shrink-0 shadow-sm hover:shadow-md transition-all duration-300",
+              "w-full overflow-hidden lg:w-80 shrink-0 shadow-sm hover:shadow-md transition-all duration-300",
               isPrincipal
                 ? "border border-intern-border/70 bg-gradient-to-b from-intern-soft via-background to-background"
-                : "border-l-4 border-l-primary"
+                : "border border-orange-200/70 bg-gradient-to-b from-orange-50 via-white to-sky-50/40"
             )}>
               <CardContent className="pt-8 pb-6 px-5 text-center sm:text-left lg:text-center">
+                <div className="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-orange-700">
+                  My Profile
+                </div>
                 <div className="flex flex-col items-center sm:items-start lg:items-center">
                   {canEdit ? (
                     <AvatarUpload
@@ -326,7 +329,7 @@ export default function EmployeeDetail() {
                       isUploading={uploadAvatar.isPending}
                     />
                   ) : (
-                    <Avatar className="h-24 w-24 border-4 border-card">
+                    <Avatar className="h-24 w-24 border-4 border-white shadow-md ring-4 ring-orange-100">
                       <AvatarImage src={employee.avatar_url || ''} alt={fullName} />
                       <AvatarFallback className="text-2xl bg-muted text-foreground">
                         {initials}

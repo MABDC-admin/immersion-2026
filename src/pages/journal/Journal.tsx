@@ -366,8 +366,56 @@ export default function Journal() {
 
     return (
         <MainLayout>
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-8 animate-fade-in">
+                <Card className="overflow-hidden border-white/80 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-sky-500/15 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="grid gap-0 xl:grid-cols-[1.5fr_0.8fr]">
+                            <div className="px-6 py-6 md:px-8">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-amber-200 bg-white/80 text-amber-700">Daily Journal</Badge>
+                                    <Badge variant="outline" className="border-sky-200 bg-white/80 text-sky-700">{entries.length} entries</Badge>
+                                </div>
+                                <h1 className="mt-5 text-3xl font-bold text-foreground">Daily Activity Journal</h1>
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                                    {isPrincipal && targetEmployee
+                                        ? `Read-only journal oversight for ${targetEmployee.first_name} ${targetEmployee.last_name}.`
+                                        : 'Log your daily activities, learnings, challenges, hours, and photo or video evidence.'}
+                                </p>
+                                {canManageJournalEntries && (
+                                    <div className="mt-5 flex flex-wrap gap-3">
+                                        <Button onClick={openNewEntry} className="gap-2 bg-orange-600 hover:bg-orange-700">
+                                            <Plus className="h-4 w-4" />
+                                            New Journal Entry
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="border-t border-white/70 bg-white/55 px-6 py-6 xl:border-l xl:border-t-0">
+                                <div className="flex items-center gap-3">
+                                    <div className={cn("rounded-2xl p-3", todayEntry ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
+                                        <Calendar className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Today</p>
+                                        <p className="text-2xl font-bold text-foreground">{todayEntry ? 'Logged' : 'Not Logged'}</p>
+                                    </div>
+                                </div>
+                                <p className="mt-4 text-sm text-muted-foreground">
+                                    {todayEntry
+                                        ? `${todayEntry.hours_worked || 0} hours recorded${todayEntry.attachments?.length ? ` with ${todayEntry.attachments.length} media files` : ''}.`
+                                        : 'Create today entry before the day ends.'}
+                                </p>
+                                {!todayEntry && canManageJournalEntries && (
+                                    <Button size="sm" variant="outline" onClick={openNewEntry} className="mt-4 border-amber-200 bg-white text-amber-800 hover:bg-amber-50">
+                                        Log Now
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="hidden flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground">Daily Activity Journal</h1>
                         <p className="text-sm text-muted-foreground">
@@ -385,7 +433,7 @@ export default function Journal() {
                 </div>
 
                 <Card className={cn(
-                    "border-l-4 shadow-sm",
+                    "hidden border-l-4 shadow-sm",
                     todayEntry ? "border-l-hrms-success" : "border-l-hrms-warning"
                 )}>
                     <CardContent className="p-4 flex items-center justify-between">
@@ -628,14 +676,15 @@ export default function Journal() {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-2xl">
+                <DialogContent className="max-h-[92vh] w-[95vw] overflow-y-auto border-white bg-gradient-to-br from-white via-amber-50/40 to-sky-50/40 sm:max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
-                        <DialogDescription>Record your daily OJT activities, learnings, challenges, and bulk photo or video uploads.</DialogDescription>
+                        <DialogDescription>Record activities, learnings, challenges, hours, and photo or video evidence.</DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4 py-2 pr-1">
+                        <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 shadow-sm">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="date">Date</Label>
                                 <Input
@@ -659,9 +708,10 @@ export default function Journal() {
                                     onChange={(event) => setHoursWorked(event.target.value)}
                                 />
                             </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 rounded-2xl border border-orange-100 bg-white/80 p-4 shadow-sm">
                             <Label htmlFor="activities">Activities Performed *</Label>
                             <Textarea
                                 id="activities"
@@ -672,7 +722,7 @@ export default function Journal() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-sm">
                             <Label htmlFor="learnings">Key Learnings</Label>
                             <Textarea
                                 id="learnings"
@@ -683,7 +733,7 @@ export default function Journal() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 rounded-2xl border border-rose-100 bg-white/80 p-4 shadow-sm">
                             <Label htmlFor="challenges">Challenges Encountered</Label>
                             <Textarea
                                 id="challenges"
@@ -694,7 +744,7 @@ export default function Journal() {
                             />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-3 rounded-2xl border border-violet-100 bg-white/80 p-4 shadow-sm">
                             <JournalMediaUploader
                                 title="Photo & Video Evidence"
                                 description="Drop multiple photos or videos here, then save the journal entry once everything looks right."

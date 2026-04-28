@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import {
     Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { ListChecks, Upload, Clock, CheckCircle, Send, FileText, Eye } from 'lucide-react';
+import { AlertTriangle, BarChart3, ListChecks, Upload, Clock, CheckCircle, Send, FileText, Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentEmployee } from '@/hooks/useEmployees';
 import { useInternTasks, useUpdateTask, useUploadTaskFile, InternTask } from '@/hooks/useTasks';
@@ -125,61 +125,125 @@ export default function MyTasks() {
     // Stats
     const pending = tasks.filter(t => t.status === 'pending').length;
     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+    const submitted = tasks.filter(t => t.status === 'submitted').length;
     const completed = tasks.filter(t => t.status === 'completed').length;
+    const overdue = tasks.filter(t => t.due_date && isPast(parseISO(t.due_date)) && t.status !== 'completed').length;
+    const completionRate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+    const taskWidgets = [
+        {
+            label: 'Pending',
+            value: pending,
+            detail: 'Ready to start',
+            icon: Clock,
+            cardClass: 'border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-white',
+            iconClass: 'bg-amber-100 text-amber-700',
+        },
+        {
+            label: 'Active',
+            value: inProgress,
+            detail: 'Currently working',
+            icon: ListChecks,
+            cardClass: 'border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-white',
+            iconClass: 'bg-sky-100 text-sky-700',
+        },
+        {
+            label: 'Submitted',
+            value: submitted,
+            detail: 'Waiting for review',
+            icon: Send,
+            cardClass: 'border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-white',
+            iconClass: 'bg-violet-100 text-violet-700',
+        },
+        {
+            label: 'Completed',
+            value: completed,
+            detail: `${completionRate}% completion rate`,
+            icon: CheckCircle,
+            cardClass: 'border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white',
+            iconClass: 'bg-emerald-100 text-emerald-700',
+        },
+    ];
 
     return (
         <MainLayout>
             <div className="space-y-6 animate-fade-in">
-                <div>
-                    <h1 className="text-xl md:text-2xl font-bold">My Tasks</h1>
-                    <p className="text-sm text-muted-foreground">Tasks assigned by your supervisor</p>
-                </div>
+                <Card className="overflow-hidden border-white/80 bg-gradient-to-br from-orange-500/15 via-sky-500/10 to-violet-500/15 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="grid gap-0 xl:grid-cols-[1.5fr_0.8fr]">
+                            <div className="px-6 py-6 md:px-8">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-orange-200 bg-white/80 text-orange-700">My Tasks</Badge>
+                                    <Badge variant="outline" className="border-sky-200 bg-white/80 text-sky-700">Supervisor assignments</Badge>
+                                </div>
+                                <h1 className="mt-5 text-3xl font-bold text-foreground">Task Dashboard</h1>
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                                    Start assigned work, open task PDFs, upload submissions, and track supervisor feedback.
+                                </p>
+                            </div>
+                            <div className="border-t border-white/70 bg-white/55 px-6 py-6 xl:border-l xl:border-t-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-2xl bg-orange-100 p-3 text-orange-700">
+                                        <BarChart3 className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                                        <p className="text-3xl font-bold text-foreground">{completionRate}%</p>
+                                    </div>
+                                </div>
+                                <p className="mt-4 text-sm text-muted-foreground">{completed} completed of {tasks.length} assigned tasks.</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                    <Card className="shadow-sm">
-                        <CardContent className="p-3 flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg bg-hrms-warning/10"><Clock className="h-4 w-4 text-hrms-warning" /></div>
-                            <div>
-                                <p className="text-lg font-bold">{pending}</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-bold">Pending</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="shadow-sm">
-                        <CardContent className="p-3 flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg bg-primary/10"><ListChecks className="h-4 w-4 text-primary" /></div>
-                            <div>
-                                <p className="text-lg font-bold">{inProgress}</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-bold">Active</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="shadow-sm">
-                        <CardContent className="p-3 flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg bg-hrms-success/10"><CheckCircle className="h-4 w-4 text-hrms-success" /></div>
-                            <div>
-                                <p className="text-lg font-bold">{completed}</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-bold">Done</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Filter */}
-                <div className="flex gap-2 flex-wrap">
-                    {['all', 'pending', 'in_progress', 'submitted', 'completed'].map(f => (
-                        <Button
-                            key={f}
-                            variant={filter === f ? 'default' : 'outline'}
-                            size="sm"
-                            className="text-xs capitalize"
-                            onClick={() => setFilter(f)}
-                        >
-                            {f === 'all' ? 'All' : f.replace('_', ' ')}
-                        </Button>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {taskWidgets.map((widget) => (
+                        <Card key={widget.label} className={cn('border shadow-sm', widget.cardClass)}>
+                            <CardContent className="p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase text-muted-foreground">{widget.label}</p>
+                                        <p className="mt-2 text-3xl font-bold text-foreground">{widget.value}</p>
+                                    </div>
+                                    <div className={cn('rounded-2xl p-3', widget.iconClass)}>
+                                        <widget.icon className="h-5 w-5" />
+                                    </div>
+                                </div>
+                                <p className="mt-3 text-sm text-muted-foreground">{widget.detail}</p>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
+
+                <Card className="border-white/80 bg-gradient-to-br from-white via-orange-50/50 to-sky-50/50 shadow-sm">
+                    <CardHeader className="pb-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <CardTitle>Task Queue</CardTitle>
+                                <p className="mt-1 text-sm text-muted-foreground">{filteredTasks.length} visible tasks</p>
+                            </div>
+                            {overdue > 0 && (
+                                <Badge variant="outline" className="w-fit border-rose-200 bg-rose-50 text-rose-700">
+                                    <AlertTriangle className="mr-1 h-3 w-3" />
+                                    {overdue} overdue
+                                </Badge>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                            {['all', 'pending', 'in_progress', 'submitted', 'completed'].map(f => (
+                                <Button
+                                    key={f}
+                                    variant={filter === f ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="text-xs capitalize"
+                                    onClick={() => setFilter(f)}
+                                >
+                                    {f === 'all' ? 'All' : f.replace('_', ' ')}
+                                </Button>
+                            ))}
+                        </div>
 
                 {/* Task List */}
                 {isLoading ? (
@@ -292,6 +356,8 @@ export default function MyTasks() {
                         })}
                     </div>
                 )}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Submit Dialog */}
