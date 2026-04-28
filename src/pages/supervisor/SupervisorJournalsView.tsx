@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { useAssignedInterns } from '@/hooks/useEvaluations';
@@ -7,10 +7,18 @@ import { useJournalEntries } from '@/hooks/useJournal';
 import { isSupervisorLikeEmployee, useCurrentEmployee, useEmployees, useSupervisorOptions } from '@/hooks/useEmployees';
 import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/layout/MainLayout';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { BookOpen, Calendar, Clock3, Film, ImageIcon, User } from 'lucide-react';
+import type { EmployeeWithRelations } from '@/types/employee';
 
 const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
@@ -27,8 +35,17 @@ export default function SupervisorJournalsView() {
     const supervisorId = employee?.id || '';
     const { data: assignedInterns = [] } = useAssignedInterns(supervisorId);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [previewAttachment, setPreviewAttachment] = useState<{
+        url: string;
+        type: string;
+        name: string;
+    } | null>(null);
     const isPrincipal = userRole === 'principal';
     const supervisorIds = new Set(supervisors.map((supervisor) => supervisor.id));
+    const employeesById = useMemo(
+        () => new Map(employees.map((currentEmployee) => [currentEmployee.id, currentEmployee])),
+        [employees]
+    );
 
     const principalInterns = employees.filter((currentEmployee) => !isSupervisorLikeEmployee(currentEmployee, supervisorIds));
     const interns = isPrincipal ? principalInterns : assignedInterns;
@@ -70,7 +87,7 @@ export default function SupervisorJournalsView() {
                             </CardHeader>
                             <CardContent className="p-0">
                                 <div className="divide-y">
-                                    {interns.map((intern) => (
+                                                        {interns.map((intern) => (
                                         <button
                                             key={intern.id}
                                             onClick={() => {
@@ -89,7 +106,9 @@ export default function SupervisorJournalsView() {
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-semibold">{intern.first_name} {intern.last_name}</p>
-                                                        <p className="text-[10px] text-muted-foreground">{intern.department?.name || 'Unassigned'}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            {getDepartmentName(intern, employeesById)}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <Badge variant="outline" className="text-[10px]">
@@ -140,7 +159,7 @@ export default function SupervisorJournalsView() {
                                             <div>
                                                 <CardTitle className="text-base">{selectedIntern.first_name} {selectedIntern.last_name}</CardTitle>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {selectedIntern.job_title || 'Intern'} • {selectedIntern.department?.name || 'Unassigned Department'}
+                                                    {selectedIntern.job_title || 'Intern'} • {getDepartmentName(selectedIntern, employeesById)}
                                                 </p>
                                             </div>
                                         </div>
@@ -167,62 +186,69 @@ export default function SupervisorJournalsView() {
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-4">
+                                        <Accordion type="single" collapsible className="space-y-4">
                                             {entries.map((entry) => (
-                                                <div key={entry.id} className="rounded-2xl border bg-white p-4 shadow-sm">
-                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                                        <div className="space-y-2">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <h3 className="text-sm font-semibold">
-                                                                    {format(new Date(entry.entry_date), 'MMMM d, yyyy')}
-                                                                </h3>
-                                                                <Badge className={statusColors[entry.status] || statusColors.draft}>
-                                                                    {entry.status}
-                                                                </Badge>
-                                                                {entry.hours_worked ? (
-                                                                    <Badge variant="outline" className="gap-1">
-                                                                        <Clock3 className="h-3 w-3" />
-                                                                        {entry.hours_worked}h
+                                                <AccordionItem key={entry.id} value={entry.id} className="rounded-2xl border bg-white px-4 shadow-sm">
+                                                    <AccordionTrigger className="py-4 hover:no-underline">
+                                                        <div className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between">
+                                                            <div className="space-y-2">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <h3 className="text-sm font-semibold">
+                                                                        {format(new Date(entry.entry_date), 'MMMM d, yyyy')}
+                                                                    </h3>
+                                                                    <Badge className={statusColors[entry.status] || statusColors.draft}>
+                                                                        {entry.status}
                                                                     </Badge>
-                                                                ) : null}
-                                                                {entry.attachments?.length ? (
-                                                                    <Badge variant="outline" className="gap-1">
-                                                                        <ImageIcon className="h-3 w-3" />
-                                                                        {entry.attachments.length} media
-                                                                    </Badge>
-                                                                ) : null}
-                                                            </div>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Submitted on {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <Calendar className="h-3.5 w-3.5" />
-                                                            Updated {format(new Date(entry.updated_at), 'MMM d, yyyy')}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 space-y-4">
-                                                        <DetailBlock label="Activities" value={entry.activities} />
-                                                        {entry.learnings ? <DetailBlock label="Key Learnings" value={entry.learnings} /> : null}
-                                                        {entry.challenges ? <DetailBlock label="Challenges" value={entry.challenges} /> : null}
-                                                        {entry.attachments && entry.attachments.length > 0 ? (
-                                                            <div className="space-y-3">
-                                                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                                                                    Photo & Video Updates
-                                                                </p>
-                                                                <div className="grid gap-3 sm:grid-cols-2">
-                                                                    {entry.attachments.map((attachment) => (
-                                                                        <JournalAttachmentCard key={attachment.id} attachment={attachment} />
-                                                                    ))}
+                                                                    {entry.hours_worked ? (
+                                                                        <Badge variant="outline" className="gap-1">
+                                                                            <Clock3 className="h-3 w-3" />
+                                                                            {entry.hours_worked}h
+                                                                        </Badge>
+                                                                    ) : null}
+                                                                    {entry.attachments?.length ? (
+                                                                        <Badge variant="outline" className="gap-1">
+                                                                            <ImageIcon className="h-3 w-3" />
+                                                                            {entry.attachments.length} media
+                                                                        </Badge>
+                                                                    ) : null}
                                                                 </div>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Submitted on {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                                                                </p>
                                                             </div>
-                                                        ) : null}
-                                                        {entry.supervisor_notes ? <DetailBlock label="Supervisor Notes" value={entry.supervisor_notes} emphasized /> : null}
-                                                    </div>
-                                                </div>
+                                                            <div className="flex items-center gap-2 pr-2 text-xs text-muted-foreground">
+                                                                <Calendar className="h-3.5 w-3.5" />
+                                                                Updated {format(new Date(entry.updated_at), 'MMM d, yyyy')}
+                                                            </div>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-4">
+                                                        <div className="space-y-4 border-t pt-4">
+                                                            <DetailBlock label="Activities" value={entry.activities} />
+                                                            {entry.learnings ? <DetailBlock label="Key Learnings" value={entry.learnings} /> : null}
+                                                            {entry.challenges ? <DetailBlock label="Challenges" value={entry.challenges} /> : null}
+                                                            {entry.attachments && entry.attachments.length > 0 ? (
+                                                                <div className="space-y-3">
+                                                                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                                                                        Photo & Video Updates
+                                                                    </p>
+                                                                    <div className="grid gap-3 sm:grid-cols-2">
+                                                                        {entry.attachments.map((attachment) => (
+                                                                            <JournalAttachmentCard
+                                                                                key={attachment.id}
+                                                                                attachment={attachment}
+                                                                                onPreview={setPreviewAttachment}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ) : null}
+                                                            {entry.supervisor_notes ? <DetailBlock label="Supervisor Notes" value={entry.supervisor_notes} emphasized /> : null}
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
                                             ))}
-                                        </div>
+                                        </Accordion>
                                     )}
                                 </CardContent>
                             </Card>
@@ -230,6 +256,23 @@ export default function SupervisorJournalsView() {
                     </div>
                 </div>
             </div>
+
+            <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
+                <DialogContent className="max-w-5xl overflow-hidden bg-black p-2">
+                    {previewAttachment && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3 px-3 pt-2 text-white">
+                                <p className="truncate text-sm">{previewAttachment.name}</p>
+                            </div>
+                            {previewAttachment.type.startsWith('video/') ? (
+                                <video src={previewAttachment.url} controls autoPlay className="max-h-[80vh] w-full rounded-lg" />
+                            ) : (
+                                <img src={previewAttachment.url} alt={previewAttachment.name} className="max-h-[80vh] w-full rounded-lg object-contain" />
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </MainLayout>
     );
 }
@@ -245,6 +288,7 @@ function DetailBlock({ label, value, emphasized = false }: { label: string; valu
 
 function JournalAttachmentCard({
     attachment,
+    onPreview,
 }: {
     attachment: {
         id: string;
@@ -252,15 +296,15 @@ function JournalAttachmentCard({
         file_path: string;
         file_type: string;
     };
+    onPreview: (preview: { url: string; type: string; name: string } | null) => void;
 }) {
     const attachmentUrl = supabase.storage.from('journal-media').getPublicUrl(attachment.file_path).data.publicUrl;
     const isVideo = attachment.file_type.startsWith('video/');
 
     return (
-        <a
-            href={attachmentUrl}
-            target="_blank"
-            rel="noreferrer"
+        <button
+            type="button"
+            onClick={() => onPreview({ url: attachmentUrl, type: attachment.file_type, name: attachment.file_name })}
             className="group overflow-hidden rounded-xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
             {isVideo ? (
@@ -278,9 +322,28 @@ function JournalAttachmentCard({
             <div className="space-y-1 px-3 py-2">
                 <p className="truncate text-xs font-semibold text-foreground">{attachment.file_name}</p>
                 <p className="text-[11px] text-muted-foreground">
-                    {isVideo ? 'Video attachment' : 'Image attachment'}
+                    {isVideo ? 'Video attachment' : 'Image attachment'} • Tap to preview
                 </p>
             </div>
-        </a>
+        </button>
     );
+}
+
+function getDepartmentName(
+    employee: Pick<EmployeeWithRelations, 'department' | 'manager_id' | 'job_title'>,
+    employeesById: Map<string, EmployeeWithRelations>
+) {
+    if (employee.department?.name) return employee.department.name;
+
+    const managerDepartment = employee.manager_id ? employeesById.get(employee.manager_id)?.department?.name : null;
+    if (managerDepartment) return managerDepartment;
+
+    const title = employee.job_title?.toLowerCase() || '';
+    if (title.includes('account')) return 'Accounting Department';
+    if (title.includes('human resource') || title.includes('hr')) return 'Human Resources Department';
+    if (title.includes('it')) return 'IT Department';
+    if (title.includes('safety')) return 'Safety Department';
+    if (title.includes('health')) return 'Health and Safety Department';
+
+    return 'Unassigned Department';
 }
