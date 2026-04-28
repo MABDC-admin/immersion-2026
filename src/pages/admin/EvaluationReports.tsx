@@ -316,32 +316,3 @@ export default function EvaluationReports() {
     </MainLayout>
   );
 }
-
-function MetricCard({
-  title,
-  value,
-  icon: Icon,
-  suffix,
-}: {
-  title: string;
-  value: string | number;
-  icon: typeof ClipboardCheck;
-  suffix?: string;
-}) {
-  return (
-    <Card className="border-l-4 border-l-primary shadow-sm">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
-            <p className="mt-2 text-2xl font-black">
-              {value}
-              {suffix && <span className="text-sm font-medium text-muted-foreground"> {suffix}</span>}
-            </p>
-          </div>
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
