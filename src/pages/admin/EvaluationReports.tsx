@@ -34,11 +34,8 @@ export default function EvaluationReports() {
     supervisorId: supervisorId === 'all' ? undefined : supervisorId,
   };
 
-  const { rows, summary, isLoading } = useEvaluationReports(filters);
+  const { rows, isLoading } = useEvaluationReports(filters);
   const { data: employees = [] } = useEmployees();
-  const { rows: selectedSupervisorRows } = useEvaluationReports(
-    supervisorId === 'all' ? {} : { supervisorId }
-  );
 
   const sortedRows = useMemo(
     () =>
@@ -79,77 +76,7 @@ export default function EvaluationReports() {
     [rows]
   );
 
-  const selectedSupervisor = useMemo(
-    () => supervisorOptions.find((option) => option.id === supervisorId) || null,
-    [supervisorId, supervisorOptions]
-  );
-
-  const selectedSupervisorInterns = useMemo(
-    () =>
-      supervisorId === 'all'
-        ? []
-        : employees
-            .filter((employee) => employee.manager_id === supervisorId)
-            .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)),
-    [employees, supervisorId]
-  );
-
-  const selectedSupervisorCoverage = useMemo(() => {
-    if (supervisorId === 'all') {
-      return {
-        evaluatedCount: 0,
-        missingCount: 0,
-        internCards: [],
-      };
-    }
-
-    const latestEvaluationByIntern = new Map<string, (typeof selectedSupervisorRows)[number]>();
-
-    for (const row of selectedSupervisorRows) {
-      const current = latestEvaluationByIntern.get(row.intern_id);
-      if (!current) {
-        latestEvaluationByIntern.set(row.intern_id, row);
-        continue;
-      }
-
-      const currentDate = new Date(current.evaluation_date || current.created_at).getTime();
-      const rowDate = new Date(row.evaluation_date || row.created_at).getTime();
-      if (rowDate > currentDate) {
-        latestEvaluationByIntern.set(row.intern_id, row);
-      }
-    }
-
-    const internCards = selectedSupervisorInterns.map((intern) => {
-      const latestEvaluation = latestEvaluationByIntern.get(intern.id) || null;
-      return {
-        intern,
-        latestEvaluation,
-        hasEvaluation: Boolean(latestEvaluation),
-      };
-    });
-
-    const evaluatedCount = internCards.filter((card) => card.hasEvaluation).length;
-    const missingCount = internCards.length - evaluatedCount;
-
-    return {
-      evaluatedCount,
-      missingCount,
-      internCards,
-    };
-  }, [selectedSupervisorInterns, selectedSupervisorRows, supervisorId]);
-
-  const categoryAverageData = [
-    { category: 'Attendance', value: summary.categoryAverages.attendance },
-    { category: 'Attitude', value: summary.categoryAverages.attitude },
-    { category: 'Ethics', value: summary.categoryAverages.ethics },
-    { category: 'Quality', value: summary.categoryAverages.quality },
-    { category: 'Teamwork', value: summary.categoryAverages.teamwork },
-  ];
-
   const topPerformers = sortedRows.slice(0, 3);
-  const needsAttention = [...sortedRows]
-    .filter((row) => (row.overall_score ?? 0) < 75)
-    .slice(0, 5);
 
   return (
     <MainLayout>
