@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
-import { ArrowDown, ArrowUp, Award, BarChart3, CheckCircle2, ClipboardCheck, Clock3, FileWarning, Filter, Medal, Trophy, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Award, BarChart3, CheckCircle2, ClipboardCheck, Clock3, Eye, FileWarning, Filter, Medal, Trophy, Users } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { EvaluationDetail } from '@/components/evaluations/EvaluationDetail';
 import { isSupervisorLikeEmployee, useEmployees } from '@/hooks/useEmployees';
-import { useEvaluationReports } from '@/hooks/useEvaluations';
+import { InternEvaluation, useEvaluationReports } from '@/hooks/useEvaluations';
 
 const chartConfig = {
   averageScore: { label: 'Average Score', color: '#ea580c' },
@@ -31,6 +33,7 @@ export default function EvaluationReports() {
   const [awardEligible, setAwardEligible] = useState<'all' | 'yes' | 'no'>('all');
   const [departmentName, setDepartmentName] = useState('all');
   const [supervisorId, setSupervisorId] = useState('all');
+  const [viewEvaluation, setViewEvaluation] = useState<InternEvaluation | null>(null);
 
   const filters = {
     periodStart: periodStart || undefined,
@@ -244,7 +247,7 @@ export default function EvaluationReports() {
                 <div className="space-y-2">
                   <CardTitle className="text-base">Assigned Intern Coverage</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Quickly see who already has a supervisor evaluation on file and who still needs one.
+                    Quickly see who already has a supervisor evaluation on file, who still needs one, and open the exact completed rubric for review.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -335,6 +338,15 @@ export default function EvaluationReports() {
                             <p>
                               Evaluation period: <span className="font-medium text-foreground">{latestEvaluation?.evaluation_period_start} to {latestEvaluation?.evaluation_period_end}</span>
                             </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 h-8 gap-1.5 bg-white text-xs"
+                              onClick={() => latestEvaluation && setViewEvaluation(latestEvaluation)}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View Full Evaluation
+                            </Button>
                           </>
                         ) : (
                           <p>
@@ -400,6 +412,15 @@ export default function EvaluationReports() {
                           <span className="pb-1 text-sm font-medium text-muted-foreground">/ 100</span>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">Supervisor: {row.supervisor_name}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 h-8 w-full gap-1.5 bg-white text-xs"
+                          onClick={() => setViewEvaluation(row)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View Exact Answers
+                        </Button>
                       </div>
                     ))
                   )}
@@ -425,6 +446,15 @@ export default function EvaluationReports() {
                         <div className="text-right">
                           <p className="text-lg font-bold text-destructive">{row.overall_score ?? 0}</p>
                           <p className="text-[11px] text-muted-foreground">/ 100</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 h-7 gap-1.5 bg-white text-[11px]"
+                            onClick={() => setViewEvaluation(row)}
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </Button>
                         </div>
                       </div>
                     ))
@@ -519,6 +549,7 @@ export default function EvaluationReports() {
                           <th className="pb-3 font-medium">Status</th>
                           <th className="pb-3 font-medium">Award</th>
                           <th className="pb-3 font-medium">Period</th>
+                          <th className="pb-3 font-medium">Form</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -565,6 +596,17 @@ export default function EvaluationReports() {
                                 {row.evaluation_period_start} to {row.evaluation_period_end}
                               </div>
                             </td>
+                            <td className="py-4 pl-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 bg-white text-xs"
+                                onClick={() => setViewEvaluation(row)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View Full Evaluation
+                              </Button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -576,6 +618,12 @@ export default function EvaluationReports() {
           </>
         )}
       </div>
+
+      <EvaluationDetail
+        open={!!viewEvaluation}
+        onOpenChange={() => setViewEvaluation(null)}
+        evaluation={viewEvaluation}
+      />
     </MainLayout>
   );
 }
