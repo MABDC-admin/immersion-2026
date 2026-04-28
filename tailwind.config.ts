@@ -66,6 +66,25 @@ export default {
           online: "hsl(var(--hrms-online))",
           offline: "hsl(var(--hrms-offline))",
         },
+        intern: {
+          DEFAULT: "hsl(var(--intern-accent))",
+          soft: "hsl(var(--intern-accent-soft))",
+          border: "hsl(var(--intern-accent-border))",
+        },
+        evalinfo: {
+          DEFAULT: "hsl(var(--evaluation-info))",
+          soft: "hsl(var(--evaluation-info-soft))",
+          border: "hsl(var(--evaluation-info-border))",
+        },
+        evaldanger: {
+          DEFAULT: "hsl(var(--evaluation-danger))",
+          soft: "hsl(var(--evaluation-danger-soft))",
+          border: "hsl(var(--evaluation-danger-border))",
+        },
+        award: {
+          DEFAULT: "hsl(var(--award-gold))",
+          soft: "hsl(var(--award-gold-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
