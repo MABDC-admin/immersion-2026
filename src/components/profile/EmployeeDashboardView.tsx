@@ -81,7 +81,7 @@ export function EmployeeDashboardView({ employeeId, onUpdateProfile }: EmployeeD
         { label: 'Journal', icon: BookOpen, href: '/journal', color: 'text-hrms-success', bg: 'bg-hrms-success/10' },
         { label: 'Evaluations', icon: ClipboardCheck, href: '/my-evaluations', color: 'text-hrms-warning', bg: 'bg-hrms-warning/10' },
         { label: 'Documents', icon: FileText, href: '/my-documents', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-        { label: 'Leave', icon: CalendarPlus, href: '/leave/requests', color: 'text-orange-500', bg: 'bg-orange-500/10' },
+        { label: 'Leave', icon: CalendarPlus, href: '/leave/requests', color: 'text-intern', bg: 'bg-intern-soft0/10' },
         { label: 'Training', icon: GraduationCap, href: '/training/courses', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
         { label: 'Profile', icon: UserPen, href: employee ? `/employees/${employee.id}` : '#', color: 'text-pink-500', bg: 'bg-pink-500/10' },
         { label: 'Chat', icon: MessageSquare, href: '/chat', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },

@@ -6,7 +6,7 @@ import { CalendarDays, AlertTriangle } from 'lucide-react';
 const leaveTypeConfig: Record<string, { color: string; bgColor: string; icon: string }> = {
   'LOP': { color: 'text-destructive', bgColor: 'bg-destructive/10', icon: '⏸' },
   'Annual Leave': { color: 'text-primary', bgColor: 'bg-primary/10', icon: '🌴' },
-  'Local Leave': { color: 'text-amber-600', bgColor: 'bg-amber-500/10', icon: '📍' },
+  'Local Leave': { color: 'text-hrms-warning', bgColor: 'bg-hrms-warning/100/10', icon: '📍' },
 };
 
 interface LeaveBalanceCardsProps {

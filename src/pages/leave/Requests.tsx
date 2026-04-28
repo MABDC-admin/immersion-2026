@@ -18,8 +18,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { LeaveRequest, LeaveStatus } from '@/types/employee';
 
 const statusConfig: Record<LeaveStatus, { label: string; variant: 'outline' | 'default' | 'destructive' | 'secondary'; className: string }> = {
-    pending: { label: 'Pending', variant: 'outline', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-    approved: { label: 'Approved', variant: 'default', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+    pending: { label: 'Pending', variant: 'outline', className: 'bg-hrms-warning/100/10 text-hrms-warning border-amber-500/20' },
+    approved: { label: 'Approved', variant: 'default', className: 'bg-hrms-success/100/10 text-hrms-success border-emerald-500/20' },
     rejected: { label: 'Rejected', variant: 'destructive', className: 'bg-destructive/10 text-destructive border-destructive/20' },
     cancelled: { label: 'Cancelled', variant: 'secondary', className: 'bg-muted text-muted-foreground border-muted' },
 };
@@ -109,7 +109,7 @@ function LeaveTable({ requests, isAdminOrHR, onStatusUpdate, isPending }: {
                                             <div className="flex justify-end gap-2">
                                                 <Button
                                                     variant="ghost" size="icon"
-                                                    className="text-emerald-600 hover:text-emerald-600 hover:bg-emerald-500/10 h-8 w-8"
+                                                    className="text-hrms-success hover:text-hrms-success hover:bg-hrms-success/100/10 h-8 w-8"
                                                     onClick={() => onStatusUpdate(request.id, 'approved')}
                                                     disabled={isPending}
                                                     title="Approve"
@@ -185,8 +185,8 @@ export default function LeaveRequests() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <Card>
                             <CardContent className="p-4 flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                                    <span className="text-amber-600 font-bold text-lg">{pendingRequests.length}</span>
+                                <div className="h-10 w-10 rounded-lg bg-hrms-warning/100/10 flex items-center justify-center">
+                                    <span className="text-hrms-warning font-bold text-lg">{pendingRequests.length}</span>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-foreground">Pending</p>
@@ -196,8 +196,8 @@ export default function LeaveRequests() {
                         </Card>
                         <Card>
                             <CardContent className="p-4 flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                                    <span className="text-emerald-600 font-bold text-lg">{approvedRequests.length}</span>
+                                <div className="h-10 w-10 rounded-lg bg-hrms-success/100/10 flex items-center justify-center">
+                                    <span className="text-hrms-success font-bold text-lg">{approvedRequests.length}</span>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-foreground">Approved</p>
@@ -231,10 +231,10 @@ export default function LeaveRequests() {
                                 All <Badge variant="secondary" className="ml-1.5 text-xs">{requests.length}</Badge>
                             </TabsTrigger>
                             <TabsTrigger value="pending">
-                                Pending <Badge variant="secondary" className="ml-1.5 text-xs bg-amber-500/10 text-amber-600">{pendingRequests.length}</Badge>
+                                Pending <Badge variant="secondary" className="ml-1.5 text-xs bg-hrms-warning/100/10 text-hrms-warning">{pendingRequests.length}</Badge>
                             </TabsTrigger>
                             <TabsTrigger value="approved">
-                                Approved <Badge variant="secondary" className="ml-1.5 text-xs bg-emerald-500/10 text-emerald-600">{approvedRequests.length}</Badge>
+                                Approved <Badge variant="secondary" className="ml-1.5 text-xs bg-hrms-success/100/10 text-hrms-success">{approvedRequests.length}</Badge>
                             </TabsTrigger>
                             <TabsTrigger value="rejected">
                                 Rejected <Badge variant="secondary" className="ml-1.5 text-xs bg-destructive/10 text-destructive">{rejectedRequests.length}</Badge>

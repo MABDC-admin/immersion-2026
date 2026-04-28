@@ -27,7 +27,7 @@ import { countCompletedRubricItems, InternEvaluation, useDeleteEvaluation, useEv
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   submitted: 'bg-primary text-primary-foreground',
-  finalized: 'bg-emerald-600 text-white',
+  finalized: 'bg-hrms-success text-white',
 };
 
 function getInitials(evaluation: InternEvaluation) {
@@ -90,7 +90,7 @@ export default function EvaluationsPage() {
             </div>
           </div>
 
-          <Card className="border-orange-200/70 bg-orange-50/40 shadow-sm">
+          <Card className="border-intern-border/70 bg-intern-soft/40 shadow-sm">
             <CardContent className="p-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
@@ -194,7 +194,7 @@ export default function EvaluationsPage() {
                                     {evaluation.intern ? `${evaluation.intern.first_name} ${evaluation.intern.last_name}` : 'Unknown Intern'}
                                   </h4>
                                   <Badge className={statusColors[evaluation.status] || statusColors.draft}>{evaluation.status}</Badge>
-                                  {evaluation.award_eligible && <Badge className="bg-amber-500 text-black">Award Eligible</Badge>}
+                                  {evaluation.award_eligible && <Badge className="bg-hrms-warning/100 text-black">Award Eligible</Badge>}
                                 </div>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                   Period: {format(new Date(evaluation.evaluation_period_start), 'MMM d')} - {format(new Date(evaluation.evaluation_period_end), 'MMM d, yyyy')}
@@ -266,7 +266,7 @@ export default function EvaluationsPage() {
         )}
 
         {!canAuthor && (
-          <Card className="border-orange-200 bg-orange-50/70">
+          <Card className="border-intern-border bg-intern-soft/70">
             <CardContent className="flex items-center gap-3 p-4 text-sm text-orange-900">
               <Target className="h-4 w-4 shrink-0" />
               This workspace is intended for supervisors. You can still review existing records here if they are assigned to your role.

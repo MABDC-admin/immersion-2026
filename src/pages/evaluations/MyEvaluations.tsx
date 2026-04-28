@@ -12,7 +12,7 @@ import { InternEvaluation, RUBRIC_SECTIONS, sumEvaluationSection, useInternEvalu
 
 const statusColors: Record<string, string> = {
   submitted: 'bg-primary text-primary-foreground',
-  finalized: 'bg-emerald-600 text-white',
+  finalized: 'bg-hrms-success text-white',
 };
 
 export default function MyEvaluations() {
@@ -69,7 +69,7 @@ export default function MyEvaluations() {
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Award Eligible</p>
                     <p className="mt-2 text-2xl font-black">{visibleEvaluations.filter((evaluation) => evaluation.award_eligible).length}</p>
                   </div>
-                  <Trophy className="h-5 w-5 text-emerald-600" />
+                  <Trophy className="h-5 w-5 text-hrms-success" />
                 </div>
               </CardContent>
             </Card>
@@ -105,7 +105,7 @@ export default function MyEvaluations() {
                             {format(new Date(evaluation.evaluation_period_start), 'MMM d')} - {format(new Date(evaluation.evaluation_period_end), 'MMM d, yyyy')}
                           </h4>
                           <Badge className={statusColors[evaluation.status] || statusColors.submitted}>{evaluation.status}</Badge>
-                          {evaluation.award_eligible && <Badge className="bg-amber-500 text-black">Award Eligible</Badge>}
+                          {evaluation.award_eligible && <Badge className="bg-hrms-warning/100 text-black">Award Eligible</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           Evaluated by{' '}

@@ -48,7 +48,7 @@ import { supabase } from '@/integrations/supabase/client';
 const statusStyles: Record<string, string> = {
   approved: 'bg-green-500/10 text-green-700 border-green-500/20',
   rejected: 'bg-destructive/10 text-destructive border-destructive/20',
-  pending: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  pending: 'bg-hrms-warning/100/10 text-hrms-warning border-amber-500/20',
   draft: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -422,7 +422,7 @@ function EmployeeJournalAccordion({
         group.entries.length > 0 && 'hover:-translate-y-0.5 hover:shadow-md',
         pendingCount > 0
           ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-card to-card'
-          : 'border-slate-200/80 bg-gradient-to-r from-orange-500/[0.05] via-card to-card'
+          : 'border-slate-200/80 bg-gradient-to-r from-intern-soft0/[0.05] via-card to-card'
       )}
     >
       <AccordionTrigger className="px-4 py-4 hover:no-underline">
@@ -439,7 +439,7 @@ function EmployeeJournalAccordion({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-sm font-semibold text-foreground sm:text-base">{employeeName}</p>
-              <Badge variant="secondary" className="rounded-full bg-orange-500/10 text-orange-700">
+              <Badge variant="secondary" className="rounded-full bg-intern-soft0/10 text-intern">
                 {group.entries.length} {group.entries.length === 1 ? 'entry' : 'entries'}
               </Badge>
               {pendingCount > 0 && (
@@ -461,23 +461,23 @@ function EmployeeJournalAccordion({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 xl:max-w-[42%] xl:justify-end">
-            <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700">
+            <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-hrms-success/100/10 text-hrms-success">
               {approvedCount} approved
             </Badge>
-            <Badge variant="outline" className="rounded-full border-sky-500/20 bg-sky-500/10 text-sky-700">
+            <Badge variant="outline" className="rounded-full border-sky-500/20 bg-evalinfo-soft0/10 text-evalinfo">
               {mediaCount} media
             </Badge>
             <Badge variant="outline" className="rounded-full border-violet-500/20 bg-violet-500/10 text-violet-700">
               {totalHours.toFixed(totalHours % 1 === 0 ? 0 : 1)} hrs
             </Badge>
-            <Badge variant="outline" className="rounded-full border-orange-500/20 bg-orange-500/10 text-orange-700 capitalize">
+            <Badge variant="outline" className="rounded-full border-orange-500/20 bg-intern-soft0/10 text-intern capitalize">
               {latestEntry?.status || 'No entry'}
             </Badge>
           </div>
         </div>
       </AccordionTrigger>
 
-      <AccordionContent className="border-t bg-gradient-to-b from-orange-500/[0.04] via-background to-background px-4 pb-4 pt-3">
+      <AccordionContent className="border-t bg-gradient-to-b from-intern-soft0/[0.04] via-background to-background px-4 pb-4 pt-3">
         {group.entries.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-background/70 px-4 py-6 text-sm text-muted-foreground">
             No daily journal entries recorded for this intern yet.
@@ -501,7 +501,7 @@ function EmployeeJournalAccordion({
                       </Badge>
                     )}
                     {entry.attachments && entry.attachments.length > 0 && (
-                      <Badge variant="secondary" className="rounded-full bg-orange-500/10 text-orange-700">
+                      <Badge variant="secondary" className="rounded-full bg-intern-soft0/10 text-intern">
                         {entry.attachments.length} media
                       </Badge>
                     )}
@@ -513,7 +513,7 @@ function EmployeeJournalAccordion({
 
                 <Button
                   variant="outline"
-                  className="shrink-0 gap-2 rounded-full border-orange-200 bg-orange-500/5 text-orange-700 hover:bg-orange-500/10"
+                  className="shrink-0 gap-2 rounded-full border-intern-border bg-intern-soft0/5 text-intern hover:bg-intern-soft0/10"
                   onClick={() => onViewEntry(entry, employeeName, group.employee.avatar_url)}
                 >
                   <ArrowUpRight className="h-4 w-4" />
@@ -621,7 +621,7 @@ export default function EmployeeJournals() {
     <MainLayout>
       <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Card className="rounded-[1.35rem] border-orange-200/70 bg-gradient-to-br from-orange-500/15 via-background to-background shadow-sm">
+          <Card className="rounded-[1.35rem] border-intern-border/70 bg-gradient-to-br from-intern/15 via-background to-background shadow-sm">
             <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -631,7 +631,7 @@ export default function EmployeeJournals() {
               <p className="text-xs text-muted-foreground">Visible in the current review view</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.35rem] border-emerald-200/70 bg-gradient-to-br from-emerald-500/10 via-background to-background shadow-sm">
+          <Card className="rounded-[1.35rem] border-hrms-success/30/70 bg-gradient-to-br from-emerald-500/10 via-background to-background shadow-sm">
             <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
@@ -641,7 +641,7 @@ export default function EmployeeJournals() {
               <p className="text-xs text-muted-foreground">Daily logs ready to open and inspect</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.35rem] border-amber-200/80 bg-gradient-to-br from-amber-500/15 via-background to-background shadow-sm">
+          <Card className="rounded-[1.35rem] border-hrms-warning/30/80 bg-gradient-to-br from-amber-500/15 via-background to-background shadow-sm">
             <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -651,7 +651,7 @@ export default function EmployeeJournals() {
               <p className="text-xs text-muted-foreground">Pinned to the top so review starts faster</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-[1.35rem] border-sky-200/80 bg-gradient-to-br from-sky-500/10 via-background to-background shadow-sm">
+          <Card className="rounded-[1.35rem] border-evalinfo-border/80 bg-gradient-to-br from-evalinfo/10 via-background to-background shadow-sm">
             <CardHeader className="space-y-1 pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Film className="h-4 w-4" />
@@ -663,8 +663,8 @@ export default function EmployeeJournals() {
           </Card>
         </div>
 
-        <Card className="overflow-hidden rounded-[1.6rem] border-orange-100/80 shadow-sm">
-          <CardContent className="space-y-4 bg-gradient-to-b from-orange-500/[0.04] via-background to-background p-4">
+        <Card className="overflow-hidden rounded-[1.6rem] border-intern-border/60/80 shadow-sm">
+          <CardContent className="space-y-4 bg-gradient-to-b from-intern-soft0/[0.04] via-background to-background p-4">
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-center">
               <div className="flex flex-wrap items-center gap-2">
                 {filterOptions.map((option) => {
@@ -678,8 +678,8 @@ export default function EmployeeJournals() {
                       className={cn(
                         'h-9 rounded-full border px-3 text-xs sm:text-sm',
                         isActive
-                          ? 'border-orange-300 bg-orange-500 text-white hover:bg-orange-500/90 hover:text-white'
-                          : 'border-orange-100 bg-white/80 text-slate-700 hover:border-orange-200 hover:bg-orange-50'
+                          ? 'border-orange-300 bg-intern-soft0 text-white hover:bg-intern-soft0/90 hover:text-white'
+                          : 'border-intern-border/60 bg-white/80 text-slate-700 hover:border-intern-border hover:bg-intern-soft'
                       )}
                       onClick={() => setActiveFilter(option.value)}
                     >
@@ -703,17 +703,17 @@ export default function EmployeeJournals() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search intern, department, or role..."
-                  className="h-10 rounded-full border-orange-100 bg-white/90 pl-9"
+                  className="h-10 rounded-full border-intern-border/60 bg-white/90 pl-9"
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-orange-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-intern-soft0/10 px-2.5 py-1 text-intern">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Pending items stay on top
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 text-sky-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-evalinfo-soft0/10 px-2.5 py-1 text-evalinfo">
                 <Building2 className="h-3.5 w-3.5" />
                 {summary.employeesWithEntries} interns already logging
               </span>

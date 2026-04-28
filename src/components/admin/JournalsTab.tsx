@@ -449,8 +449,8 @@ export function JournalsTab() {
                 {viewEntry.learnings && (
                   <div className="group">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10">
-                        <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-hrms-warning/100/10">
+                        <Lightbulb className="h-3.5 w-3.5 text-hrms-warning" />
                       </div>
                       <h4 className="text-sm font-semibold text-foreground">Learnings</h4>
                     </div>

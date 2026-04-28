@@ -40,8 +40,8 @@ const roleLabels: Record<string, string> = {
 const roleColors: Record<string, string> = {
   admin: 'bg-destructive/10 text-destructive border-destructive/20',
   hr_manager: 'bg-primary/10 text-primary border-primary/20',
-  principal: 'bg-sky-500/10 text-sky-700 border-sky-500/20',
-  supervisor: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  principal: 'bg-evalinfo-soft0/10 text-evalinfo border-sky-500/20',
+  supervisor: 'bg-hrms-success/100/10 text-hrms-success border-emerald-500/20',
   manager: 'bg-accent text-accent-foreground border-accent',
   payroll_officer: 'bg-secondary text-secondary-foreground border-secondary',
   employee: 'bg-muted text-muted-foreground border-muted',
@@ -233,7 +233,7 @@ export function ImpersonationTab() {
       <Card className="border-l-4 border-l-emerald-500 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <UserCheck className="h-5 w-5 text-emerald-600" />
+            <UserCheck className="h-5 w-5 text-hrms-success" />
             Supervisor Intern Assignment Inspection
           </CardTitle>
           <CardDescription>
@@ -246,13 +246,13 @@ export function ImpersonationTab() {
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Total Supervisors</p>
               <p className="text-2xl font-bold mt-1">{supervisors.length}</p>
             </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-500/5 px-4 py-3">
-              <p className="text-xs uppercase tracking-widest text-emerald-700 font-semibold">With Interns</p>
-              <p className="text-2xl font-bold mt-1 text-emerald-700">{supervisorsWithInterns.length}</p>
+            <div className="rounded-xl border border-hrms-success/30 bg-hrms-success/100/5 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-hrms-success font-semibold">With Interns</p>
+              <p className="text-2xl font-bold mt-1 text-hrms-success">{supervisorsWithInterns.length}</p>
             </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-500/5 px-4 py-3">
-              <p className="text-xs uppercase tracking-widest text-amber-700 font-semibold">No Interns</p>
-              <p className="text-2xl font-bold mt-1 text-amber-700">{supervisorsWithoutInterns.length}</p>
+            <div className="rounded-xl border border-hrms-warning/30 bg-hrms-warning/100/5 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-hrms-warning font-semibold">No Interns</p>
+              <p className="text-2xl font-bold mt-1 text-hrms-warning">{supervisorsWithoutInterns.length}</p>
             </div>
           </div>
 
@@ -271,7 +271,7 @@ export function ImpersonationTab() {
                         <div className="flex items-center gap-3 min-w-0">
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={sup.avatarUrl || ''} />
-                            <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-700">
+                            <AvatarFallback className="text-xs bg-hrms-success/100/10 text-hrms-success">
                               {sup.firstName?.[0]}{sup.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
@@ -305,14 +305,14 @@ export function ImpersonationTab() {
                           </Button>
                           {sup.assignedInternCount > 0 ? (
                             <CollapsibleTrigger asChild>
-                              <Badge variant="outline" className="border-emerald-200 bg-emerald-500/10 text-emerald-700 gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-colors">
+                              <Badge variant="outline" className="border-hrms-success/30 bg-hrms-success/100/10 text-hrms-success gap-1.5 cursor-pointer hover:bg-hrms-success/100/20 transition-colors">
                                 <CheckCircle2 className="h-3 w-3" />
                                 {sup.assignedInternCount} intern{sup.assignedInternCount !== 1 ? 's' : ''}
                                 <ChevronDown className={cn('h-3 w-3 transition-transform', isExpanded && 'rotate-180')} />
                               </Badge>
                             </CollapsibleTrigger>
                           ) : (
-                            <Badge variant="outline" className="border-amber-200 bg-amber-500/10 text-amber-700 gap-1.5">
+                            <Badge variant="outline" className="border-hrms-warning/30 bg-hrms-warning/100/10 text-hrms-warning gap-1.5">
                               <AlertTriangle className="h-3 w-3" />
                               No interns assigned
                             </Badge>
@@ -440,7 +440,7 @@ export function ImpersonationTab() {
                 filteredUsers.map((u) => (
                   <TableRow
                     key={u.userId}
-                    className={isImpersonating && impersonating?.userId === u.userId ? 'bg-amber-500/5' : ''}
+                    className={isImpersonating && impersonating?.userId === u.userId ? 'bg-hrms-warning/100/5' : ''}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -477,11 +477,11 @@ export function ImpersonationTab() {
                     <TableCell className="text-center">
                       {u.role === 'supervisor' ? (
                         u.assignedInternCount > 0 ? (
-                          <Badge variant="outline" className="border-emerald-200 bg-emerald-500/10 text-emerald-700">
+                          <Badge variant="outline" className="border-hrms-success/30 bg-hrms-success/100/10 text-hrms-success">
                             {u.assignedInternCount}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-amber-200 bg-amber-500/10 text-amber-700">
+                          <Badge variant="outline" className="border-hrms-warning/30 bg-hrms-warning/100/10 text-hrms-warning">
                             0
                           </Badge>
                         )
@@ -493,7 +493,7 @@ export function ImpersonationTab() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 gap-1.5 text-xs hover:bg-amber-500/10 hover:border-amber-300"
+                        className="h-8 gap-1.5 text-xs hover:bg-hrms-warning/100/10 hover:border-amber-300"
                         onClick={() => handleImpersonate(u)}
                         disabled={!u.employeeId}
                       >
