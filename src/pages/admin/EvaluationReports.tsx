@@ -81,7 +81,7 @@ export default function EvaluationReports() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="rounded-3xl border border-orange-200/70 bg-gradient-to-r from-orange-500/12 via-background to-background p-6 shadow-sm">
+        <div className="rounded-3xl border border-intern-border/70 bg-gradient-to-r from-intern/15 via-background to-background p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Evaluation Reports</h1>
@@ -89,11 +89,11 @@ export default function EvaluationReports() {
                 Ranked oversight view for Admin and Principal. Intern evaluation results are sorted from highest to lowest score.
               </p>
             </div>
-            <Badge variant="outline" className="w-fit border-orange-200 bg-white/80">Admin & Principal View</Badge>
+            <Badge variant="outline" className="w-fit border-intern-border bg-white/80">Admin & Principal View</Badge>
           </div>
         </div>
 
-        <Card className="border-orange-200/70 bg-orange-50/40">
+        <Card className="border-intern-border/70 bg-intern-soft/40">
           <CardContent className="p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
               <div className="space-y-2">
@@ -247,7 +247,7 @@ export default function EvaluationReports() {
                             <td className="py-4 pr-4">
                               <div className="flex items-center gap-2 font-semibold">
                                 #{index + 1}
-                                {index === 0 ? <ArrowUp className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                                {index === 0 ? <ArrowUp className="h-3.5 w-3.5 text-hrms-success" /> : null}
                                 {index === sortedRows.length - 1 ? <ArrowDown className="h-3.5 w-3.5 text-destructive" /> : null}
                               </div>
                             </td>
@@ -275,7 +275,7 @@ export default function EvaluationReports() {
                             </td>
                             <td className="py-4 pr-4">
                               {row.award_eligible ? (
-                                <Badge className="bg-amber-500 text-black"><Trophy className="mr-1 h-3 w-3" />Eligible</Badge>
+                                <Badge className="bg-award text-black"><Trophy className="mr-1 h-3 w-3" />Eligible</Badge>
                               ) : (
                                 <Badge variant="secondary">No</Badge>
                               )}
