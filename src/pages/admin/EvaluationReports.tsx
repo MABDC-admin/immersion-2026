@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
-import { ArrowDown, ArrowUp, Award, BarChart3, CheckCircle2, ClipboardCheck, Clock3, Eye, FileWarning, Filter, Medal, Trophy, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, Filter, Medal, Trophy } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,18 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { EvaluationDetail } from '@/components/evaluations/EvaluationDetail';
 import { isSupervisorLikeEmployee, useEmployees } from '@/hooks/useEmployees';
 import { InternEvaluation, useEvaluationReports } from '@/hooks/useEvaluations';
-
-const chartConfig = {
-  averageScore: { label: 'Average Score', color: '#ea580c' },
-  count: { label: 'Count', color: '#0284c7' },
-  value: { label: 'Value', color: '#16a34a' },
-};
-
-const PIE_COLORS = ['#ea580c', '#0284c7', '#16a34a', '#dc2626'];
 
 function getInitials(name: string) {
   const [first = 'I', second = 'N'] = name.trim().split(/\s+/);
