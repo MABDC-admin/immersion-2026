@@ -1,10 +1,15 @@
+import type { Json } from '@/integrations/supabase/types';
+
 export type ConversationType = 'direct' | 'group' | 'hr_support';
+export type ChatMessageType = 'text' | 'attachment' | 'system' | 'image' | 'video' | 'file' | 'gallery';
+
+export type ChatMetadata = Record<string, Json | undefined>;
 
 export interface ChatConversation {
     id: string;
     type: ConversationType;
     title?: string;
-    metadata?: Record<string, any>;
+    metadata?: ChatMetadata;
     created_at: string;
     updated_at: string;
     last_message?: ChatMessage;
@@ -30,8 +35,8 @@ export interface ChatMessage {
     conversation_id: string;
     sender_id: string;
     content: string;
-    type: 'text' | 'attachment' | 'system' | 'image' | 'video' | 'file' | 'gallery';
-    metadata?: Record<string, any>;
+    type: ChatMessageType;
+    metadata?: ChatMetadata;
     is_edited: boolean;
     is_deleted: boolean;
     created_at: string;
@@ -45,6 +50,6 @@ export interface ChatMessage {
 export interface SendMessageInput {
     conversation_id: string;
     content: string;
-    type?: 'text' | 'attachment' | 'system' | 'image' | 'video' | 'file' | 'gallery';
-    metadata?: Record<string, any>;
+    type?: ChatMessageType;
+    metadata?: ChatMetadata;
 }

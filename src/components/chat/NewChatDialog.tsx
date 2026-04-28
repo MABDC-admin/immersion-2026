@@ -54,8 +54,8 @@ export function NewChatDialog({ open, onOpenChange, currentEmployeeId, onConvers
 
             onConversationCreated(convId);
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to create chat');
         } finally {
             setIsCreating(false);
         }

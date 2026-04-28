@@ -15,6 +15,32 @@ const authSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const ROLE_PRIORITY = ['admin', 'hr_manager', 'principal', 'supervisor', 'manager', 'payroll_officer', 'employee'] as const;
+
+async function recordLoginAudit(userId: string, email: string) {
+  try {
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    const userRoles = (roles || []).map((record) => record.role).filter(Boolean) as string[];
+    const primaryRole = ROLE_PRIORITY.find((role) => userRoles.includes(role)) ?? null;
+
+    await supabase
+      .from('login_audit_logs' as never)
+      .insert({
+        user_id: userId,
+        email,
+        user_role: primaryRole,
+        user_agent: navigator.userAgent,
+      } as never);
+  } catch (error) {
+    console.error('Failed to record login audit trail:', error);
+  }
+}
+
 export default function Auth() {
   const navigate = useNavigate();
   const { user, signIn, signUp, isLoading } = useAuth();
@@ -55,7 +81,7 @@ export default function Auth() {
     }
 
     setIsSubmitting(true);
-    const { error } = await signIn(cleanEmail, cleanPassword);
+    const { error, user: signedInUser } = await signIn(cleanEmail, cleanPassword);
     setIsSubmitting(false);
 
     if (error) {
@@ -65,6 +91,9 @@ export default function Auth() {
         toast.error(error.message);
       }
     } else {
+      if (signedInUser) {
+        await recordLoginAudit(signedInUser.id, signedInUser.email || cleanEmail);
+      }
       toast.success("Welcome back!");
       navigate("/");
     }

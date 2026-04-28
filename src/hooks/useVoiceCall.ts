@@ -17,7 +17,7 @@ interface SignalPayload {
   from: string;
   to: string;
   conversationId: string;
-  data?: any;
+  data?: RTCSessionDescriptionInit | RTCIceCandidateInit;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
@@ -160,7 +160,7 @@ export function useVoiceCall(currentEmployeeId: string) {
         supabase.removeChannel(channelRef.current);
       }
 
-      const channel = supabase.channel(`call:${conversationId}`);
+      const channel = supabase.channel('voice-calls');
       channelRef.current = channel;
 
       channel
@@ -365,7 +365,7 @@ export function useVoiceCall(currentEmployeeId: string) {
   useEffect(() => {
     if (!currentEmployeeId) return;
 
-    const channel = supabase.channel(`call-listen:${currentEmployeeId}`);
+    const channel = supabase.channel('voice-calls');
     channel
       .on('broadcast', { event: 'voice-call' }, ({ payload }: { payload: SignalPayload }) => {
         if (payload.to !== currentEmployeeId) return;

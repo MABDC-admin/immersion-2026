@@ -77,8 +77,8 @@ export function NewGroupChatDialog({ open, onOpenChange, currentEmployeeId, onCo
             setSelectedMembers([]);
             setGroupName('');
             setSearchQuery('');
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to create group chat');
         } finally {
             setIsCreating(false);
         }

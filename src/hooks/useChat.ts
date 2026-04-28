@@ -2,7 +2,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChatConversation, ChatMessage, SendMessageInput, ChatMember } from '@/types/chat';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+type ChatConversationWithReadState = ChatConversation & {
+    my_last_read_at?: string | null;
+    unread_count?: number;
+};
+
+type ConversationMembership = {
+    last_read_at: string | null;
+    conversation: (ChatConversation & { members?: ChatMember[] }) | null;
+};
+
+type ChatPresenceState = {
+    online_at?: string;
+    typing_in?: string | null;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => (
+    error instanceof Error ? error.message : fallback
+);
 
 export function useChat(conversationId?: string) {
     const queryClient = useQueryClient();
@@ -28,27 +47,42 @@ export function useChat(conversationId?: string) {
 
                 if (membershipError) throw membershipError;
 
-                const convs = (memberships || [])
-                    .map((membership: any) => ({
+                const convs = ((memberships || []) as ConversationMembership[])
+                    .map((membership) => ({
                         ...(membership.conversation || {}),
                         my_last_read_at: membership.last_read_at,
                     }))
-                    .filter((conversation: any) => conversation?.id)
-                    .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+                    .filter((conversation): conversation is ChatConversationWithReadState => Boolean(conversation?.id))
+                    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
                 // For each conversation, fetch unread count for current employee
                 const convsWithUnread = await Promise.all((convs || []).map(async (conv) => {
-                    const myMember = conv.members?.find((m: any) => m.employee_id === employeeId);
-                    if (!myMember) return { ...conv, unread_count: 0 };
+                    const myMember = conv.members?.find((m) => m.employee_id === employeeId);
+                    if (!myMember) return { ...conv, unread_count: 0, last_message: undefined };
 
-                    const { count, error: countError } = await supabase
+                    const { data: lastMessage } = await supabase
+                        .from('messages')
+                        .select('*')
+                        .eq('conversation_id', conv.id)
+                        .eq('is_deleted', false)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+
+                    let unreadQuery = supabase
                         .from('messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('conversation_id', conv.id)
-                        .gt('created_at', myMember.last_read_at || conv.my_last_read_at)
                         .neq('sender_id', employeeId);
 
-                    return { ...conv, unread_count: count || 0 };
+                    const lastReadAt = myMember.last_read_at || conv.my_last_read_at;
+                    if (lastReadAt) {
+                        unreadQuery = unreadQuery.gt('created_at', lastReadAt);
+                    }
+
+                    const { count } = await unreadQuery;
+
+                    return { ...conv, unread_count: count || 0, last_message: lastMessage || undefined };
                 }));
 
                 return convsWithUnread as (ChatConversation & { unread_count: number })[];
@@ -69,6 +103,7 @@ export function useChat(conversationId?: string) {
                         sender:employees(id, first_name, last_name, avatar_url)
                     `)
                     .eq('conversation_id', conversationId)
+                    .eq('is_deleted', false)
                     .order('created_at', { ascending: true });
 
                 if (error) throw error;
@@ -81,7 +116,7 @@ export function useChat(conversationId?: string) {
     // Send a message
     const useSendMessage = () => {
         return useMutation({
-            mutationFn: async ({ conversation_id, content, sender_id }: SendMessageInput & { sender_id: string }) => {
+            mutationFn: async ({ conversation_id, content, sender_id, type = 'text', metadata = {} }: SendMessageInput & { sender_id: string }) => {
                 const { data, error } = await supabase
                     .from('messages')
                     .insert([
@@ -89,6 +124,8 @@ export function useChat(conversationId?: string) {
                             conversation_id,
                             content,
                             sender_id,
+                            type,
+                            metadata,
                         },
                     ])
                     .select()
@@ -142,8 +179,8 @@ export function useChat(conversationId?: string) {
                 queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
                 toast.success('Conversation deleted');
             },
-            onError: (error: any) => {
-                toast.error(error.message || 'Failed to delete conversation');
+            onError: (error: unknown) => {
+                toast.error(getErrorMessage(error, 'Failed to delete conversation'));
             }
         });
     };
@@ -169,7 +206,7 @@ export function useChat(conversationId?: string) {
     // Get total unread count across all conversations
     const useTotalUnreadCount = (employeeId: string) => {
         const { data: conversations = [] } = useConversations(employeeId);
-        return (conversations as any[]).reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+        return conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
     };
 
     // Upload attachment
@@ -197,6 +234,7 @@ export function useChat(conversationId?: string) {
     const usePresence = (employeeId: string, conversationId?: string) => {
         const [onlineEmployeeIds, setOnlineEmployeeIds] = useState<Set<string>>(new Set());
         const [typingUsers, setTypingUsers] = useState<Record<string, Set<string>>>({}); // convId -> Set<employeeId>
+        const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
         useEffect(() => {
             if (!employeeId) return;
@@ -208,6 +246,7 @@ export function useChat(conversationId?: string) {
                     },
                 },
             });
+            channelRef.current = channel;
 
             channel
                 .on('presence', { event: 'sync' }, () => {
@@ -218,7 +257,8 @@ export function useChat(conversationId?: string) {
                     // Rebuild typing users map
                     const nextTyping: Record<string, Set<string>> = {};
                     Object.entries(state).forEach(([empId, presences]) => {
-                        (presences as any[]).forEach(presence => {
+                        if (empId === employeeId) return;
+                        (presences as ChatPresenceState[]).forEach(presence => {
                             if (presence.typing_in) {
                                 if (!nextTyping[presence.typing_in]) nextTyping[presence.typing_in] = new Set();
                                 nextTyping[presence.typing_in].add(empId);
@@ -237,13 +277,15 @@ export function useChat(conversationId?: string) {
                 });
 
             return () => {
-                channel.unsubscribe();
+                channelRef.current = null;
+                supabase.removeChannel(channel);
             };
         }, [employeeId]);
 
         const setTyping = async (convId: string | null) => {
-            const channel = supabase.channel('chat-presence');
-            await channel.track({
+            if (!channelRef.current) return;
+
+            await channelRef.current.track({
                 online_at: new Date().toISOString(),
                 typing_in: convId
             });

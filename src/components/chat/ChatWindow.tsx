@@ -11,7 +11,49 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ActiveCallOverlay } from './ActiveCallOverlay';
 import { CallStatus } from '@/hooks/useVoiceCall';
-import { ChatMessage, ChatConversation } from '@/types/chat';
+import { ChatMessage, ChatMetadata } from '@/types/chat';
+
+interface AttachmentMetadata {
+    file_path?: string;
+    file_name?: string;
+    file_type?: string;
+    file_size?: number;
+}
+
+interface GalleryImageMetadata extends AttachmentMetadata {
+    file_path: string;
+    file_name: string;
+}
+
+const getString = (value: unknown) => typeof value === 'string' ? value : undefined;
+const getNumber = (value: unknown) => typeof value === 'number' ? value : undefined;
+
+const getAttachmentMetadata = (metadata?: ChatMetadata): AttachmentMetadata => ({
+    file_path: getString(metadata?.file_path),
+    file_name: getString(metadata?.file_name),
+    file_type: getString(metadata?.file_type),
+    file_size: getNumber(metadata?.file_size),
+});
+
+const getGalleryImages = (metadata?: ChatMetadata): GalleryImageMetadata[] => {
+    const images = metadata?.images;
+    if (!Array.isArray(images)) return [];
+
+    return images.flatMap((image) => {
+        if (!image || typeof image !== 'object' || Array.isArray(image)) return [];
+
+        const filePath = getString(image.file_path);
+        const fileName = getString(image.file_name);
+        if (!filePath || !fileName) return [];
+
+        return [{
+            file_path: filePath,
+            file_name: fileName,
+            file_type: getString(image.file_type),
+            file_size: getNumber(image.file_size),
+        }];
+    });
+};
 
 interface ChatWindowProps {
     conversationId: string;
@@ -67,10 +109,10 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
     useEffect(() => {
         if (!conversationId) return;
         const unsubscribe = subscribeToConversation(conversationId, (newMsg) => {
-            queryClient.setQueryData(['chat', 'messages', conversationId], (old: any) => {
-                const exists = old?.some((m: any) => m.id === newMsg.id);
+            queryClient.setQueryData<ChatMessage[]>(['chat', 'messages', conversationId], (old = []) => {
+                const exists = old.some((m) => m.id === newMsg.id);
                 if (exists) return old;
-                return [...(old || []), newMsg];
+                return [...old, newMsg];
             });
         });
         return () => unsubscribe();
@@ -198,8 +240,8 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
             });
 
             toast.success(`Succesfully uploaded ${files.length} files`);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to upload files');
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to upload files');
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -319,6 +361,8 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                         const isOwn = msg.sender_id === employeeId;
                         const senderInfo = memberMap.get(msg.sender_id);
                         const senderName = senderInfo ? `${senderInfo.first_name}` : '';
+                        const attachment = getAttachmentMetadata(msg.metadata);
+                        const galleryImages = getGalleryImages(msg.metadata);
 
                         return (
                             <div
@@ -339,22 +383,22 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                                         ? "bg-[#dcf8c6] text-foreground rounded-tr-none border border-[#c0e0a8]"
                                         : "bg-card text-foreground rounded-tl-none border border-muted/20"
                                 )}>
-                                    {msg.type === 'image' && msg.metadata?.file_path && (
+                                    {msg.type === 'image' && attachment.file_path && (
                                         <div className="rounded-xl overflow-hidden bg-black/5 group relative max-w-[280px]">
                                             <img
-                                                src={supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl}
-                                                alt={msg.metadata.file_name}
+                                                src={supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl}
+                                                alt={attachment.file_name || 'Shared image'}
                                                 className="w-full h-auto min-h-[100px] object-cover cursor-pointer transition-transform hover:scale-[1.02]"
-                                                onClick={() => setPreviewImage(supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl)}
+                                                onClick={() => setPreviewImage(supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl)}
                                             />
                                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                                                 <Image className="h-8 w-8 text-white/70" />
                                             </div>
                                         </div>
                                     )}
-                                    {msg.type === 'gallery' && msg.metadata?.images && (
+                                    {msg.type === 'gallery' && galleryImages.length > 0 && (
                                         <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden max-w-[280px]">
-                                            {msg.metadata.images.map((img: any, i: number) => (
+                                            {galleryImages.map((img, i) => (
                                                 <div key={i} className="relative group aspect-square bg-black/5">
                                                     <img
                                                         src={supabase.storage.from('chat-attachments').getPublicUrl(img.file_path).data.publicUrl}
@@ -369,27 +413,27 @@ export function ChatWindow({ conversationId, employeeId, onBack, callState, onIn
                                             ))}
                                         </div>
                                     )}
-                                    {msg.type === 'video' && msg.metadata?.file_path && (
+                                    {msg.type === 'video' && attachment.file_path && (
                                         <div className="rounded-xl overflow-hidden bg-black/5 max-w-[280px]">
                                             <video
                                                 controls
                                                 className="w-full rounded-lg"
-                                                src={supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl}
+                                                src={supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl}
                                             />
                                         </div>
                                     )}
-                                    {msg.type === 'file' && msg.metadata?.file_path && (
+                                    {msg.type === 'file' && attachment.file_path && (
                                         <div
                                             className="flex items-center gap-3 p-2 rounded-xl bg-black/5 border border-muted/5 cursor-pointer hover:bg-black/10 transition-colors min-w-[200px] max-w-[280px]"
-                                            onClick={() => window.open(supabase.storage.from('chat-attachments').getPublicUrl(msg.metadata.file_path).data.publicUrl, '_blank')}
+                                            onClick={() => window.open(supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl, '_blank')}
                                         >
                                             <div className="flex-shrink-0 p-3 rounded-lg bg-white shadow-sm ring-1 ring-black/5">
                                                 <FileText className="h-7 w-7 text-primary" />
                                             </div>
                                             <div className="flex-1 min-w-0 pr-2">
-                                                <p className="text-[11px] font-bold text-foreground truncate">{msg.metadata.file_name}</p>
+                                                <p className="text-[11px] font-bold text-foreground truncate">{attachment.file_name || 'Shared file'}</p>
                                                 <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
-                                                    {(msg.metadata.file_size / (1024 * 1024)).toFixed(2)} MB • {msg.metadata.file_type?.split('/').pop() || 'FILE'}
+                                                    {((attachment.file_size || 0) / (1024 * 1024)).toFixed(2)} MB • {attachment.file_type?.split('/').pop() || 'FILE'}
                                                 </p>
                                             </div>
                                         </div>

@@ -1296,6 +1296,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_audit_logs: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          user_agent: string | null
+          user_id: string
+          user_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+          user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+          user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1304,6 +1331,7 @@ export type Database = {
           id: string
           is_deleted: boolean | null
           is_edited: boolean | null
+          metadata: Json
           sender_id: string | null
           type: string | null
         }
@@ -1314,6 +1342,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           is_edited?: boolean | null
+          metadata?: Json
           sender_id?: string | null
           type?: string | null
         }
@@ -1324,6 +1353,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           is_edited?: boolean | null
+          metadata?: Json
           sender_id?: string | null
           type?: string | null
         }
