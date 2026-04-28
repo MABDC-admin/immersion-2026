@@ -157,147 +157,17 @@ export default function EvaluationReports() {
           </CardContent>
         </Card>
 
-        {selectedSupervisor && (
-          <Card className="border-sky-200/70 bg-sky-50/40 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-base">Assigned Intern Coverage</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Quickly see who already has a supervisor evaluation on file, who still needs one, and open the exact completed rubric for review.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="w-fit border-sky-200 bg-white/80">
-                    {selectedSupervisor.name} • {selectedSupervisor.assignedInternCount} assigned
-                  </Badge>
-                  <Badge className="gap-1 bg-emerald-600/90">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {selectedSupervisorCoverage.evaluatedCount} evaluated
-                  </Badge>
-                  <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-900 hover:bg-amber-100">
-                    <FileWarning className="h-3.5 w-3.5" />
-                    {selectedSupervisorCoverage.missingCount} missing
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {selectedSupervisorInterns.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
-                  No assigned interns were found for this supervisor.
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {selectedSupervisorCoverage.internCards.map(({ intern, latestEvaluation, hasEvaluation }) => (
-                    <div
-                      key={intern.id}
-                      className={`rounded-2xl border p-4 shadow-sm transition-colors ${
-                        hasEvaluation
-                          ? 'border-emerald-200 bg-white'
-                          : 'border-amber-200 bg-amber-50/60'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <Avatar className="h-11 w-11 border border-slate-200">
-                            <AvatarImage src={intern.avatar_url || ''} />
-                            <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                              {getInitials(`${intern.first_name} ${intern.last_name}`)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">{intern.first_name} {intern.last_name}</p>
-                            <p className="truncate text-xs text-muted-foreground">{intern.job_title || 'Intern'}</p>
-                            <p className="truncate text-xs text-muted-foreground">{intern.department?.name || 'Unassigned Department'}</p>
-                          </div>
-                        </div>
-                        {hasEvaluation ? (
-                          <div className="shrink-0 text-right">
-                            <p className="text-2xl font-black leading-none text-slate-900">{latestEvaluation?.overall_score ?? 0}</p>
-                            <p className="text-[11px] text-muted-foreground">/ 100</p>
-                          </div>
-                        ) : (
-                          <Badge variant="secondary" className="shrink-0 bg-amber-100 text-amber-900 hover:bg-amber-100">
-                            Missing
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {hasEvaluation ? (
-                          <>
-                            <Badge className="gap-1 bg-emerald-600/90">
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              {latestEvaluation?.status === 'draft' ? 'Draft saved' : 'Evaluation on file'}
-                            </Badge>
-                            {latestEvaluation?.award_eligible ? (
-                              <Badge className="bg-amber-500 text-black">
-                                <Trophy className="mr-1 h-3 w-3" />
-                                Award Eligible
-                              </Badge>
-                            ) : null}
-                          </>
-                        ) : (
-                          <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-900 hover:bg-amber-100">
-                            <Clock3 className="h-3.5 w-3.5" />
-                            No evaluation yet
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                        {hasEvaluation ? (
-                          <>
-                            <p>
-                              Latest status: <span className="font-medium text-foreground capitalize">{latestEvaluation?.status || 'draft'}</span>
-                            </p>
-                            <p>
-                              Evaluation period: <span className="font-medium text-foreground">{latestEvaluation?.evaluation_period_start} to {latestEvaluation?.evaluation_period_end}</span>
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 h-8 gap-1.5 bg-white text-xs"
-                              onClick={() => latestEvaluation && setViewEvaluation(latestEvaluation)}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              View Full Evaluation
-                            </Button>
-                          </>
-                        ) : (
-                          <p>
-                            This assigned intern does not have any supervisor evaluation record yet.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard title="Evaluations" value={summary.evaluationCount} icon={ClipboardCheck} />
-          <MetricCard title="Average Score" value={summary.averageOverallScore.toFixed(2)} suffix="/100" icon={BarChart3} />
-          <MetricCard title="Award Eligible" value={summary.awardEligibleCount} icon={Award} />
-          <MetricCard title="Supervisors" value={summary.supervisorBreakdown.length} icon={Users} />
-        </div>
-
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle>Top Performing Interns</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-3">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle>Top Performing Interns</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-3">
                   {topPerformers.length === 0 ? (
                     <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
                       No ranked evaluation records yet.
@@ -310,7 +180,7 @@ export default function EvaluationReports() {
                             <Medal className="h-3 w-3" />
                             Rank #{index + 1}
                           </Badge>
-                          {row.award_eligible && <Badge className="bg-amber-500 text-black">Award Eligible</Badge>}
+                          {row.award_eligible && <Badge className="bg-award text-black">Award Eligible</Badge>}
                         </div>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border border-slate-200">
@@ -336,109 +206,11 @@ export default function EvaluationReports() {
                           onClick={() => setViewEvaluation(row)}
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          View Exact Answers
+                          View Evaluation
                         </Button>
                       </div>
                     ))
                   )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle>Needs Attention</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {needsAttention.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                      No low-score evaluations in the current report view.
-                    </div>
-                  ) : (
-                    needsAttention.map((row) => (
-                      <div key={row.id} className="flex items-center justify-between gap-3 rounded-2xl border bg-white p-4">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{row.intern_name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{row.supervisor_name} • {row.department_name}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-destructive">{row.overall_score ?? 0}</p>
-                          <p className="text-[11px] text-muted-foreground">/ 100</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2 h-7 gap-1.5 bg-white text-[11px]"
-                            onClick={() => setViewEvaluation(row)}
-                          >
-                            <Eye className="h-3 w-3" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Average Score by Supervisor</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer className="h-[300px] w-full" config={chartConfig}>
-                    <BarChart data={summary.supervisorBreakdown.slice(0, 8)}>
-                      <CartesianGrid vertical={false} />
-                      <XAxis dataKey="supervisorName" tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={70} />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="averageScore" fill="var(--color-averageScore)" radius={8} />
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Score Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer className="h-[300px] w-full" config={chartConfig}>
-                    <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent nameKey="label" />} />
-                      <Pie data={summary.scoreBands} dataKey="value" nameKey="label" outerRadius={100}>
-                        {summary.scoreBands.map((entry, index) => (
-                          <Cell key={entry.label} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {summary.scoreBands.map((entry, index) => (
-                      <Badge key={entry.label} variant="outline" className="gap-2">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
-                        {entry.label}: {entry.value}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle>Category Averages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer className="h-[280px] w-full" config={chartConfig}>
-                  <BarChart data={categoryAverageData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="category" tickLine={false} axisLine={false} />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="value" fill="var(--color-value)" radius={8} />
-                  </BarChart>
-                </ChartContainer>
               </CardContent>
             </Card>
 
