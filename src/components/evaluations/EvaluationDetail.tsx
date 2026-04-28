@@ -48,16 +48,11 @@ export function EvaluationDetail({ open, onOpenChange, evaluation }: EvaluationD
   const printableRef = useRef<HTMLDivElement | null>(null);
 
   const handleExportPdf = () => {
-    if (!printableRef.current) return;
-
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=900');
-    if (!printWindow) return;
-
     const title = evaluation.intern
       ? `${evaluation.intern.first_name} ${evaluation.intern.last_name} Evaluation`
       : 'Supervisor Evaluation';
 
-    printWindow.document.write(`
+    const html = `
       <!doctype html>
       <html>
         <head>
@@ -191,13 +186,53 @@ export function EvaluationDetail({ open, onOpenChange, evaluation }: EvaluationD
           ${buildEvaluationPrintHtml(evaluation)}
         </body>
       </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 300);
+    `;
+
+    // Use a hidden iframe in the current document — avoids popup blockers and
+    // reliably triggers the browser's native "Save as PDF" dialog.
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const cleanup = () => {
+      // Delay removal so the print dialog can finish reading the document.
+      setTimeout(() => {
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }, 1000);
+    };
+
+    iframe.onload = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) {
+          cleanup();
+          return;
+        }
+        // Give images/fonts a tick to lay out before printing.
+        setTimeout(() => {
+          try {
+            win.focus();
+            win.print();
+          } catch (err) {
+            console.error('Print failed', err);
+          } finally {
+            cleanup();
+          }
+        }, 250);
+      } catch (err) {
+        console.error('Print iframe error', err);
+        cleanup();
+      }
+    };
+
+    // srcdoc gives the iframe a real document and fires `load` reliably.
+    iframe.srcdoc = html;
   };
 
   return (
