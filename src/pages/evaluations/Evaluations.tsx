@@ -470,7 +470,7 @@ export default function EvaluationsPage() {
                               {format(new Date(evaluation.evaluation_period_start), 'MMM d')} - {format(new Date(evaluation.evaluation_period_end), 'MMM d, yyyy')}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              {evaluation.intern ? getEmployeeDepartmentName({ department: evaluation.intern.department, job_title: '' }) : 'Unassigned Department'}
+                              {evaluation.intern ? getEmployeeDepartmentName({ department: evaluation.intern.department as { id: string; name: string } | null | undefined, job_title: '' }) : 'Unassigned Department'}
                             </p>
                           </div>
                         </div>

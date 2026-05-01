@@ -198,7 +198,7 @@ export function useVoiceCall(currentEmployeeId: string) {
                 pc = await setupPeerConnection() as RTCPeerConnection;
                 if (!pc) break;
               }
-              await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
+              await pc.setRemoteDescription(new RTCSessionDescription(payload.data as RTCSessionDescriptionInit));
               // Apply pending ICE candidates
               for (const candidate of pendingCandidates.current) {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -221,7 +221,7 @@ export function useVoiceCall(currentEmployeeId: string) {
             case 'answer': {
               const pc = peerConnection.current;
               if (!pc) break;
-              await pc.setRemoteDescription(new RTCSessionDescription(payload.data));
+              await pc.setRemoteDescription(new RTCSessionDescription(payload.data as RTCSessionDescriptionInit));
               // Apply pending ICE candidates
               for (const candidate of pendingCandidates.current) {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -235,9 +235,9 @@ export function useVoiceCall(currentEmployeeId: string) {
             case 'ice-candidate': {
               const pc = peerConnection.current;
               if (pc && pc.remoteDescription) {
-                await pc.addIceCandidate(new RTCIceCandidate(payload.data));
+                await pc.addIceCandidate(new RTCIceCandidate(payload.data as RTCIceCandidateInit));
               } else {
-                pendingCandidates.current.push(payload.data);
+                pendingCandidates.current.push(payload.data as RTCIceCandidateInit);
               }
               break;
             }

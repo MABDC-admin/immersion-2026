@@ -5,7 +5,7 @@ import { ChatConversation, ChatMessage, SendMessageInput, ChatMember } from '@/t
 import { useEffect, useRef, useState } from 'react';
 
 type ChatConversationWithReadState = ChatConversation & {
-    my_last_read_at?: string | null;
+    my_last_read_at: string | null;
     unread_count?: number;
 };
 
