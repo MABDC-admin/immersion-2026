@@ -1791,6 +1791,10 @@ export type Database = {
         Args: { creator_id: string; group_title?: string; member_ids: string[] }
         Returns: string
       }
+      ensure_chat_employee_profile: {
+        Args: { role_label?: string; user_email: string }
+        Returns: string
+      }
       exec_sql: { Args: { query: string }; Returns: undefined }
       find_direct_conversation: {
         Args: { user_a: string; user_b: string }
@@ -1808,10 +1812,6 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_hr: { Args: { _user_id: string }; Returns: boolean }
-      ensure_chat_employee_profile: {
-        Args: { user_email: string; role_label?: string | null }
-        Returns: string
-      }
     }
     Enums: {
       app_role:
